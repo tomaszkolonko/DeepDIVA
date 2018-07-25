@@ -16,12 +16,12 @@ import models
 # Delegated
 from template.runner.image_classification import evaluate, train
 from template.setup import set_up_model, set_up_dataloaders
-from util.misc import checkpoint, adjust_learning_rate
+from util.misc import checkpoint, adjust_learning_rate, onnx_export
 
 
 class ImageClassification:
     @staticmethod
-    def single_run(writer, current_log_folder, model_name, epochs, lr, decay_lr, validation_interval,
+    def single_run(writer, current_log_folder, model_name, epochs, lr, decay_lr, validation_interval, export_onnx,
                    **kwargs):
         """
         This is the main routine where train(), validate() and test() are called.
@@ -44,6 +44,8 @@ class ImageClassification:
             Decay the lr flag
         validation_interval: int
             Run evaluation on validation set every N epochs
+        export_onnx : boolean
+            enable onnx export of model trained at last iteration
 
         Returns
         -------
@@ -89,7 +91,8 @@ class ImageClassification:
         # Test
         test_value = ImageClassification._test(test_loader, model, criterion, writer, epochs - 1, **kwargs)
         logging.info('Training completed')
-
+        if export_onnx:
+            onnx_export(model, model_expected_input_size, current_log_folder)
         return train_value, val_value, test_value
 
     ####################################################################################################################

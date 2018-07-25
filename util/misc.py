@@ -4,6 +4,8 @@ General purpose utility functions.
 """
 
 # Utils
+from torch.autograd import Variable
+
 import logging
 import os
 import os.path
@@ -13,6 +15,7 @@ import string
 import cv2
 import numpy as np
 import torch
+import torch.onnx
 
 
 def _prettyprint_logging_label(logging_label):
@@ -157,6 +160,25 @@ def checkpoint(epoch, new_value, best_value, model, optimizer, log_dir, invert_b
     return best_value
 
 
+def onnx_export(model, input_size, log_dir):
+    """ saves the model as onnx protbuf file
+
+    Parameters
+    ----------
+
+    model : torch.nn.module object
+        The model we are exporting to ONNX
+
+    input_size : tuple
+        The required input size for the model
+
+    log_dir : str
+        The current logging directory
+    """
+    dummy_input = Variable(torch.randn(10, 3, input_size[0], input_size[1]))
+    torch.onnx.export(model, dummy_input, os.path.join(log_dir, 'trained_model.onnx'))
+
+
 def to_capital_camel_case(s):
     """Converts a string to camel case.
 
@@ -234,6 +256,7 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image_tensor=None, 
 
     return
 
+
 def has_extension(filename, extensions):
     """Checks if a file is an allowed extension.
 
@@ -252,5 +275,3 @@ def has_extension(filename, extensions):
     """
     filename_lower = filename.lower()
     return any(filename_lower.endswith(ext) for ext in extensions)
-
-

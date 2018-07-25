@@ -161,6 +161,11 @@ def _training_options(parser):
                               type=int,
                               default=1,
                               help='Run evaluation on validation set every N epochs')
+    parser_train.add_argument('--export-onnx',
+                              action='store_true',
+                              default=False,
+                              help='export the last trained model in ONNX format'
+                              )
 
 
 def _apply_options(parser):
