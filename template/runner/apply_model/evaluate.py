@@ -12,7 +12,7 @@ from util.misc import save_image_and_log_to_tensorboard
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 
 
-def feature_extract(data_loader, model, writer, epoch, no_cuda, log_interval, classify, **kwargs):
+def feature_extract(data_loader, model, writer, epoch, no_cuda, log_interval, classify, no_evaluation, **kwargs):
     """
     The evaluation routine
 
@@ -38,6 +38,10 @@ def feature_extract(data_loader, model, writer, epoch, no_cuda, log_interval, cl
 
     classify : boolean
         Specifies whether to generate a classification report for the data or not.
+
+    no_evaluation : boolean
+        Specifies whether or not to generate evaluation information, if true only classifaction result is computed
+
 
     Returns
     -------
@@ -70,8 +74,9 @@ def feature_extract(data_loader, model, writer, epoch, no_cuda, log_interval, cl
             out = out.view(bs, ncrops, -1).mean(1)
 
         preds.append([np.argmax(item.data.cpu().numpy()) for item in out])
-        features.append(out.data.cpu().numpy())
-        labels.append(label)
+        if not no_evaluation:
+            features.append(out.data.cpu().numpy())
+            labels.append(label)
         filenames.append(filename)
 
         # Log progress to console
@@ -81,13 +86,14 @@ def feature_extract(data_loader, model, writer, epoch, no_cuda, log_interval, cl
                        100. * batch_idx / len(data_loader)))
 
     # Measure accuracy (FPR95)
-    num_tests = len(data_loader.dataset)
-    labels = np.concatenate(labels, 0).reshape(num_tests)
-    features = np.concatenate(features, 0)
-    preds = np.concatenate(preds, 0)
-    filenames = np.concatenate(filenames, 0)
+    if not no_evaluation:
+        num_tests = len(data_loader.dataset)
+        labels = np.concatenate(labels, 0).reshape(num_tests)
+        features = np.concatenate(features, 0)
+        preds = np.concatenate(preds, 0)
+        filenames = np.concatenate(filenames, 0)
 
-    if classify:
+    if classify and not no_evaluation:
         # Make a confusion matrix
         try:
             cm = confusion_matrix(y_true=labels, y_pred=preds)
@@ -102,8 +108,7 @@ def feature_extract(data_loader, model, writer, epoch, no_cuda, log_interval, cl
         logging.info('\n' + classification_report(y_true=labels,
                                                   y_pred=preds,
                                                   target_names=[str(item) for item in data_loader.dataset.classes]))
-    else:
+    elif not no_evaluation:
         preds = None
-
 
     return features, preds, labels, filenames
