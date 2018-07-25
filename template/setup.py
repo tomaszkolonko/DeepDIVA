@@ -115,7 +115,14 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
             if not no_cuda:
                 model_dict = torch.load(load_model)
             else:
-                model_dict = torch.load(load_model, map_location=lambda storage, loc: storage)
+                # try loading the model regular, if it does not work try with remapping
+                # the model then was trained on gpu and everything needs to remapped to cpu
+                try:
+                    model_dict = torch.load(load_model)
+                except:
+                    logging.warning(
+                        "WARNING! YOU ARE LOADING A GPU TRAINED MODEL ON A CPU. THIS CAN LEAD TO UNEXPECTED BEHAVIOUR!")
+                    model_dict = torch.load(load_model, map_location=lambda storage, loc: storage)
             logging.info('Loading a saved model')
             try:
                 model.load_state_dict(model_dict['state_dict'], strict=False)
@@ -240,7 +247,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
         train_ds, val_ds, test_ds = image_folder_dataset.load_dataset(dataset_folder, inmem, workers)
 
         # Loads the analytics csv and extract mean and std
-        mean, std = _load_mean_std_classes_from_file(dataset_folder, inmem, workers)
+        mean, std, _ = _load_mean_std_classes_from_file(dataset_folder, inmem, workers)
 
         # Set up dataset transforms
         logging.debug('Setting up dataset transforms')
