@@ -91,7 +91,7 @@ def compute_mean_std(dataset_folder, inmem, workers):
     class_frequencies_weights = _get_class_frequencies_weights(train_ds, workers)
 
     # Save results as CSV file in the dataset folder
-    df = pd.DataFrame([mean, std, class_frequencies_weights, len(class_frequencies_weights)])
+    df = pd.DataFrame([mean, std, class_frequencies_weights, [len(class_frequencies_weights)]])
     df.index = ['mean[RGB]', 'std[RGB]', 'class_frequencies_weights[num_classes]', 'num_classes']
     df.to_csv(os.path.join(dataset_folder, 'analytics.csv'), header=False)
 
