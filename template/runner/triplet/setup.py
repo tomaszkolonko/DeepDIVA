@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 
 # DeepDIVA
 from datasets.image_folder_triplet import load_dataset
-from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
+from template.setup import _dataloaders_from_datasets, _load_mean_std_classes_from_file
 
 
 def setup_dataloaders(model_expected_input_size, dataset_folder, n_triplets, batch_size, workers, inmem, **kwargs):
@@ -53,9 +53,9 @@ def setup_dataloaders(model_expected_input_size, dataset_folder, n_triplets, bat
                                              num_triplets=n_triplets)
 
     # Loads the analytics csv and extract mean and std
-    mean, std = _load_mean_std_from_file(dataset_folder=dataset_folder,
-                                         inmem=inmem,
-                                         workers=workers)
+    mean, std, num_classes = _load_mean_std_classes_from_file(dataset_folder=dataset_folder,
+                                                 inmem=inmem,
+                                                 workers=workers)
 
     # Set up dataset transforms
     logging.debug('Setting up dataset transforms')

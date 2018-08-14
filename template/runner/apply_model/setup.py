@@ -15,7 +15,7 @@ import torch.backends.cudnn as cudnn
 import models
 from datasets.image_folder_dataset import ImageFolderApply
 from template.runner.triplet.transforms import MultiCrop
-from template.setup import _load_mean_std_from_file, _get_optimizer, \
+from template.setup import _load_mean_std_classes_from_file, _get_optimizer, \
     _load_class_frequencies_weights_from_file
 
 
@@ -65,7 +65,7 @@ def set_up_dataloader(model_expected_input_size, dataset_folder, batch_size, wor
 
     # Loads the analytics csv and extract mean and std
     try:
-        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers)
+        mean, std, num_classes = _load_mean_std_classes_from_file(dataset_folder, inmem, workers)
     except:
         logging.error('analytics.csv not found in folder. Please copy the one generated in the '
                         'training folder to this folder.')
@@ -94,7 +94,7 @@ def set_up_dataloader(model_expected_input_size, dataset_folder, batch_size, wor
                                                num_workers=workers,
                                                pin_memory=True)
 
-    return apply_loader, len(apply_ds.classes)
+    return apply_loader, num_classes
 
 
 #

@@ -112,7 +112,17 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
     # Load saved model
     if load_model:
         if os.path.isfile(load_model):
-            model_dict = torch.load(load_model)
+            if not no_cuda:
+                model_dict = torch.load(load_model)
+            else:
+                # try loading the model regular, if it does not work try with remapping
+                # the model then was trained on gpu and everything needs to remapped to cpu
+                try:
+                    model_dict = torch.load(load_model)
+                except:
+                    logging.warning(
+                        "WARNING! YOU ARE LOADING A GPU TRAINED MODEL ON A CPU. THIS CAN LEAD TO UNEXPECTED BEHAVIOUR!")
+                    model_dict = torch.load(load_model, map_location=lambda storage, loc: storage)
             logging.info('Loading a saved model')
             try:
                 model.load_state_dict(model_dict['state_dict'], strict=False)
@@ -237,7 +247,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
         train_ds, val_ds, test_ds = image_folder_dataset.load_dataset(dataset_folder, inmem, workers)
 
         # Loads the analytics csv and extract mean and std
-        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers)
+        mean, std, _ = _load_mean_std_classes_from_file(dataset_folder, inmem, workers)
 
         # Set up dataset transforms
         logging.debug('Setting up dataset transforms')
@@ -267,7 +277,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
 
         # Loads the analytics csv and extract mean and std
         # TODO: update bidimensional to work with new load_mean_std functions
-        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers)
+        mean, std = _load_mean_std_classes_from_file(dataset_folder, inmem, workers)
 
         # Bring mean and std into range [0:1] from original domain
         mean = np.divide((mean - train_ds.min_coords), np.subtract(train_ds.max_coords, train_ds.min_coords))
@@ -298,9 +308,9 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     sys.exit(-1)
 
 
-def _load_mean_std_from_file(dataset_folder, inmem, workers):
+def _load_mean_std_classes_from_file(dataset_folder, inmem, workers):
     """
-    This function simply recovers mean and std from the analytics.csv file
+    This function simply recovers mean, std and numClasses from the analytics.csv file
 
     Parameters
     ----------
@@ -314,7 +324,7 @@ def _load_mean_std_from_file(dataset_folder, inmem, workers):
 
     Returns
     -------
-    ndarray[double], ndarray[double]
+    ndarray[double], ndarray[double], int
         Mean and Std of the selected dataset, contained in the analytics.csv file.
     """
     # Loads the analytics csv and extract mean and std
@@ -322,12 +332,13 @@ def _load_mean_std_from_file(dataset_folder, inmem, workers):
         csv_file = _load_analytics_csv(dataset_folder, inmem, workers)
         mean = np.asarray(csv_file.ix[0, 1:3])
         std = np.asarray(csv_file.ix[1, 1:3])
+        num_classes = int(csv_file.ix[3, 1])
     except KeyError:
         import sys
         logging.error('analytics.csv located in {} incorrectly formed. '
                       'Try to delete it and run again'.format(dataset_folder))
         sys.exit(0)
-    return mean, std
+    return mean, std, num_classes
 
 
 def _load_analytics_csv(dataset_folder, inmem, workers):
@@ -459,7 +470,8 @@ def set_up_logging(parser, experiment_name, output_folder, quiet, args_dict, deb
     for group in parser._action_groups[2:]:
         if group.title not in ['GENERAL', 'DATA']:
             for action in group._group_actions:
-                if (kwargs[action.dest] is not None) and (kwargs[action.dest] != action.default) and action.dest != 'load_model':
+                if (kwargs[action.dest] is not None) and (
+                        kwargs[action.dest] != action.default) and action.dest != 'load_model':
                     non_default_parameters.append(str(action.dest) + "=" + str(kwargs[action.dest]))
 
     # Build up final logging folder tree with the non-default training parameters
@@ -606,6 +618,4 @@ def set_up_env(gpu_id, seed, multi_run, no_cuda, **kwargs):
     # Torch random
     torch.manual_seed(seed)
     if not no_cuda:
-
         torch.cuda.manual_seed_all(seed)
-

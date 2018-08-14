@@ -10,7 +10,8 @@ and they should be used instead of hard-coding stuff.
 import logging
 import os
 import pickle
-
+import pandas as pd
+import numpy as np
 # DeepDIVA
 import models
 # Delegated
@@ -26,7 +27,7 @@ from template.setup import set_up_model
 class ApplyModel:
     @staticmethod
     def single_run(writer, current_log_folder, model_name, epochs, lr, decay_lr,
-                   output_channels, classify, **kwargs):
+                   output_channels, classify, no_evaluation, **kwargs):
         """
         This is the main routine where train(), validate() and test() are called.
 
@@ -59,6 +60,9 @@ class ApplyModel:
         classify : boolean
             Specifies whether to generate a classification report for the data or not.
 
+        no_evaluation : boolean
+            Specifies whether or not to generate evaluation information, if true only classifaction result is computed
+
         Returns
         -------
         None: None
@@ -88,9 +92,16 @@ class ApplyModel:
                                               model=model,
                                               epoch=-1,
                                               classify=classify,
+                                              no_evaluation=no_evaluation,
                                               **kwargs)
         with open(os.path.join(current_log_folder, 'results.pkl'), 'wb') as f:
             pickle.dump(results, f)
+
+        # Simple CSV export
+        df = pd.DataFrame([results[1][0], list(results[3][0])])
+        df.index = ['predictions', 'filenames']
+        df.to_csv(os.path.join(current_log_folder, 'results.csv'), header=False)
+
         return None, None, None
 
     ####################################################################################################################
@@ -98,5 +109,6 @@ class ApplyModel:
     # It is useful because sub-classes can selectively change the logic of certain parts only.
 
     @classmethod
-    def _feature_extract(cls, writer, data_loader, model, epoch, **kwargs):
-        return evaluate.feature_extract(writer=writer, data_loader=data_loader, model=model, epoch=epoch, **kwargs)
+    def _feature_extract(cls, writer, data_loader, model, epoch, no_evaluation, **kwargs):
+        return evaluate.feature_extract(writer=writer, data_loader=data_loader, model=model, epoch=epoch,
+                                        no_evaluation=no_evaluation, **kwargs)

@@ -161,6 +161,11 @@ def _training_options(parser):
                               type=int,
                               default=1,
                               help='Run evaluation on validation set every N epochs')
+    parser_train.add_argument('--export-onnx',
+                              action='store_true',
+                              default=False,
+                              help='export the last trained model in ONNX format'
+                              )
 
 
 def _apply_options(parser):
@@ -181,6 +186,11 @@ def _apply_options(parser):
                               type=int,
                               default=None,
                               help='override the number of output channels for loading specific models')
+    parser_apply.add_argument('--no-evaluation',
+                              action='store_true',
+                              default=False,
+                              help='simply run classification on all files provided in dataset-folder without any evaluation'
+                              )
 
 
 def _optimizer_options(parser):
