@@ -9,6 +9,7 @@ from .BabyResNet import babyresnet18, babyresnet34, babyresnet50, babyresnet101,
 from ._VGG import vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19, vgg19_bn
 from ._Inception_v3 import inception_v3
 from ._DenseNet import densenet121, densenet161, densenet169, densenet201
+from .CNN_basic_tanh import CNN_basic_tanh
 
 """
 Formula to compute the output size of a conv. layer
