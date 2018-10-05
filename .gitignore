@@ -113,3 +113,7 @@ ENV/
 _build
 _static
 _templates
+
+# asbestos data should never be pushed (private)
+datasets/asbestos_images/
+datasets/asbestos_images_new/
