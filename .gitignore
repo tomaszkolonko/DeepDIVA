@@ -117,3 +117,7 @@ _templates
 # datasets should never be pushed (private)
 datasets
 output
+
+# private scripts
+scratchPad.py
+
