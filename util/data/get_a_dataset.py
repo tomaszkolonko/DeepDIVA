@@ -15,6 +15,28 @@ from PIL import Image
 # DeepDIVA
 from util.data.dataset_splitter import split_dataset
 
+def hisDB(args):
+    """
+    Fetches and prepares (in a DeepDIVA friendly format) the HisDB dataset for semantic segmentation to the location specified
+    on the file system
+
+    Parameters
+    ----------
+    args : dict
+        List of arguments necessary to run this routine. In particular its necessary to provide
+        output_folder as String containing the path where the dataset will be downloaded
+
+    Returns
+    -------
+        None
+    """
+    linkstrain = ['https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/img-CS863.zip',
+                  'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/img-CS18.zip',
+                  'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/img-CB55.zip']
+    linktest = [()]
+
+
+
 
 def mnist(args):
     """
