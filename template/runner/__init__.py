@@ -4,6 +4,7 @@ from .image_classification import ImageClassification
 from .triplet import Triplet
 from .image_auto_encoding import ImageAutoEncoding
 from .semantic_segmentation import SemanticSegmentation
+from .image_segmentation import ImageSegmentation
 
 __all__ = ['ImageClassification', 'Bidimensional', 'Triplet', 'ApplyModel',
            'ImageAutoEncoding', 'SemanticSegmentation']
