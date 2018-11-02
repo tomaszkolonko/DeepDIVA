@@ -76,7 +76,6 @@ def load_dataset(dataset_folder, in_memory=False, workers=1):
     train_dir = os.path.join(dataset_folder, 'train')
     val_dir = os.path.join(dataset_folder, 'val')
     test_dir = os.path.join(dataset_folder, 'test')
-    logging.info("*** TZ_DEBUG: you are in the segmentation class... so far so good.")
 
     if in_memory:
         logging.error("With segmentation you don't have the option to put everything into memory")

@@ -232,7 +232,6 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     # Recover dataset name
     dataset = os.path.basename(os.path.normpath(dataset_folder))
     logging.info('Loading {} from:{}'.format(dataset, dataset_folder))
-    logging.info('tz: batch_size is set to: {}'.format(batch_size))
 
     ###############################################################################################
     # Load the dataset splits as images
