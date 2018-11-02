@@ -6,6 +6,9 @@ Load a dataset of historic documents by specifying the folder where its located.
 import logging
 import os
 import sys
+
+from datasets.image_folder_segmentation_parser import ImageFolder
+
 from multiprocessing import Pool
 import cv2
 import numpy as np
@@ -94,9 +97,9 @@ def load_dataset(dataset_folder, in_memory=False, workers=1):
         sys.exit(-1)
 
     # Get an online dataset for each split
-    train_ds = torchvision.datasets.ImageFolder(train_dir)
-    val_ds = torchvision.datasets.ImageFolder(val_dir)
-    test_ds = torchvision.datasets.ImageFolder(test_dir)
+    train_ds = ImageFolder(train_dir)
+    val_ds = ImageFolder(val_dir)
+    test_ds = ImageFolder(test_dir)
     return train_ds, val_ds, test_ds
 
 
