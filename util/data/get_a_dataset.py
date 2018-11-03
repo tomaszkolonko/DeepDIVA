@@ -1,5 +1,6 @@
 # Utils
 import argparse
+import fnmatch
 import inspect
 import os
 import shutil
@@ -7,6 +8,12 @@ import sys
 
 import numpy as np
 import scipy
+
+
+import zipfile
+import urllib.request
+import csv
+
 # Torch
 import torch
 import torchvision
@@ -172,6 +179,123 @@ def cifar10(args):
 
     split_dataset(dataset_folder=dataset_root, split=0.2, symbolic=False)
 
+
+def icdar2017_clamm(args):
+
+    url = "http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip"
+    print("Downloading " + url)
+    zip_name = "ICDAR2017_CLaMM_Training.zip"
+    local_filename, headers = urllib.request.urlretrieve(url, zip_name)
+    zfile = zipfile.ZipFile(local_filename)
+
+    # Make output folders
+    dataset_root = os.path.join(args.output_folder, 'ICDAR2017-CLAMM')
+    dataset_manuscriptDating = os.path.join(dataset_root, 'ManuscrpitDating')
+    dataset_styleClassification = os.path.join(dataset_root, 'StyleClassification')
+    #test_folder = os.path.join(dataset_root, 'test')
+
+    _make_folder_if_not_exists(dataset_root)
+    _make_folder_if_not_exists(dataset_manuscriptDating)
+    _make_folder_if_not_exists(dataset_styleClassification)
+    #_make_folder_if_not_exists(test_folder)
+
+    def _write_data_to_folder(zipfile, filenames, labels, folder):
+
+        sorted_labels = [None]*len(labels)
+        zip_infolist = zipfile.infolist()[1:]
+        start_index = len("ICDAR2017_CLaMM_Training/")
+        for i in range(len(zip_infolist)):
+            entry = zip_infolist[i]
+            entry_index_infilenames = filenames.index(entry.filename[start_index:])
+            sorted_labels[i] = labels[entry_index_infilenames]
+
+        print(zip_infolist[1].filename)
+        print(sorted_labels[1])
+
+        for i, (enrty, label) in enumerate(zip(zipfile.infolist()[1:], sorted_labels)):
+            with zipfile.open(enrty) as file:
+                img = Image.open(file)
+                dest = os.path.join(folder, str(label))
+                _make_folder_if_not_exists(dest)
+                img.save(os.path.join(dest, str(i) + '.tif'))
+
+    filenames, md_labels, sc_labels = [], [], []
+    for entry in zfile.infolist():
+        if '.csv' in entry.filename:
+            with zfile.open(entry) as file:
+                cf = file.read()
+                c = csv.StringIO(cf.decode())
+                next(c) # Skip the first line which is the header of csv file
+                for row in c:
+                    filename_ind = row.find(';')
+                    filenames.append(row[0:filename_ind])
+                    sc_label_ind = row[filename_ind+1:].find(';')
+                    sc_labels.append(int(row[filename_ind+1:filename_ind+1+sc_label_ind]))
+                    md_label_end_ind = row[filename_ind+1+sc_label_ind+1:].find("\r")
+                    md_labels.append(int(row[filename_ind+1+sc_label_ind+1:filename_ind+1+sc_label_ind+1+md_label_end_ind]))
+
+            zfile.infolist().remove(entry) # remove the csv file from infolist
+        if '.db' in entry.filename:
+            zfile.infolist().remove(entry)
+
+    _write_data_to_folder(zfile, filenames, sc_labels, dataset_styleClassification)
+    _write_data_to_folder(zfile, filenames, md_labels, dataset_manuscriptDating)
+    os.remove(os.path.join(zfile.filename))
+    print("ICDAR2017 CLaMM data is ready!")
+
+
+def historical_wi(args):
+
+    binarizedData_url = "ftp://scruffy.caa.tuwien.ac.at/staff/database/icdar2017/icdar17-historicalwi-training-binarized.zip"
+    gt_url = "ftp://scruffy.caa.tuwien.ac.at/staff/database/icdar2017/icdar17-historicalwi-training-color.zip"
+    zip_name = "icdar17-historicalwi-training-binarized.zip"
+    zip_name_gt = "icdar17-historicalwi-training-color.zip"
+
+    # Make output folders
+    dataset_root = os.path.join(args.output_folder, 'Historical_WI')
+    train_folder = os.path.join(dataset_root, 'train')
+    gt_folder = os.path.join(dataset_root, 'GT')
+    # test_folder = os.path.join(dataset_root, 'test')
+
+    _make_folder_if_not_exists(dataset_root)
+    _make_folder_if_not_exists(train_folder)
+    _make_folder_if_not_exists(gt_folder)
+    # _make_folder_if_not_exists(test_folder)
+
+    def _write_data_to_folder(zipfile, labels, folder):
+
+        for i, (enrty, label) in enumerate(zip(zipfile.infolist()[1:], labels)):
+            with zipfile.open(enrty) as file:
+                img = Image.open(file)
+                dest = os.path.join(folder, str(label))
+                _make_folder_if_not_exists(dest)
+                img.save(os.path.join(dest, str(i) + '.png'))
+
+    def _get_labels(zipfile, start_index):
+        labels = []
+        for zipinfo in zipfile.infolist()[1:]:
+            file_name = zipinfo.filename
+            ind = file_name.find("-", start_index)
+            labels.append(file_name[start_index:ind])
+        return labels
+
+    # For binarized dataset
+    print("Downloading " + binarizedData_url)
+    local_filename, headers = urllib.request.urlretrieve(binarizedData_url, zip_name)
+    zfile = zipfile.ZipFile(local_filename)
+    training_labels = _get_labels(zfile, len("icdar2017-training-binary/"))
+    _write_data_to_folder(zfile, training_labels, train_folder)
+    os.remove(os.path.join(zfile.filename))
+    print("Binary data is ready!")
+
+    # For colored dataset
+    print("Downloading " + gt_url)
+    local_filename_gt, headers_gt = urllib.request.urlretrieve(gt_url, zip_name_gt)
+    zfile_gt = zipfile.ZipFile(local_filename_gt)
+    gt_labels = _get_labels(zfile_gt, len("icdar2017-training-color/"))
+    _write_data_to_folder(zfile_gt, gt_labels, gt_folder)
+    os.remove(os.path.join(zfile_gt.filename))
+    print("Colored data is ready!")
 
 def _make_folder_if_not_exists(path):
     if not os.path.exists(path):
