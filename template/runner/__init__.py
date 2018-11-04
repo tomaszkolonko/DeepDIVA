@@ -2,6 +2,8 @@ from .apply_model import ApplyModel
 from .bidimensional import Bidimensional
 from .image_classification import ImageClassification
 from .triplet import Triplet
-from .image_segmentation import ImageSegmentation
+from .image_auto_encoding import ImageAutoEncoding
+from .semantic_segmentation import SemanticSegmentation
 
-__all__ = ['ImageClassification', 'ImageSegmentation', 'Bidimensional', 'Triplet', 'ApplyModel']
+__all__ = ['ImageClassification', 'Bidimensional', 'Triplet', 'ApplyModel',
+           'ImageAutoEncoding', 'SemanticSegmentation']
