@@ -21,7 +21,7 @@ from PIL import Image
 from util.misc import get_all_files_in_folders_and_subfolders, has_extension
 
 
-def load_dataset(dataset_folder, in_memory=False, workers=1):
+def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False):
     """
     Loads the dataset from file system and provides the dataset splits for train validation and test
 
@@ -95,6 +95,9 @@ def load_dataset(dataset_folder, in_memory=False, workers=1):
     if not os.path.isdir(test_dir):
         logging.error("Test folder not found in the dataset_folder=" + dataset_folder)
         sys.exit(-1)
+
+    if(testing):
+        return train_dir, val_dir, test_dir
 
     # Get an online dataset for each split
     train_ds = ImageFolder(train_dir)

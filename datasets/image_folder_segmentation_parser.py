@@ -22,13 +22,13 @@ def is_image_file(filename):
     return any(filename_lower.endswith(ext) for ext in IMG_EXTENSIONS)
 
 
-def find_classes(dir):
-    # TODO: think about how not to hardcode this array
-    classes = ["background", "foreground", "text", "decoration"]
-    classes.sort()
-    # TODO: really necessary? Probably not...
-    class_to_idx = {classes[i]: i for i in range(len(classes))}
-    return classes, class_to_idx
+# def find_classes(dir):
+#     # TODO: think about how not to hardcode this array
+#     classes = ["background", "foreground", "text", "decoration"]
+#     classes.sort()
+#     # TODO: really necessary? Probably not...
+#     class_to_idx = {classes[i]: i for i in range(len(classes))}
+#     return classes, class_to_idx
 
 def find_classes_():
     classes = ["background", "foreground", "text", "decoration"]
@@ -36,22 +36,22 @@ def find_classes_():
     return classes
 
 
-def make_dataset(dir, class_to_idx):
-    images = []
-    dir = os.path.expanduser(dir)
-    for target in sorted(os.listdir(dir)):
-        d = os.path.join(dir, target)
-        if not os.path.isdir(d):
-            continue
-
-        for root, _, fnames in sorted(os.walk(d)):
-            for fname in sorted(fnames):
-                if is_image_file(fname):
-                    path = os.path.join(root, fname)
-                    item = (path, class_to_idx[target])
-                    images.append(item)
-
-    return images
+# def make_dataset(dir, class_to_idx):
+#     images = []
+#     dir = os.path.expanduser(dir)
+#     for target in sorted(os.listdir(dir)):
+#         d = os.path.join(dir, target)
+#         if not os.path.isdir(d):
+#             continue
+#
+#         for root, _, fnames in sorted(os.walk(d)):
+#             for fname in sorted(fnames):
+#                 if is_image_file(fname):
+#                     path = os.path.join(root, fname)
+#                     item = (path, class_to_idx[target])
+#                     images.append(item)
+#
+#     return images
 
 
 def make_dataset_(dir):
@@ -135,7 +135,6 @@ class ImageFolder(data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
-        self.yolo = "yolo"
 
     def __getitem__(self, index):
         """
@@ -143,16 +142,20 @@ class ImageFolder(data.Dataset):
             index (int): Index
 
         Returns:
-            tuple: (image, target) where target is class_index of the target class.
+            tuple: (image, groundtruth) where both are paths to the actual image.
         """
-        path, target = self.imgs[index]
-        img = self.loader(path)
+        path_img, path_gt = self.imgs[index]
+        img = self.loader(path_img)
+        gt = self.loader(path_gt)
         if self.transform is not None:
             img = self.transform(img)
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+            gt = self.transform(gt)
+        # TODO: unclear if target_transform is still needed for segmentation purpose
+        # if self.target_transform is not None:
+        #     img = self.transform(img)
+        #     gt = self.transform(gt)
 
-        return img, target
+        return img, gt
 
     def __len__(self):
         return len(self.imgs)
