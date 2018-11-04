@@ -232,7 +232,6 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     # Recover dataset name
     dataset = os.path.basename(os.path.normpath(dataset_folder))
     logging.info('Loading {} from:{}'.format(dataset, dataset_folder))
-    logging.info('tz: batch_size is set to: {}'.format(batch_size))
 
     ###############################################################################################
     # Load the dataset splits as images
@@ -249,11 +248,19 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
         # Set up dataset transforms
         logging.debug('Setting up dataset transforms')
         # TODO:TZ resizing might become a problem for GT !!! Maybe for segmentation we simply wont resize for starters
-        transform = transforms.Compose([
-            transforms.Resize(model_expected_input_size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std)
-        ])
+        # TODO:TZ implement all transformations with twin images !!!
+        if (kwargs['runner_class'] == 'image_segmentation'):
+            transform = transforms.Compose([
+                transforms.randomTwinCrop(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ])
+        else:
+            transform = transforms.Compose([
+                transforms.Resize(model_expected_input_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ])
 
         train_ds.transform = transform
         val_ds.transform = transform

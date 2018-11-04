@@ -96,7 +96,7 @@ def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False):
         logging.error("Test folder not found in the dataset_folder=" + dataset_folder)
         sys.exit(-1)
 
-    if(testing):
+    if testing:
         return train_dir, val_dir, test_dir
 
     # Get an online dataset for each split
