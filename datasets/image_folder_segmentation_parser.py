@@ -2,6 +2,7 @@ import torch.utils.data as data
 
 from PIL import Image
 import os
+import sys
 import os.path
 import logging
 
@@ -22,11 +23,17 @@ def is_image_file(filename):
 
 
 def find_classes(dir):
-    logging.info("Inside correct segmentation class... .which is amazing")
-    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+    # TODO: think about how not to hardcode this array
+    classes = ["background", "foreground", "text", "decoration"]
     classes.sort()
+    # TODO: really necessary? Probably not...
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx
+
+def find_classes_():
+    classes = ["background", "foreground", "text", "decoration"]
+    classes.sort()
+    return classes
 
 
 def make_dataset(dir, class_to_idx):
@@ -47,6 +54,29 @@ def make_dataset(dir, class_to_idx):
     return images
 
 
+def make_dataset_(dir):
+    images = []
+    dir = os.path.expanduser(dir)
+
+    # TODO: fix this as soon it is working
+    path_imgs = os.path.join(dir, "img")
+    path_gts = os.path.join(dir, "gt")
+
+    if not (os.path.isdir(path_imgs) or os.path.isdir(path_gts)):
+        logging.error("folder img or gt not found in " + str(dir))
+
+
+    for _, _, fnames in sorted(os.walk(path_imgs)):
+        for fname in sorted(fnames):
+            if is_image_file(fname):
+                path_img = os.path.join(path_imgs, fname)
+                path_gt = os.path.join(path_gts, fname)
+                item = (path_img, path_gt)
+                images.append(item)
+
+    return images
+
+
 def pil_loader(path):
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, 'rb') as f:
@@ -54,33 +84,25 @@ def pil_loader(path):
             return img.convert('RGB')
 
 
-def accimage_loader(path):
-    import accimage
-    try:
-        return accimage.Image(path)
-    except IOError:
-        # Potentially a decoding problem, fall back to PIL.Image
-        return pil_loader(path)
-
-
 def default_loader(path):
     from torchvision import get_image_backend
-    if get_image_backend() == 'accimage':
-        return accimage_loader(path)
+    if get_image_backend() == 'PIL':
+        pil_loader(path)
     else:
-        return pil_loader(path)
+        logging.info("Something went wrong with the default_loader in image_folder_segmentation_parser.py")
+        sys.exit(-1)
 
 
 class ImageFolder(data.Dataset):
     """A generic data loader where the images are arranged in this way: ::
 
-        root/dog/xxx.png
-        root/dog/xxy.png
-        root/dog/xxz.png
+        root/gt/xxx.png
+        root/gt/xxy.png
+        root/gt/xxz.png
 
-        root/cat/123.png
-        root/cat/nsdf3.png
-        root/cat/asd932_.png
+        root/img/xxx.png
+        root/img/xxy.png
+        root/img/xxz.png
 
     Args:
         root (string): Root directory path.
@@ -96,10 +118,12 @@ class ImageFolder(data.Dataset):
         imgs (list): List of (image path, class_index) tuples
     """
 
+    # TODO: transform and target_transform could be the correct places for your cropping
     def __init__(self, root, transform=None, target_transform=None,
                  loader=default_loader):
-        classes, class_to_idx = find_classes(root)
-        imgs = make_dataset(root, class_to_idx)
+        # classes, class_to_idx = find_classes(root)
+        classes = find_classes_()
+        imgs = make_dataset_(root) #, class_to_idx)
         if len(imgs) == 0:
             raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
                                "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
@@ -107,10 +131,11 @@ class ImageFolder(data.Dataset):
         self.root = root
         self.imgs = imgs
         self.classes = classes
-        self.class_to_idx = class_to_idx
+        # self.class_to_idx = class_to_idx
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
+        self.yolo = "yolo"
 
     def __getitem__(self, index):
         """
