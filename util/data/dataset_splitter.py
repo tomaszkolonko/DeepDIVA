@@ -111,6 +111,28 @@ def split_dataset(dataset_folder, split, symbolic):
     return
 
 
+def split_dataset_segmentation(dataset_folder, split, symbolic):
+    """
+    Partition a dataset into train/val splits on the filesystem.
+
+    The data set has to be in the format train/datas-subset1/*.JPG, train/data-subset2/*.JPG etc.
+    The split will be performed according to the split argument within each data-subset.
+
+    Parameters
+    ----------
+    dataset_folder : str
+        Path to the dataset folder (see datasets.image_folder_segmentation.load_dataset for details).
+    split : float
+        Specifies how much of the training set should be converted into the validation set.
+    symbolic : bool
+        Does not make a copy of the data, but only symbolic links to the original data
+
+    Returns
+    -------
+        None
+    """
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='This script creates train/val splits '

@@ -4,6 +4,8 @@ import inspect
 import os
 import shutil
 import sys
+import urllib
+import zipfile
 
 import numpy as np
 import scipy
@@ -13,29 +15,7 @@ import torchvision
 from PIL import Image
 
 # DeepDIVA
-from util.data.dataset_splitter import split_dataset
-
-def hisDB(args):
-    """
-    Fetches and prepares (in a DeepDIVA friendly format) the HisDB dataset for semantic segmentation to the location specified
-    on the file system
-
-    Parameters
-    ----------
-    args : dict
-        List of arguments necessary to run this routine. In particular its necessary to provide
-        output_folder as String containing the path where the dataset will be downloaded
-
-    Returns
-    -------
-        None
-    """
-    linkstrain = ['https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/img-CS863.zip',
-                  'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/img-CS18.zip',
-                  'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/img-CB55.zip']
-    linktest = [()]
-
-
+from util.data.dataset_splitter import split_dataset, split_dataset_segmentation
 
 
 def mnist(args):
@@ -193,6 +173,88 @@ def cifar10(args):
     shutil.rmtree(os.path.join(args.output_folder, 'cifar-10-batches-py'))
 
     split_dataset(dataset_folder=dataset_root, split=0.2, symbolic=False)
+
+def hisDB(args):
+    """
+    Fetches and prepares (in a DeepDIVA friendly format) the HisDB dataset for semantic segmentation to the location specified
+    on the file system
+
+    Parameters
+    ----------
+    args : dict
+        List of arguments necessary to run this routine. In particular its necessary to provide
+        output_folder as String containing the path where the dataset will be downloaded
+
+    Returns
+    -------
+        None
+    """
+    # make the root folder
+    dataset_root = os.path.join(args.output_folder, 'HisDB')
+    _make_folder_if_not_exists(dataset_root)
+
+    # links to HisDB data sets
+    linktrain_all = urllib.parse.urlparse(
+        'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/all.zip')
+    linktest_all = urllib.parse.urlparse(
+        'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/private-test/all-privateTest.zip')
+
+    d = {'train': linktrain_all, 'test': linktest_all}
+
+    for data_use, link in d.items():
+        download_path = os.path.join(dataset_root, link.geturl().rsplit('/', 1)[-1])
+
+        # download files
+        urllib.request.urlretrieve(link.geturl(), download_path)
+        folder_extracted = os.path.splitext(os.path.join(dataset_root, link.geturl().rsplit('/', 1)[-1].rsplit('.', 1)[0]))[0]
+
+        # unpack relevant folders
+        zip_file = zipfile.ZipFile(download_path)
+
+        # unpack imgs and gt
+        for file in zip_file.namelist():
+            if file.startswith('img'):
+                _unpack_folder_hisDB(zip_file, file, folder_extracted, 'imgs', data_use)
+            elif file.startswith('pixel'):
+                _unpack_folder_hisDB(zip_file, file, folder_extracted, 'gt', data_use)
+
+        os.rename(folder_extracted, os.path.join(os.path.dirname(folder_extracted), data_use))
+
+        # split the training data set
+        split_dataset_segmentation(dataset_folder=dataset_root, split=0.2, symbolic=False)
+
+
+
+def _unpack_folder_hisDB(zip_file, file, folder_extracted, subfolder, data_use):
+    """
+    This function unpacks the images and the pixel-label gt of the HisDB from the zip files
+    :param zip_file: mother-zip file to unpack
+    :param file: zip-file in zip file to unpack
+    :param folder_extracted: location, where the child-zips are extracted to
+    :param subfolder: either 'imgs' or 'gt' (imgs for image input data, gt for the pixel-labelled images)
+    :param data_use: either train or test
+    :return: None
+    """
+    if data_use == 'test':
+        dirname = os.path.join(folder_extracted, subfolder)
+    elif data_use == 'train':
+        dirname = os.path.join(folder_extracted, subfolder, file.rsplit('.', 1)[0].rsplit('-', 1)[-1])
+
+    # unzip files
+    zip_file.extract(file, dirname)
+    with zipfile.ZipFile(os.path.join(dirname, file), "r") as zip_ref:
+        zip_ref.extractall(dirname)
+        # delete zips
+        os.remove(os.path.join(dirname, file))
+
+    if data_use == 'train':
+        # move all images up
+        for subdir, dirs, files in os.walk(dirname):
+            for file in files:
+                shutil.move(os.path.join(subdir, file), os.path.join(dirname, file))
+        to_remove = {'gt': 'pixel-level-gt', 'imgs': 'img'}
+        shutil.rmtree(os.path.join(dirname, to_remove[subfolder]))
+
 
 
 def _make_folder_if_not_exists(path):
