@@ -224,7 +224,6 @@ def hisDB(args):
         split_dataset_segmentation(dataset_folder=dataset_root, split=0.2, symbolic=False)
 
 
-
 def _unpack_folder_hisDB(zip_file, file, folder_extracted, subfolder, data_use):
     """
     This function unpacks the images and the pixel-label gt of the HisDB from the zip files
@@ -254,7 +253,6 @@ def _unpack_folder_hisDB(zip_file, file, folder_extracted, subfolder, data_use):
                 shutil.move(os.path.join(subdir, file), os.path.join(dirname, file))
         to_remove = {'gt': 'pixel-level-gt', 'imgs': 'img'}
         shutil.rmtree(os.path.join(dirname, to_remove[subfolder]))
-
 
 
 def _make_folder_if_not_exists(path):
