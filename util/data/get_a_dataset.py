@@ -205,7 +205,9 @@ def hisDB(args):
         download_path = os.path.join(dataset_root, link.geturl().rsplit('/', 1)[-1])
 
         # download files
+        print('Downloading {}...'.format(link.geturl()))
         urllib.request.urlretrieve(link.geturl(), download_path)
+        print('Download completed. Unpacking files...')
         folder_extracted = os.path.splitext(os.path.join(dataset_root, link.geturl().rsplit('/', 1)[-1].rsplit('.', 1)[0]))[0]
 
         # unpack relevant folders
@@ -220,8 +222,8 @@ def hisDB(args):
 
         os.rename(folder_extracted, os.path.join(os.path.dirname(folder_extracted), data_use))
 
-        # split the training data set
-        split_dataset_segmentation(dataset_folder=dataset_root, split=0.2, symbolic=False)
+    # split the training data set
+    split_dataset_segmentation(dataset_folder=dataset_root, split=0.2, symbolic=False)
 
 
 def _unpack_folder_hisDB(zip_file, file, folder_extracted, subfolder, data_use):
