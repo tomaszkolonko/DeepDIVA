@@ -24,14 +24,8 @@ def label_img_to_one_hot(np_array):
     nb_classes = len(int_to_one_hot(im_np.max(), ''))
 
     class_dict = {x: int_to_one_hot(x, nb_classes) for x in np.unique(im_np)}
-    # create an empty matrix to fill
-    one_hot_matrix = np.ndarray(shape=(im_np.shape[0], im_np.shape[1], nb_classes), dtype=np.int8)
-
-    # fill the matrix
-    for key, value in class_dict.items():
-        ind = np.where(im_np == key)
-        for i, j in zip(ind[0], ind[1]):
-            one_hot_matrix[i, j, ] = value
+    # create the one hot matrix
+    one_hot_matrix = np.asanyarray([[class_dict[im_np[i,j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
 
     return one_hot_matrix
 
