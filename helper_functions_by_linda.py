@@ -13,10 +13,10 @@ def int_to_one_hot(x, n_classes):
     return list(map(int, list(s.format(x))))
 
 
-def label_img_to_one_hot(np_array):
+def multi_label_img_to_one_hot(np_array):
     """
     TODO: There must be a faster way of doing this
-    Convert ground truth label image to one-hot encoded matrix of size image height x image width x #classes
+    Convert ground truth label image to multi-one-hot encoded matrix of size image height x image width x #classes
     :param np_array: numpy array of an RGB image
     :return: sparse one-hot encoded class matrix
     """
@@ -30,9 +30,9 @@ def label_img_to_one_hot(np_array):
     return one_hot_matrix
 
 
-def one_hot_to_output(matrix, out_path):
+def multi_one_hot_to_output(matrix, out_path):
     """
-    This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
+    This function converts the multi-one-hot encoded matrix to an image like it was provided in the ground truth
     :param matrix: one-hot encoded matrix
     :param out_path: path to output (e.g. image output/image1.png)
     """
@@ -47,3 +47,23 @@ def one_hot_to_output(matrix, out_path):
     # save image
     img = Image.fromarray(RGB.astype('uint8'), 'RGB')
     img.save(out_path)
+    
+def label_img_to_one_hot(np_array):
+    """
+    Convert ground truth label image to one-hot encoded matrix of size image height x image width x #classes
+    :param np_array: numpy array of an RGB image
+    :return: sparse one-hot encoded class matrix
+    """
+
+
+
+def one_hot_to_output(matrix, out_path):
+    """
+    This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
+    :param matrix: one-hot encoded matrix
+    :param out_path: path to output (e.g. image output/image1.png)
+    """
+
+
+
+#im_np = np.array(Image.open('/home/linda/Documents/PhD/datasets/pixel-level-gt-CB55/pixel-level-gt/public-test/e-codices_fmb-cb-0055_0098v_max.png'))

@@ -198,7 +198,7 @@ def hisDB(args):
         None
     """
     # make the root folder
-    dataset_root = os.path.join(args, 'HisDB')
+    dataset_root = os.path.join(args.output_folder, 'HisDB')
     _make_folder_if_not_exists(dataset_root)
 
     # links to HisDB data sets
@@ -236,15 +236,16 @@ def hisDB(args):
             for folder in ['data', 'gt']:
                 _make_folder_if_not_exists(os.path.join(dataset_folder, partition, folder))
 
-                # move the files to the correct place
-        for folder in dataset_folders:
-            for k1, v1 in {'pixel-level-gt': 'gt', 'img': 'data'}.items():
-                for k2, v2 in {'public-test': 'test', 'training': 'train', 'validation': 'val'}.items():
-                    current_path = os.path.join(dataset_root, folder, k1, k2)
-                    new_path = os.path.join(dataset_root, folder, v2, v1)
-                    for f in [f for f in os.listdir(current_path) if os.path.isfile(os.path.join(current_path, f))]:
-                        shutil.move(os.path.join(current_path, f), os.path.join(new_path, f))
-
+    # move the files to the correct place
+    for folder in dataset_folders:
+        for k1, v1 in {'pixel-level-gt': 'gt', 'img': 'data'}.items():
+            for k2, v2 in {'public-test': 'test', 'training': 'train', 'validation': 'val'}.items():
+                current_path = os.path.join(dataset_root, folder, k1, k2)
+                new_path = os.path.join(dataset_root, folder, v2, v1)
+                for f in [f for f in os.listdir(current_path) if os.path.isfile(os.path.join(current_path, f))]:
+                    shutil.move(os.path.join(current_path, f), os.path.join(new_path, f))
+            # remove old folders
+            shutil.rmtree(os.path.join(dataset_root, folder, k1))
     print('Finished. Data set up at {}.'.format(dataset_root))
 
 
