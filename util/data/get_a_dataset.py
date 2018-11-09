@@ -3,6 +3,7 @@ import argparse
 import inspect
 import os
 import shutil
+import re
 import sys
 import urllib
 import zipfile
@@ -15,7 +16,7 @@ import torchvision
 from PIL import Image
 
 # DeepDIVA
-from util.data.dataset_splitter import split_dataset, split_dataset_segmentation
+from util.data.dataset_splitter import split_dataset
 
 
 def mnist(args):
@@ -176,8 +177,15 @@ def cifar10(args):
 
 def hisDB(args):
     """
-    Fetches and prepares (in a DeepDIVA friendly format) the HisDB dataset for semantic segmentation to the location specified
+    Fetches and prepares (in a DeepDIVA friendly format) the HisDB-all dataset for semantic segmentation to the location specified
     on the file system
+
+    Output folder structure: ../HisDB/CB55/train
+                             ../HisDB/CB55/val
+                             ../HisDB/CB55/test
+
+                             ../HisDB/CB55/test/data -> images
+                             ../HisDB/CB55/test/gt   -> pixel-wise annotated ground truth
 
     Parameters
     ----------
@@ -194,67 +202,160 @@ def hisDB(args):
     _make_folder_if_not_exists(dataset_root)
 
     # links to HisDB data sets
-    linktrain_all = urllib.parse.urlparse(
+    link = urllib.parse.urlparse(
         'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/all.zip')
-    linktest_all = urllib.parse.urlparse(
-        'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/private-test/all-privateTest.zip')
+    # link_test_private = urllib.parse.urlparse(
+    #    'https://diuf.unifr.ch/main/hisdoc/sites/diuf.unifr.ch.main.hisdoc/files/uploads/diva-hisdb/hisdoc/private-test/all-privateTest.zip')
+    download_path = os.path.join(dataset_root, link.geturl().rsplit('/', 1)[-1])
 
-    d = {'train': linktrain_all, 'test': linktest_all}
+    # download files
+    print('Downloading {}...'.format(link.geturl()))
+    urllib.request.urlretrieve(link.geturl(), download_path)
+    print('Download complete. Unpacking files...')
 
-    for data_use, link in d.items():
-        download_path = os.path.join(dataset_root, link.geturl().rsplit('/', 1)[-1])
+    # unpack relevant folders
+    zip_file = zipfile.ZipFile(download_path)
 
-        # download files
-        print('Downloading {}...'.format(link.geturl()))
-        urllib.request.urlretrieve(link.geturl(), download_path)
-        print('Download completed. Unpacking files...')
-        folder_extracted = os.path.splitext(os.path.join(dataset_root, link.geturl().rsplit('/', 1)[-1].rsplit('.', 1)[0]))[0]
+    # unpack imgs and gt
+    data_gt_zip = {f: re.sub(r'img', 'pixel-level-gt', f) for f in zip_file.namelist() if 'img' in f}
+    dataset_folders = [data_file.split('-')[-1][:-4] for data_file in data_gt_zip.keys()]
+    for data_file, gt_file in data_gt_zip.items():
+        dataset_name = data_file.split('-')[-1][:-4]
+        dataset_folder = os.path.join(dataset_root, dataset_name)
+        _make_folder_if_not_exists(dataset_folder)
 
-        # unpack relevant folders
-        zip_file = zipfile.ZipFile(download_path)
+        for file in [data_file, gt_file]:
+            zip_file.extract(file, dataset_folder)
+            with zipfile.ZipFile(os.path.join(dataset_folder, file), "r") as zip_ref:
+                zip_ref.extractall(dataset_folder)
+                # delete zips
+                os.remove(os.path.join(dataset_folder, file))
 
-        # unpack imgs and gt
-        for file in zip_file.namelist():
-            if file.startswith('img'):
-                _unpack_folder_hisDB(zip_file, file, folder_extracted, 'imgs', data_use)
-            elif file.startswith('pixel'):
-                _unpack_folder_hisDB(zip_file, file, folder_extracted, 'gt', data_use)
+        # create folder structure
+        for partition in ['train', 'val', 'test']:
+            for folder in ['data', 'gt']:
+                _make_folder_if_not_exists(os.path.join(dataset_folder, partition, folder))
 
-        os.rename(folder_extracted, os.path.join(os.path.dirname(folder_extracted), data_use))
+    # move the files to the correct place
+    for folder in dataset_folders:
+        for k1, v1 in {'pixel-level-gt': 'gt', 'img': 'data'}.items():
+            for k2, v2 in {'public-test': 'test', 'training': 'train', 'validation': 'val'}.items():
+                current_path = os.path.join(dataset_root, folder, k1, k2)
+                new_path = os.path.join(dataset_root, folder, v2, v1)
+                for f in [f for f in os.listdir(current_path) if os.path.isfile(os.path.join(current_path, f))]:
+                    shutil.move(os.path.join(current_path, f), os.path.join(new_path, f))
+            # remove old folders
+            shutil.rmtree(os.path.join(dataset_root, folder, k1))
+    print('Finished. Data set up at {}.'.format(dataset_root))
 
-    # split the training data set
-    split_dataset_segmentation(dataset_folder=dataset_root, split=0.2, symbolic=False)
 
+def icdar2017_clamm(args):
 
-def _unpack_folder_hisDB(zip_file, file, folder_extracted, subfolder, data_use):
-    """
-    This function unpacks the images and the pixel-label gt of the HisDB from the zip files
-    :param zip_file: mother-zip file to unpack
-    :param file: zip-file in zip file to unpack
-    :param folder_extracted: location, where the child-zips are extracted to
-    :param subfolder: either 'imgs' or 'gt' (imgs for image input data, gt for the pixel-labelled images)
-    :param data_use: either train or test
-    :return: None
-    """
-    if data_use == 'test':
-        dirname = os.path.join(folder_extracted, subfolder)
-    elif data_use == 'train':
-        dirname = os.path.join(folder_extracted, subfolder, file.rsplit('.', 1)[0].rsplit('-', 1)[-1])
+    url = "http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip"
+    print("Downloading " + url)
+    zip_name = "ICDAR2017_CLaMM_Training.zip"
+    local_filename, headers = urllib.request.urlretrieve(url, zip_name)
+    zfile = zipfile.ZipFile(local_filename)
 
-    # unzip files
-    zip_file.extract(file, dirname)
-    with zipfile.ZipFile(os.path.join(dirname, file), "r") as zip_ref:
-        zip_ref.extractall(dirname)
-        # delete zips
-        os.remove(os.path.join(dirname, file))
+    # Make output folders
+    dataset_root = os.path.join(args.output_folder, 'ICDAR2017-CLAMM')
+    dataset_manuscriptDating = os.path.join(dataset_root , 'ManuscrpitDating')
+    dataset_md_train = os.path.join(dataset_manuscriptDating , 'train')
+    dataset_styleClassification = os.path.join(dataset_root , 'StyleClassification')
+    dataset_sc_train = os.path.join(dataset_styleClassification, 'train')
+    test_sc_folder = os.path.join(dataset_styleClassification, 'test')
+    test_md_folder = os.path.join(dataset_manuscriptDating, 'test')
 
-    if data_use == 'train':
-        # move all images up
-        for subdir, dirs, files in os.walk(dirname):
-            for file in files:
-                shutil.move(os.path.join(subdir, file), os.path.join(dirname, file))
-        to_remove = {'gt': 'pixel-level-gt', 'imgs': 'img'}
-        shutil.rmtree(os.path.join(dirname, to_remove[subfolder]))
+    _make_folder_if_not_exists(dataset_root)
+    _make_folder_if_not_exists(dataset_manuscriptDating)
+    _make_folder_if_not_exists(dataset_styleClassification)
+    _make_folder_if_not_exists(test_sc_folder)
+
+    def _write_data_to_folder(zipfile, filenames, labels, folder, start_index,  isTest):
+
+        sorted_labels = [None]*len(labels)
+        if isTest == 1:
+            for i in range(len(zipfile.infolist())):
+                entry = zipfile.infolist()[i]
+                if "IRHT_P_009793.tif" in entry.filename:
+                    zipfile.infolist().remove(entry)
+                    break
+
+        zip_infolist = zipfile.infolist()[1:]
+
+        for i in range(len(zip_infolist)):
+            entry = zip_infolist[i]
+            entry_index_infilenames = filenames.index(entry.filename[start_index:])
+            sorted_labels[i] = labels[entry_index_infilenames]
+
+        print(zip_infolist[1].filename)
+        print(sorted_labels[1])
+
+        for i, (enrty, label) in enumerate(zip(zipfile.infolist()[1:], sorted_labels)):
+            with zipfile.open(enrty) as file:
+                img = Image.open(file)
+                dest = os.path.join(folder, str(label))
+                _make_folder_if_not_exists(dest)
+                img.save(os.path.join(dest, str(i) + '.png'), "PNG", quality=100)
+
+    def getLabels(zfile):
+        filenames, md_labels, sc_labels = [], [], []
+        zip_infolist = zfile.infolist()[1:]
+        for entry in zip_infolist:
+            if '.csv' in entry.filename:
+                with zfile.open(entry) as file:
+                    cf = file.read()
+                    c = csv.StringIO(cf.decode())
+                    next(c) # Skip the first line which is the header of csv file
+                    for row in c:
+
+                        md_label_strt_ind = row.rfind(';')
+                        md_label_end_ind = row.rfind("\r")
+                        md_labels.append(row[md_label_strt_ind+1:md_label_end_ind])
+                        sc_labels_strt_ind = row[:md_label_strt_ind].rfind(';')
+                        sc_labels.append(row[sc_labels_strt_ind+1:md_label_strt_ind])
+                        filename_ind = row[:sc_labels_strt_ind].rfind(';')
+
+                        if filename_ind > -1:
+                            f_name = row[filename_ind+1:sc_labels_strt_ind]
+                        else:
+                            f_name = row[:sc_labels_strt_ind]
+                        if isTest == 1 and f_name == 'IRHT_P_009783.tif':
+                            print('No file named ' + f_name + ". This filename will not be added!")
+                        else:
+                            filenames.append(f_name)
+
+                zfile.infolist().remove(entry) # remove the csv file from infolist
+            if '.db' in entry.filename: # remove the db file from infolist
+                zfile.infolist().remove(entry)
+        return filenames, sc_labels, md_labels
+
+    isTest = 0
+    filenames, sc_labels, md_labels = getLabels(zfile)
+    start_index_training = len("ICDAR2017_CLaMM_Training/")
+
+    _write_data_to_folder(zfile, filenames, sc_labels, dataset_sc_train, start_index_training, isTest)
+    _write_data_to_folder(zfile, filenames, md_labels, dataset_md_train, start_index_training, isTest)
+
+    os.remove(os.path.join(zfile.filename))
+
+    url = "http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_task1_task3.zip"
+    print("Downloading " + url)
+    zip_name_test = "ICDAR2017_CLaMM_task1_task3.zip"
+    local_filename_test, headers_test = urllib.request.urlretrieve(url, zip_name_test)
+    zfile_test = zipfile.ZipFile(local_filename_test)
+
+    isTest = 1
+    filenames_test, sc_test_labels, md_test_labels = getLabels(zfile_test)
+    start_index_test = len("ICDAR2017_CLaMM_task1_task3/")
+    _write_data_to_folder(zfile_test, filenames_test, sc_test_labels, test_sc_folder, start_index_test, 1)
+    _write_data_to_folder(zfile_test, filenames_test, md_test_labels, test_md_folder, start_index_test, 1)
+
+    os.remove(os.path.join(zfile_test.filename))
+
+    split_dataset(dataset_folder=dataset_manuscriptDating, split=0.2, symbolic=False)
+    split_dataset(dataset_folder=dataset_styleClassification, split=0.2, symbolic=False)
+    print("ICDAR2017 CLaMM data is ready!")
 
 
 def _make_folder_if_not_exists(path):
