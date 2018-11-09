@@ -1,15 +1,20 @@
 # Utils
 import argparse
+import fnmatch
 import inspect
 import os
 import shutil
-import re
 import sys
+
 import urllib
 import zipfile
+import re
+import csv
+
 
 import numpy as np
 import scipy
+
 # Torch
 import torch
 import torchvision
@@ -270,6 +275,7 @@ def icdar2017_clamm(args):
     _make_folder_if_not_exists(dataset_manuscriptDating)
     _make_folder_if_not_exists(dataset_styleClassification)
     _make_folder_if_not_exists(test_sc_folder)
+    _make_folder_if_not_exists(test_md_folder)
 
     def _write_data_to_folder(zipfile, filenames, labels, folder, start_index,  isTest):
 
@@ -288,22 +294,20 @@ def icdar2017_clamm(args):
             entry_index_infilenames = filenames.index(entry.filename[start_index:])
             sorted_labels[i] = labels[entry_index_infilenames]
 
-        print(zip_infolist[1].filename)
-        print(sorted_labels[1])
-
-        for i, (enrty, label) in enumerate(zip(zipfile.infolist()[1:], sorted_labels)):
-            with zipfile.open(enrty) as file:
+        for i, (entry, label) in enumerate(zip(zipfile.infolist()[1:], sorted_labels)):
+            with zipfile.open(entry) as file:
                 img = Image.open(file)
                 dest = os.path.join(folder, str(label))
                 _make_folder_if_not_exists(dest)
                 img.save(os.path.join(dest, str(i) + '.png'), "PNG", quality=100)
 
-    def getLabels(zfile):
+    def _getLabels(zfile):
         filenames, md_labels, sc_labels = [], [], []
         zip_infolist = zfile.infolist()[1:]
         for entry in zip_infolist:
             if '.csv' in entry.filename:
                 with zfile.open(entry) as file:
+
                     cf = file.read()
                     c = csv.StringIO(cf.decode())
                     next(c) # Skip the first line which is the header of csv file
@@ -331,7 +335,7 @@ def icdar2017_clamm(args):
         return filenames, sc_labels, md_labels
 
     isTest = 0
-    filenames, sc_labels, md_labels = getLabels(zfile)
+    filenames, sc_labels, md_labels = _getLabels(zfile)
     start_index_training = len("ICDAR2017_CLaMM_Training/")
 
     _write_data_to_folder(zfile, filenames, sc_labels, dataset_sc_train, start_index_training, isTest)
@@ -346,7 +350,7 @@ def icdar2017_clamm(args):
     zfile_test = zipfile.ZipFile(local_filename_test)
 
     isTest = 1
-    filenames_test, sc_test_labels, md_test_labels = getLabels(zfile_test)
+    filenames_test, sc_test_labels, md_test_labels = _getLabels(zfile_test)
     start_index_test = len("ICDAR2017_CLaMM_task1_task3/")
     _write_data_to_folder(zfile_test, filenames_test, sc_test_labels, test_sc_folder, start_index_test, 1)
     _write_data_to_folder(zfile_test, filenames_test, md_test_labels, test_md_folder, start_index_test, 1)
