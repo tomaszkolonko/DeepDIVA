@@ -19,7 +19,7 @@ from template.runner.image_segmentation import evaluate, train
 from template.setup import set_up_model, set_up_dataloaders
 from util.misc import checkpoint, adjust_learning_rate
 
-
+# TODO: delete this runner... and use semantic_segmentation also use own setup within runner not outside it...
 class ImageSegmentation:
     @staticmethod
     def single_run(writer, current_log_folder, model_name, epochs, lr, decay_lr,

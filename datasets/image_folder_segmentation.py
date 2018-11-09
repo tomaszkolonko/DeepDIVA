@@ -48,10 +48,23 @@ def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False):
         train/gt/mustBeSameName_1.png
         train/gt/mustBeSameName_2.png
         train/gt/whatever_34.png
-
+⁄
         train/img/mustBeSameName_1.png
         train/img/mustBeSameName_2.png
         train/img/whatever_34.png
+
+
+        ../CB55/train/img/page23.png
+        ../CB55/train/img/page231.png
+        ../CB55/train/gt/page23.png
+        ../CB55/train/gt/page231.png
+
+        ../CB55/val/img
+        ../CB55/val/gt
+        ../CB55/test/img
+        ../CB55/test/gt
+
+
 
     Parameters
     ----------

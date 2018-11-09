@@ -9,8 +9,8 @@ import torchvision.transforms as transforms
 from datasets.image_folder_dataset import load_dataset
 from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
 
-
-def set_up_dataloaders(model_expected_input_size, dataset_folder, n_triplets, batch_size, workers, inmem, **kwargs):
+# TODO: refactor into the image_folder_segmentation.py
+def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
     """
     Set up the dataloaders for the specified datasets.
 

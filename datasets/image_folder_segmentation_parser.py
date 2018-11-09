@@ -136,6 +136,9 @@ class ImageFolder(data.Dataset):
         self.target_transform = target_transform
         self.loader = loader
 
+        self.which_page
+        self.which_crop
+
     def __getitem__(self, index):
         """
         Args:
@@ -147,13 +150,14 @@ class ImageFolder(data.Dataset):
         path_img, path_gt = self.imgs[index]
         img = self.loader(path_img)
         gt = self.loader(path_gt)
+        # TODO: make transform crop out of two arguments... controlling through variable N
+        # TODO: take N crops out of the same image.... you also should have a threshold
+        # value and you will use th same images for as long as you don't reach the threshold....
+        # return crops of img and return crops on gt of the one-hot encoder from linda.
         if self.transform is not None:
             img = self.transform(img)
+        if self.target_transform is not None:
             gt = self.transform(gt)
-        # TODO: unclear if target_transform is still needed for segmentation purpose
-        # if self.target_transform is not None:
-        #     img = self.transform(img)
-        #     gt = self.transform(gt)
 
         return img, gt
 
