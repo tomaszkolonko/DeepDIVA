@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from datasets.image_folder_segmentation_parser import find_classes_, is_image_file, ImageFolder
+from datasets.image_folder_segmentation import find_classes, is_image_file, ImageFolder
 
 
 class Test_find_classes_(TestCase):
     def test_find_classes_(self):
-        array_of_classes = find_classes_()
+        array_of_classes = find_classes()
         self.assertIsNotNone(array_of_classes)
         self.assertTrue(len(array_of_classes) >= 2)
 
