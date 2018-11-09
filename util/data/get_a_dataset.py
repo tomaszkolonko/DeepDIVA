@@ -6,12 +6,8 @@ import os
 import shutil
 import sys
 
-import numpy as np
-import scipy
-
-
+import urllib
 import zipfile
-import urllib.request
 import csv
 
 # Torch
