@@ -114,6 +114,11 @@ _build
 _static
 _templates
 
-# datasets should never be pushed (private)
-datasets
+# Be careful on which datasets you want to be pushed upstream 
+datasets/asbestos*
+datasets/CIFAR*
+datasets/MNIST*
+datasets/SVHN*
+
+# Don't push any outputs from previous runs
 output

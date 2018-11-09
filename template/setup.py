@@ -237,13 +237,17 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     # Load the dataset splits as images
     try:
         logging.debug("Try to load dataset as images")
-        train_ds, val_ds, test_ds = image_folder_dataset.load_dataset(dataset_folder, inmem, workers)
+        if(kwargs['runner_class'] == 'image_segmentation'):
+            train_ds, val_ds, test_ds = image_folder_segmentation.load_dataset(dataset_folder, inmem, workers)
+        else:
+            train_ds, val_ds, test_ds = image_folder_dataset.load_dataset(dataset_folder, inmem, workers)
 
         # Loads the analytics csv and extract mean and std
         mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers)
 
         # Set up dataset transforms
         logging.debug('Setting up dataset transforms')
+        # TODO:TZ resizing might become a problem for GT !!! Maybe for segmentation we simply wont resize for starters
         transform = transforms.Compose([
             transforms.Resize(model_expected_input_size),
             transforms.ToTensor(),

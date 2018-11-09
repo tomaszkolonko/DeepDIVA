@@ -7,6 +7,7 @@ import argparse
 import os
 import shutil
 import sys
+import re
 import numpy as np
 
 # Torch related stuff
@@ -109,6 +110,12 @@ def split_dataset(dataset_folder, split, symbolic):
             shutil.copy(X, dest)
 
     return
+
+def _get_file_with_parents(filepath, levels=1):
+    common = filepath
+    for i in range(levels + 1):
+        common = os.path.dirname(common)
+    return os.path.relpath(filepath, common)
 
 
 if __name__ == "__main__":
