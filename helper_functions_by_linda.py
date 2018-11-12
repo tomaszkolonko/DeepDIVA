@@ -96,25 +96,6 @@ def one_hot_to_output(matrix, out_path):
     img = Image.fromarray(RGB.astype('uint8'), 'RGB')
     img.save(out_path)
 
-img_path = '/home/linda/Documents/PhD/datasets/HisDB-10/CB55-10/gt/test/e-codices_fmb-cb-0055_0098v_max.png'
-np_img = np.array(Image.open(img_path))
-one_hot = label_img_to_one_hot(np_img)
-
-#%%
-import os
-import torch
-import torchvision
-
-path = '/home/linda/Documents/PhD/datasets/HisDB-one/train'
-imgs = ['crop-e-codices_fmb-cb-0055_0098v_max.jpg', 'crop-e-codices_fmb-cb-0055_0098v_max.png']
-
-data = np.rollaxis(np.array(Image.open(os.path.join(path, imgs[0]))), 2, 0)
-gt = np.rollaxis(np.array(Image.open(os.path.join(path, imgs[1]))), 2, 0)
-
-#dadset = torchvision.datasets.ImageFolder(path)
-
-data_torch = torch.tensor(data).unsqueeze(0)
-
 
 
 
