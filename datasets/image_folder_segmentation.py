@@ -195,7 +195,7 @@ class ImageFolder(data.Dataset):
     """
 
     # TODO: transform and target_transform could be the correct places for your cropping
-    def __init__(self, root, pages_in_memory=0, crops_per_page=0, transform=None, target_transform=None,
+    def __init__(self, root, pages_in_memory=0, crops_per_page=0, crop_size=10, transform=None, target_transform=None,
                  loader=default_loader):
         classes = find_classes()
         imgs = make_dataset(root)
@@ -211,7 +211,9 @@ class ImageFolder(data.Dataset):
         self.loader = loader
         self.pages_in_memory = pages_in_memory
         self.crops_per_page = crops_per_page
+        self.crop_size = crop_size
 
+        self.counter_crops_per_page = 0
         self.images = [None] * pages_in_memory
         self.gt = [None] * pages_in_memory
 
@@ -242,17 +244,19 @@ class ImageFolder(data.Dataset):
         # TODO: take N crops out of the same image.... you also should have a threshold
         # value and you will use th same images for as long as you don't reach the threshold....
         # return crops of img and return crops on gt of the one-hot encoder from linda.
-        for i in range (0, self.crops_per_page):
+        while(self.counter_crops_per_page <= self.crops_per_page):
             if self.transform is not None:
-                img, gt = self.transform(img, gt)
-        return img, gt
+                img, gt = self.transform(img, gt, self.crop_size)
+                self.counter_crops_per_page = self.counter_crops_per_page + 1
+                return img, gt
+        if(self.counter_crops_per_page > self.crops_per_page):
+            self.update_ram()
+            self.counter_crops_per_page = 0
 
         #if self.transform is not None:
         #    img = self.transform(img, gt)
         #if self.target_transform is not None:
         #    gt = self.transform(gt)
-
-        return img, gt
 
     def initialize_ram(self):
         for i in range(0, self.pages_in_memory):
@@ -260,6 +264,8 @@ class ImageFolder(data.Dataset):
 
             self.images[i] = self.loader(temp_image)
             self.gt[i] = self.loader(temp_gt)
+
+    def update_ram(self):
 
     def __len__(self):
         return len(self.imgs)
