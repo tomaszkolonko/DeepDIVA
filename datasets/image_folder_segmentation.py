@@ -52,7 +52,8 @@ def make_dataset(directory):
         for fname in sorted(fnames):
             if is_image_file(fname):
                 path_img = os.path.join(path_imgs, fname)
-                path_gt = os.path.join(path_gts, fname)
+                fname_gt = fname[:-4] + ".png"
+                path_gt = os.path.join(path_gts, fname_gt)
                 item = (path_img, path_gt)
                 images.append(item)
 
@@ -69,13 +70,13 @@ def pil_loader(path):
 def default_loader(path):
     from torchvision import get_image_backend
     if get_image_backend() == 'PIL':
-        pil_loader(path)
+        return pil_loader(path)
     else:
         logging.info("Something went wrong with the default_loader in image_folder_segmentation.py")
         sys.exit(-1)
 
 
-def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False):
+def load_dataset(dataset_folder, args, in_memory=False, workers=1, testing=False):
     """
     Loads the dataset from file system and provides the dataset splits for train validation and test
 
@@ -114,6 +115,9 @@ def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False):
     ----------
     dataset_folder : string
         Path to the dataset on the file System
+
+    args : dict
+        Dictionary of all the CLI arguments passed in
 
     in_memory : boolean
         Load the whole dataset in memory. If False, only file names are stored and images are loaded
@@ -159,9 +163,9 @@ def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False):
         return train_dir, val_dir, test_dir
 
     # Get an online dataset for each split
-    train_ds = ImageFolder(train_dir)
-    val_ds = ImageFolder(val_dir)
-    test_ds = ImageFolder(test_dir)
+    train_ds = ImageFolder(train_dir, args['pages_in_memory'], args['crops_per_page'])
+    val_ds = ImageFolder(val_dir, args['pages_in_memory'], args['crops_per_page'])
+    test_ds = ImageFolder(test_dir, args['pages_in_memory'], args['crops_per_page'])
     return train_ds, val_ds, test_ds
 
 
@@ -191,9 +195,9 @@ class ImageFolder(data.Dataset):
     """
 
     # TODO: transform and target_transform could be the correct places for your cropping
-    def __init__(self, root, transform=None, target_transform=None,
+    def __init__(self, root, pages_in_memory=0, crops_per_page=0, transform=None, target_transform=None,
                  loader=default_loader):
-        classes = find_classes()  # type: List[str]
+        classes = find_classes()
         imgs = make_dataset(root)
         if len(imgs) == 0:
             raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
@@ -205,9 +209,12 @@ class ImageFolder(data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
+        self.pages_in_memory = pages_in_memory
+        self.crops_per_page = crops_per_page
 
-        self.which_page
-        self.which_crop
+        self.images = [None] * pages_in_memory
+        self.gt = [None] * pages_in_memory
+
 
     def __getitem__(self, index):
         """
@@ -217,21 +224,42 @@ class ImageFolder(data.Dataset):
         Returns:
             tuple: (image, groundtruth) where both are paths to the actual image.
         """
+
+        print(self.images)
+
+        # Think about moving this initialization to the constructor !!!
+        if self.images[0] == None:
+            self.initialize_ram()
+
+
+
         path_img, path_gt = self.imgs[index]
         img = self.loader(path_img)
         gt = self.loader(path_gt)
+
+
         # TODO: make transform crop out of two arguments... controlling through variable N
         # TODO: take N crops out of the same image.... you also should have a threshold
         # value and you will use th same images for as long as you don't reach the threshold....
         # return crops of img and return crops on gt of the one-hot encoder from linda.
-        if self.transform is not None:
-            img = self.transform(img)
-        if self.target_transform is not None:
-            gt = self.transform(gt)
+        for i in range (0, self.crops_per_page):
+            if self.transform is not None:
+                img, gt = self.transform(img, gt)
+        return img, gt
+
+        #if self.transform is not None:
+        #    img = self.transform(img, gt)
+        #if self.target_transform is not None:
+        #    gt = self.transform(gt)
 
         return img, gt
 
+    def initialize_ram(self):
+        for i in range(0, self.pages_in_memory):
+            temp_image, temp_gt = self.imgs[i]
+
+            self.images[i] = self.loader(temp_image)
+            self.gt[i] = self.loader(temp_gt)
+
     def __len__(self):
         return len(self.imgs)
-
-
