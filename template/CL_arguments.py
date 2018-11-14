@@ -297,4 +297,16 @@ def _semantic_segmentation_options(parser):
                                 type=int,
                                 default=256, metavar='N',
                                 help='size of the square input patch e.g. with 32 the input will be re-sized to 32x32')
+    semantic_segmentation.add_argument('--pages-in-memory',
+                                       type=int,
+                                       default=3, metavar='N',
+                                       help='number of pages that are loaded into RAM and learned on')
+    semantic_segmentation.add_argument('--crop-size',
+                                       type=int,
+                                       default=32, metavar='N',
+                                       help='size of each crop taken (default 32x32)')
+    semantic_segmentation.add_argument('--crops-per-page',
+                                       type=int,
+                                       default=10, metavar='N',
+                                       help='number of crops per iterations per page')
 

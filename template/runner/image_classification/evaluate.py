@@ -71,6 +71,9 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
     preds = []
     targets = []
 
+    total_length = len(data_loader)
+    # length of the dataloader the size of the image array.
+    # it's overlaoded and can be found in the dataset class
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
 
