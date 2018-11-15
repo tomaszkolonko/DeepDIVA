@@ -112,7 +112,7 @@ def split_dataset(dataset_folder, split, symbolic):
     return
 
 
-def split_dataset_writerIdentification(dataset_folder, split, symbolic):
+def split_dataset_writerIdentification(dataset_folder, split):
     """
     Partition a dataset into train/val splits on the filesystem.
 
@@ -129,7 +129,7 @@ def split_dataset_writerIdentification(dataset_folder, split, symbolic):
     -------
         None
     """
-
+    print("Data Splitting for Writer Identification\n")
     # Getting the train dir
     traindir = os.path.join(dataset_folder, 'train')
 
@@ -146,16 +146,15 @@ def split_dataset_writerIdentification(dataset_folder, split, symbolic):
         sys.exit(-1)
 
     # Load the dataset file names
+    print("Loading dataset filenames\n")
     fileNames = os.listdir(binarized_traindir)
-    colored_fileNames = os.listdir(colored_traindir)
-    print(fileNames)
+    print("Training set size: :" + str(len(fileNames)))
     validation_size = int(len(fileNames)*split)
-    training_size = len(fileNames) - validation_size
+    print("Validation set size: " + str(validation_size))
     random.seed(42)
     random.shuffle(fileNames)
     validation_files = random.sample(fileNames, validation_size)
     training_files = [file for file in fileNames if file not in validation_files]
-    print(training_files)
 
     # Print number of elements for each class
     ''''
@@ -182,7 +181,7 @@ def split_dataset_writerIdentification(dataset_folder, split, symbolic):
     if os.path.exists(split_train_color_dir):
         shutil.rmtree(split_train_color_dir)
     os.makedirs(split_train_color_dir)
-
+    print("Copying files to train folder\n")
     for tf in training_files:
         path_binarized = os.path.join(split_train_binarized_dir, tf)
         path_color = os.path.join(split_train_color_dir, tf)
@@ -192,11 +191,17 @@ def split_dataset_writerIdentification(dataset_folder, split, symbolic):
         if os.path.exists(path_color):
             shutil.rmtree(path_color)
         os.makedirs(path_color)
-        print("tf " + tf + "\n list of files: \n")
-        print(os.listdir(tf))
-        for i in range(len(os.listdir(tf))):
-            shutil.copy(tf[i], path_binarized)
-            shutil.copy(colored_fileNames[i], path_color)
+
+        binarized_file_path = os.path.join(binarized_traindir, tf)
+        subfiles_binarized = os.listdir(binarized_file_path)
+        colored_file_path = os.path.join(colored_traindir, tf)
+        subfiles_colored = os.listdir(colored_file_path)
+        for i in range(len(subfiles_binarized)):
+            file = os.path.join(binarized_file_path, subfiles_binarized[i])
+            shutil.copy(file, path_binarized)
+        for i in range(len(subfiles_colored)):
+            file = os.path.join(colored_file_path, subfiles_colored[i])
+            shutil.copy(file, path_color)
 
     split_val_dir = os.path.join(dataset_folder, "val")
     if os.path.exists(split_val_dir):
@@ -213,9 +218,12 @@ def split_dataset_writerIdentification(dataset_folder, split, symbolic):
         shutil.rmtree(split_val_color_dir)
     os.makedirs(split_val_color_dir)
 
+    print("Copying files to val folder\n")
     for vf in validation_files:
+
         path_binarized = os.path.join(split_val_binarized_dir, vf)
         path_color = os.path.join(split_val_color_dir, vf)
+
         if os.path.exists(path_binarized):
             shutil.rmtree(path_binarized)
         os.makedirs(path_binarized)
@@ -223,9 +231,18 @@ def split_dataset_writerIdentification(dataset_folder, split, symbolic):
             shutil.rmtree(path_color)
         os.makedirs(path_color)
 
-        for i in range(len(os.listdir(vf))):
-            shutil.copy(vf[i], path_binarized)
-            shutil.copy(colored_fileNames[i], path_color)
+        binarized_file_path = os.path.join(binarized_traindir, vf)
+        subfiles_binarized = os.listdir(binarized_file_path)
+        colored_file_path = os.path.join(colored_traindir, vf)
+        subfiles_colored = os.listdir(colored_file_path)
+
+        for i in range(len(subfiles_binarized)):
+            file = os.path.join(binarized_file_path, subfiles_binarized[i])
+            shutil.copy(file, path_binarized)
+
+        for i in range(len(subfiles_colored)):
+            file = os.path.join(colored_file_path, subfiles_colored[i])
+            shutil.copy(file, path_color)
 
     return
 
@@ -254,8 +271,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    #split_dataset(dataset_folder=args.dataset_folder, split=args.split, symbolic=args.symbolic)
+    split_dataset(dataset_folder=args.dataset_folder, split=args.split, symbolic=args.symbolic)
 
-    split_dataset_writerIdentification(dataset_folder=args.dataset_folder, split=args.split, symbolic=args.symbolic)
+    split_dataset_writerIdentification(dataset_folder=args.dataset_folder, split=args.split)
 
 
