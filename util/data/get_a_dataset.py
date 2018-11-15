@@ -25,7 +25,7 @@ import torchvision
 from PIL import Image
 
 # DeepDIVA
-from util.data.dataset_splitter import split_dataset
+from util.data.dataset_splitter import split_dataset, split_dataset_writerIdentification
 
 
 def mnist(args):
@@ -384,7 +384,7 @@ def historical_wi(args):
                      len("ScriptNet-HistoricalWI-2017-binarized/"), len("ScriptNet-HistoricalWI-2017-color/")]
 
     # Make output folders
-    dataset_root = os.path.join(args.output_folder, 'Historical_WI')
+    dataset_root = os.path.join(args.output_folder)
     train_folder = os.path.join(dataset_root, 'train')
     train_binarized_folder = os.path.join(train_folder, 'Binarized')
     train_colored_folder = os.path.join(train_folder, 'Color')
@@ -434,8 +434,8 @@ def historical_wi(args):
             isTrainingset = 0
 
         print("Downloading " + urls[i])
-        #local_filename, headers = urllib.request.urlretrieve(urls[i], zip_names[i])
-        local_filename = local_files[i]
+        local_filename, headers = urllib.request.urlretrieve(urls[i], zip_names[i])
+        #local_filename = local_files[i]
         zfile = zipfile.ZipFile(local_filename)
         labels = _get_labels(zfile, start_indices[i])
         _write_data_to_folder(zfile, labels, folders[i], isTrainingset)
@@ -449,7 +449,7 @@ def historical_wi(args):
         else:
             print("Colored test data is ready!")
 
-    #split_dataset(dataset_folder=dataset_root, split=0.3, symbolic=False)
+    split_dataset_writerIdentification(dataset_folder=dataset_root, split=0.3)
 
 
 
