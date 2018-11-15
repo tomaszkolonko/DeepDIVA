@@ -75,8 +75,11 @@ class SemanticSegmentation:
                                                                     train_loader=train_loader,
                                                                     **kwargs)
 
-        criterion = nn.MSELoss()
-        #TODO: change loss function https://pytorch.org/docs/stable/_modules/torch/nn/modules/loss.html  https://pytorch.org/docs/stable/nn.html#crossentropylos
+        # For the multi-dimensional cross entropy the array shapes are as follows:
+        # Input: (N, C, d_1, d_2, ..., d_K) where N is the mini-batch size, C are the number of classes and d_K the kth dimension
+        # Target: (N, d_1, d_2, ..., d_K)
+        # see https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/loss.py for more detail
+        criterion = nn.CrossEntropyLoss()
 
         # Core routine
         logging.info('Begin training')

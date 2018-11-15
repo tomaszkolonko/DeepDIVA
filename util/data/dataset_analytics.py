@@ -39,6 +39,7 @@ from multiprocessing import Pool
 import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 # Torch related stuff
 import torch

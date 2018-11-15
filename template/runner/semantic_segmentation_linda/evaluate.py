@@ -10,7 +10,7 @@ from sklearn.metrics import classification_report
 from tqdm import tqdm
 
 # DeepDIVA
-from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, tensor_to_image
+from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, tensor_to_image, one_hot_to_output
 
 
 def validate(val_loader, model, criterion, writer, epoch, no_cuda=False, log_interval=20, **kwargs):
@@ -77,7 +77,11 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
     targets = []
 
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
-    for batch_idx, (input, _) in pbar:
+    for batch_idx, (input, target) in pbar:
+        # keep the original target for computing the output for the test
+        target_one_hot = target
+        # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
+        target = torch.LongTensor([np.argmax(a, axis=0) for a in target.numpy()])
 
         # Measure data loading time
         data_time.update(time.time() - end)
@@ -85,26 +89,24 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
         # Moving data to GPU
         if not no_cuda:
             input = input.cuda(async=True)
-
-        # Split the data into halves to separate the input from the GT
-        satel_image, map_image = torch.chunk(input, chunks=2, dim=3)
+            target = target.cuda(async=True)
 
         # Convert the input and its labels to Torch Variables
-        input_var = torch.autograd.Variable(satel_image)
-        target_var = torch.autograd.Variable(map_image)
+        input_var = torch.autograd.Variable(input)
+        target_var = torch.autograd.Variable(target)
 
-        # Compute output
+        # Compute output TODO: Is it here that I get (output_patch, filename, top_left coordinates?
         output = model(input_var)
 
         # Compute and record the loss
         loss = criterion(output, target_var)
         losses.update(loss.data[0], input.size(0))
 
-        # Compute and record the accuracy
+        # Compute and record the accuracy TODO
         # acc1 = accuracy(output.data, target, topk=(1,))[0]
         # top1.update(acc1[0], input.size(0))
 
-        # Get the predictions
+        # Get the predictions TODO
         # _ = [preds.append(item) for item in [np.argmax(item) for item in output.data.cpu().numpy()]]
         # _ = [targets.append(item) for item in target.cpu().numpy()]
 
@@ -132,23 +134,23 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
 
 
-    # Logging the epoch-wise accuracy
+    # Logging the epoch-wise accuracy TODO
     if multi_run is None:
         # writer.add_scalar(logging_label + '/accuracy', top1.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output',
                                           image=output[:1], global_step=epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/input',
-                                          image=satel_image[:1])
+                                          image=input[:1])
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/target',
-                                          image=map_image[:1])
+                                          image=target[:1])
     else:
         # writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), top1.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output_{}'.format(multi_run),
                                           image=output[:1], global_step=epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/input_{}'.format(multi_run),
-                                          image=satel_image[:1])
+                                          image=input[:1])
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/target',
-                                          image=map_image[:1])
+                                          image=target[:1])
 
     logging.info(_prettyprint_logging_label(logging_label) +
                  ' epoch[{}]: '
@@ -157,9 +159,11 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
                  'Batch time={batch_time.avg:.3f} ({data_time.avg:.3f} to load data)'
                  .format(epoch, batch_time=batch_time, data_time=data_time, loss=losses, top1=top1))
     #
-    # # Generate a classification report for each epoch
+    # # Generate a classification report for each epoch TODO
     # _log_classification_report(data_loader, epoch, preds, targets, writer)
-    #
+
+    # generate full image output during test TODO
+
     # return top1.avg
 
 

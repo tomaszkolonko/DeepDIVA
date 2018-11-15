@@ -39,7 +39,7 @@ class Unet(nn.Module):
 		self.up_4 = conv_block_2(self.num_filter*2,self.num_filter*1,act_fn)
 
 		self.out = nn.Sequential(
-			nn.Conv2d(self.num_filter,self.out_dim,8,1,1),
+			nn.Conv2d(self.num_filter,self.out_dim,3,1,1),
 			nn.Tanh(),
 		)
 
