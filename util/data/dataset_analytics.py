@@ -39,6 +39,7 @@ from multiprocessing import Pool
 import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 # Torch related stuff
 import torch
@@ -91,6 +92,52 @@ def compute_mean_std(dataset_folder, inmem, workers):
     df = pd.DataFrame([mean, std, class_frequencies_weights])
     df.index = ['mean[RGB]', 'std[RGB]', 'class_frequencies_weights[num_classes]']
     df.to_csv(os.path.join(dataset_folder, 'analytics.csv'), header=False)
+
+
+def compute_mean_std_semantic_segmentation(dataset_folder, inmem, workers):
+    """
+    Computes mean and std of a dataset for semantic segmentation. Saves the results as CSV file in the dataset folder.
+
+    Parameters
+    ----------
+    dataset_folder : String (path)
+        Path to the dataset folder (see above for details)
+    inmem : Boolean
+        Specifies whether is should be computed i nan online of offline fashion.
+    workers : int
+        Number of workers to use for the mean/std computation
+
+    Returns
+    -------
+        None
+    """
+
+    # Getting the train dir
+    traindir = os.path.join(dataset_folder, 'train')
+
+    # Load the dataset file names
+    train_ds = datasets.ImageFolder(traindir, transform=transforms.Compose([transforms.ToTensor()]))
+
+    # Extract the actual file names and labels as entries
+    file_names_all = np.asarray([item[0] for item in train_ds.imgs])
+    file_names_gt = [f for f in file_names_all if '/gt/' in f]
+    file_names_data = [f for f in file_names_all if '/data/' in f]
+
+    # Compute mean and std
+    if inmem:
+        mean, std = cms_inmem(file_names_data)
+    else:
+        mean, std = cms_online(file_names_data, workers)
+
+    # Compute class frequencies weights
+    class_frequencies_weights = _get_class_frequencies_weights_HisDB(file_names_gt)
+    print(class_frequencies_weights)
+    # Save results as CSV file in the dataset folder
+    df = pd.DataFrame([mean, std, class_frequencies_weights])
+    df.index = ['mean[RGB]', 'std[RGB]', 'class_frequencies_weights[num_classes]']
+    df.to_csv(os.path.join(dataset_folder, 'analytics.csv'), header=False)
+
+
 
 
 # Loads an image with OpenCV and returns the channel wise means of the image.
@@ -222,6 +269,34 @@ def _get_class_frequencies_weights(dataset, workers):
     # Normalize vector to sum up to 1.0 (in case the Loss function does not do it)
     return (1 / num_samples_per_class) / ((1 / num_samples_per_class).sum())
 
+def _get_class_frequencies_weights_HisDB(gt_images):
+    """
+    Get the weights proportional to the inverse of their class frequencies.
+    The vector sums up to 1
+
+    Parameters
+    ----------
+    gt_images: list of strings
+        Path to all ground truth images, which contain the pixel-wise label
+    workers: int
+        Number of workers to use for the mean/std computation
+
+    Returns
+    -------
+    ndarray[double] of size (num_classes)
+        The weights vector as a 1D array normalized (sum up to 1)
+    """
+    logging.info('Begin computing class frequencies weights')
+    all_labels = np.array([np.array(Image.open(path))[:, :, 2].flatten() for path in gt_images]).flatten()
+
+    total_num_samples = len(all_labels)
+    num_samples_per_class = np.unique(all_labels, return_counts=True)[1]
+    class_frequencies = (num_samples_per_class / total_num_samples)
+    logging.info('Finished computing class frequencies weights')
+    logging.info('Class frequencies (rounded): {class_frequencies}'
+                 .format(class_frequencies=np.around(class_frequencies * 100, decimals=2)))
+    # Normalize vector to sum up to 1.0 (in case the Loss function does not do it)
+    return (1 / num_samples_per_class) / ((1 / num_samples_per_class).sum())
 
 if __name__ == "__main__":
     logging.basicConfig(

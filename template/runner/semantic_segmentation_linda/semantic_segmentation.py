@@ -65,16 +65,21 @@ class SemanticSegmentation:
         """
 
         # Setting up the dataloaders
-        train_loader, val_loader, test_loader = set_up_dataloaders(input_patch_size, **kwargs)
+        train_loader, val_loader, test_loader, num_classes = set_up_dataloaders(input_patch_size, **kwargs)
+        num_classes = 8 #TODO: return this from set_up_dataloaders
 
         # Setting up model, optimizer, criterion
-        model, _, optimizer, best_value, start_epoch = set_up_model(num_classes=3, # In this case is the num dimension of the output
+        model, _, optimizer, best_value, start_epoch = set_up_model(num_classes=num_classes, # In this case is the num dimension of the output
                                                                     model_name=model_name,
                                                                     lr=lr,
                                                                     train_loader=train_loader,
                                                                     **kwargs)
 
-        criterion = nn.MSELoss()
+        # For the multi-dimensional cross entropy the array shapes are as follows:
+        # Input: (N, C, d_1, d_2, ..., d_K) where N is the mini-batch size, C are the number of classes and d_K the kth dimension
+        # Target: (N, d_1, d_2, ..., d_K)
+        # see https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/loss.py for more detail
+        criterion = nn.CrossEntropyLoss()
 
         # Core routine
         logging.info('Begin training')
@@ -102,7 +107,7 @@ class SemanticSegmentation:
         # Load the best model before evaluating on the test set.
         logging.info('Loading the best model before evaluating on the test set.')
         kwargs["load_model"] = os.path.join(current_log_folder, 'model_best.pth.tar')
-        model, _, _, _, _ = set_up_model(num_classes=3,
+        model, _, _, _, _ = set_up_model(num_classes=num_classes,
                                          model_name=model_name,
                                          lr=lr,
                                          train_loader=train_loader,

@@ -30,26 +30,24 @@ def multi_label_img_to_one_hot(np_array):
     one_hot_matrix = np.asanyarray(
         [[class_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
 
-    return one_hot_matrix
+    return np.rollaxis(one_hot_matrix.astype(np.uint8), 2, 0)
 
 
-def multi_one_hot_to_output(matrix, out_path):
+def multi_one_hot_to_output(matrix):
     """
     This function converts the multi-one-hot encoded matrix to an image like it was provided in the ground truth
     :param matrix: multi-one-hot encoded matrix
-    :param out_path: path to output (e.g. image output/image1.png)
+    :param RGB: RGB numpy array
     """
     # create RGB
-    matrix = np.char.mod('%d', matrix)
+    matrix = np.rollaxis(np.char.mod('%d', matrix), 0, 3)
     zeros = (32 - matrix.shape[2]) * '0'
     B = np.array([[int('{}{}'.format(zeros, ''.join(matrix[i][j])), 2) for j in range(matrix.shape[1])] for i in
                   range(matrix.shape[0])])
 
     RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
 
-    # save image
-    img = Image.fromarray(RGB.astype('uint8'), 'RGB')
-    img.save(out_path)
+    return RGB
 
 
 def label_img_to_one_hot(np_array):
@@ -70,16 +68,16 @@ def label_img_to_one_hot(np_array):
     one_hot_matrix = np.asanyarray(
         [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
         
-    return one_hot_matrix
+    return np.rollaxis(one_hot_matrix.astype(np.uint8), 2, 0)
 
 
-def one_hot_to_output(matrix, out_path):
+def one_hot_to_output(matrix):
     """
     This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
     :param matrix: one-hot encoded matrix
-    :param out_path: path to output (e.g. image output/image1.png)
+    :param RGB: RGB numpy array
     """
-    matrix = np.char.mod('%d', matrix)
+    matrix = np.rollaxis(np.char.mod('%d', matrix), 0, 3)
     
     integer_encoded = np.array([i for i in range(8)])
     onehot_encoder = OneHotEncoder(sparse=False)
@@ -92,28 +90,7 @@ def one_hot_to_output(matrix, out_path):
     
     RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
 
-    # save image
-    img = Image.fromarray(RGB.astype('uint8'), 'RGB')
-    img.save(out_path)
-
-img_path = '/home/linda/Documents/PhD/datasets/HisDB-10/CB55-10/gt/test/e-codices_fmb-cb-0055_0098v_max.png'
-np_img = np.array(Image.open(img_path))
-one_hot = label_img_to_one_hot(np_img)
-
-#%%
-import os
-import torch
-import torchvision
-
-path = '/home/linda/Documents/PhD/datasets/HisDB-one/train'
-imgs = ['crop-e-codices_fmb-cb-0055_0098v_max.jpg', 'crop-e-codices_fmb-cb-0055_0098v_max.png']
-
-data = np.rollaxis(np.array(Image.open(os.path.join(path, imgs[0]))), 2, 0)
-gt = np.rollaxis(np.array(Image.open(os.path.join(path, imgs[1]))), 2, 0)
-
-#dadset = torchvision.datasets.ImageFolder(path)
-
-data_torch = torch.tensor(data).unsqueeze(0)
+    return RGB
 
 
 

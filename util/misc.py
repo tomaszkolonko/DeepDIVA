@@ -14,6 +14,8 @@ import cv2
 import numpy as np
 import torch
 
+from sklearn.preprocessing import OneHotEncoder
+
 
 def _prettyprint_logging_label(logging_label):
     """Format the logging label in a pretty manner.
@@ -309,5 +311,139 @@ def has_extension(filename, extensions):
     """
     filename_lower = filename.lower()
     return any(filename_lower.endswith(ext) for ext in extensions)
+
+
+# functions added for HisDB classification
+def int_to_one_hot(x, n_classes):
+    """
+    Read out class encoding from blue channel bit-encoding (1 to [0,0,0,1] -> length determined by the number of classes)
+
+    Parameters
+    ----------
+    x: int
+        (pixel value of Blue channel from RGB image)
+    n_classes: int
+        number of class labels
+    Returns
+    -------
+    list
+        (multi) one-hot encoded list for integer
+    """
+    s = '{0:0' + str(n_classes) + 'b}'
+    return list(map(int, list(s.format(x))))
+
+
+def label_img_to_one_hot(np_array):
+    """
+    Convert ground truth label image to multi-one-hot encoded matrix of size image height x image width x #classes
+
+    Parameters
+    -------
+    np_array: numpy array
+        RGB image [W x H x C]
+    Returns
+    -------
+    numpy array of size [#C x W x H]
+        sparse one-hot encoded multi-class matrix, where #C is the number of classes
+    """
+    im_np = np_array[2, :, :].astype(np.uint8)
+
+    integer_encoded = np.array([i for i in range(8)])
+    onehot_encoder = OneHotEncoder(sparse=False)
+    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+    onehot_encoded = onehot_encoder.fit_transform(integer_encoded).astype(np.int8)
+
+    replace_dict = {k: v for k, v in zip([1, 2, 4, 6, 8, 10, 12, 14], onehot_encoded)}
+    # create the one hot matrix
+    one_hot_matrix = np.asanyarray(
+        [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
+
+    return one_hot_matrix.astype(np.uint8)
+
+
+def multi_label_img_to_multi_hot(np_array):
+    """
+    TODO: There must be a faster way of doing this
+    Convert ground truth label image to multi-one-hot encoded matrix of size image height x image width x #classes
+
+    Parameters
+    -------
+    np_array: numpy array
+        RGB image [W x H x C]
+    Returns
+    -------
+    numpy array of size [#C x W x H]
+        sparse one-hot encoded multi-class matrix, where #C is the number of classes
+    """
+    im_np = np_array[:, :, 2].astype(np.int8)
+    nb_classes = len(int_to_one_hot(im_np.max(), ''))
+
+    class_dict = {x: int_to_one_hot(x, nb_classes) for x in np.unique(im_np)}
+    # create the one hot matrix
+    one_hot_matrix = np.asanyarray(
+        [[class_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
+
+    return np.rollaxis(one_hot_matrix.astype(np.uint8), 2, 0)
+
+
+def multi_one_hot_to_output(matrix):
+    """
+    This function converts the multi-one-hot encoded matrix to an image like it was provided in the ground truth
+
+    Parameters
+    -------
+    numpy array of size [#C x W x H]
+        sparse one-hot encoded multi-class matrix, where #C is the number of classes
+    Returns
+    -------
+    np_array: numpy array
+        RGB image [C x W x H]
+    """
+    # create RGB
+    matrix = np.rollaxis(np.char.mod('%d', matrix), 0, 3)
+    zeros = (32 - matrix.shape[2]) * '0'
+    B = np.array([[int('{}{}'.format(zeros, ''.join(matrix[i][j])), 2) for j in range(matrix.shape[1])] for i in
+                  range(matrix.shape[0])])
+
+    RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
+
+    return RGB
+
+def one_hot_to_output(matrix):
+    """
+    This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
+
+    Parameters
+    -------
+    numpy array of size [#C x W x H]
+        sparse one-hot encoded multi-class matrix, where #C is the number of classes
+    Returns
+    -------
+    np_array: numpy array
+        RGB image [C x W x H]
+    """
+    matrix = np.argmax(matrix, axis=0)
+    class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
+
+    for old, new in class_to_B.items():
+        mask = matrix == old
+        B = np.where(mask, new, matrix)
+
+    RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
+
+    return RGB
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
