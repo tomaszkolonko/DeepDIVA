@@ -8,6 +8,10 @@ import sys
 
 import urllib
 import zipfile
+import csv
+
+import urllib
+import zipfile
 import re
 import csv
 
@@ -21,7 +25,7 @@ import torchvision
 from PIL import Image
 
 # DeepDIVA
-from util.data.dataset_splitter import split_dataset
+from util.data.dataset_splitter import split_dataset, split_dataset_writerIdentification
 
 
 def mnist(args):
@@ -253,7 +257,6 @@ def hisDB(args):
             shutil.rmtree(os.path.join(dataset_root, folder, k1))
     print('Finished. Data set up at {}.'.format(dataset_root))
 
-
 def icdar2017_clamm(args):
 
     url = "http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip"
@@ -275,10 +278,9 @@ def icdar2017_clamm(args):
     _make_folder_if_not_exists(dataset_manuscriptDating)
     _make_folder_if_not_exists(dataset_styleClassification)
     _make_folder_if_not_exists(test_sc_folder)
-    _make_folder_if_not_exists(test_md_folder)
 
     def _write_data_to_folder(zipfile, filenames, labels, folder, start_index,  isTest):
-
+        print("Writing data\n")
         sorted_labels = [None]*len(labels)
         if isTest == 1:
             for i in range(len(zipfile.infolist())):
@@ -294,20 +296,20 @@ def icdar2017_clamm(args):
             entry_index_infilenames = filenames.index(entry.filename[start_index:])
             sorted_labels[i] = labels[entry_index_infilenames]
 
-        for i, (entry, label) in enumerate(zip(zipfile.infolist()[1:], sorted_labels)):
-            with zipfile.open(entry) as file:
+        for i, (enrty, label) in enumerate(zip(zipfile.infolist()[1:], sorted_labels)):
+            with zipfile.open(enrty) as file:
                 img = Image.open(file)
                 dest = os.path.join(folder, str(label))
                 _make_folder_if_not_exists(dest)
                 img.save(os.path.join(dest, str(i) + '.png'), "PNG", quality=100)
 
-    def _getLabels(zfile):
+    def getLabels(zfile):
+        print("Extracting labels\n")
         filenames, md_labels, sc_labels = [], [], []
         zip_infolist = zfile.infolist()[1:]
         for entry in zip_infolist:
             if '.csv' in entry.filename:
                 with zfile.open(entry) as file:
-
                     cf = file.read()
                     c = csv.StringIO(cf.decode())
                     next(c) # Skip the first line which is the header of csv file
@@ -335,10 +337,11 @@ def icdar2017_clamm(args):
         return filenames, sc_labels, md_labels
 
     isTest = 0
-    filenames, sc_labels, md_labels = _getLabels(zfile)
+    filenames, sc_labels, md_labels = getLabels(zfile)
     start_index_training = len("ICDAR2017_CLaMM_Training/")
-
+    print("Training data is being prepared for style classification!\n")
     _write_data_to_folder(zfile, filenames, sc_labels, dataset_sc_train, start_index_training, isTest)
+    print("Training data is being prepared for manuscript dating!\n")
     _write_data_to_folder(zfile, filenames, md_labels, dataset_md_train, start_index_training, isTest)
 
     os.remove(os.path.join(zfile.filename))
@@ -350,16 +353,104 @@ def icdar2017_clamm(args):
     zfile_test = zipfile.ZipFile(local_filename_test)
 
     isTest = 1
-    filenames_test, sc_test_labels, md_test_labels = _getLabels(zfile_test)
+    filenames_test, sc_test_labels, md_test_labels = getLabels(zfile_test)
     start_index_test = len("ICDAR2017_CLaMM_task1_task3/")
+    print("Test data is being prepared for style classification!\n")
     _write_data_to_folder(zfile_test, filenames_test, sc_test_labels, test_sc_folder, start_index_test, 1)
+    print("Test data is being prepared for manuscript dating!\n")
     _write_data_to_folder(zfile_test, filenames_test, md_test_labels, test_md_folder, start_index_test, 1)
 
     os.remove(os.path.join(zfile_test.filename))
-
+    print("Training-Validation splitting\n")
     split_dataset(dataset_folder=dataset_manuscriptDating, split=0.2, symbolic=False)
     split_dataset(dataset_folder=dataset_styleClassification, split=0.2, symbolic=False)
     print("ICDAR2017 CLaMM data is ready!")
+
+
+def historical_wi(args):
+
+    train_binarized_url = "ftp://scruffy.caa.tuwien.ac.at/staff/database/icdar2017/icdar17-historicalwi-training-binarized.zip"
+    train_colored_url = "ftp://scruffy.caa.tuwien.ac.at/staff/database/icdar2017/icdar17-historicalwi-training-color.zip"
+    test_binarized_url = "https://zenodo.org/record/854353/files/ScriptNet-HistoricalWI-2017-binarized.zip?download=1"
+    test_colored_url = "https://zenodo.org/record/854353/files/ScriptNet-HistoricalWI-2017-color.zip?download=1"
+    urls = [train_binarized_url, train_colored_url, test_binarized_url, test_colored_url]
+
+    zip_name_train_binarized = "icdar17-historicalwi-training-binarized.zip"
+    zip_name_train_color = "icdar17-historicalwi-training-color.zip"
+    zip_name_test_binarized = "ScriptNet-HistoricalWI-2017-binarized.zip"
+    zip_name_test_color = "ScriptNet-HistoricalWI-2017-color.zip"
+    zip_names = [zip_name_train_binarized, zip_name_train_color, zip_name_test_binarized, zip_name_test_color]
+    start_indices = [len("icdar2017-training-binary/"), len("icdar2017-training-color/"),
+                     len("ScriptNet-HistoricalWI-2017-binarized/"), len("ScriptNet-HistoricalWI-2017-color/")]
+
+    # Make output folders
+    dataset_root = os.path.join(args.output_folder)
+    train_folder = os.path.join(dataset_root, 'train')
+    train_binarized_folder = os.path.join(train_folder, 'Binarized')
+    train_colored_folder = os.path.join(train_folder, 'Color')
+    test_folder = os.path.join(dataset_root, 'test')
+    test_binarized_folder = os.path.join(test_folder, 'Binarized')
+    test_colored_folder = os.path.join(test_folder, 'Color')
+    folders = [train_binarized_folder, train_colored_folder, test_binarized_folder, test_colored_folder]
+
+    _make_folder_if_not_exists(dataset_root)
+    _make_folder_if_not_exists(train_folder)
+    _make_folder_if_not_exists(train_binarized_folder)
+    _make_folder_if_not_exists(train_colored_folder)
+    _make_folder_if_not_exists(test_folder)
+    _make_folder_if_not_exists(test_binarized_folder)
+    _make_folder_if_not_exists(test_colored_folder)
+
+    def _write_data_to_folder(zipfile, labels, folder, isTrainingset):
+        print("Writing data to folder\n")
+        for i, (enrty, label) in enumerate(zip(zipfile.infolist()[1:], labels)):
+            with zipfile.open(enrty) as file:
+                img = Image.open(file)
+                dest = os.path.join(folder, str(label))
+                _make_folder_if_not_exists(dest)
+                if isTrainingset == 1:
+                    img.save(os.path.join(dest, str(i) + '.png'))
+                else:
+                    img.save(os.path.join(dest, str(i) + '.jpg'))
+
+    def _get_labels(zipfile, start_index):
+        print("Extracting labels\n")
+        labels = []
+        for zipinfo in zipfile.infolist()[1:]:
+            file_name = zipinfo.filename
+            ind = file_name.find("-", start_index)
+            labels.append(file_name[start_index:ind])
+        return labels
+
+    local_files = ["icdar17-historicalwi-training-binarized.zip", "icdar17-historicalwi-training-color.zip",
+                   "ScriptNet-HistoricalWI-2017-binarized.zip", "ScriptNet-HistoricalWI-2017-color.zip"]
+
+    #Prepare Datasets
+
+    for i in range(len(urls)):
+        if i < 2:
+            isTrainingset = 1
+        else:
+            isTrainingset = 0
+
+        print("Downloading " + urls[i])
+        local_filename, headers = urllib.request.urlretrieve(urls[i], zip_names[i])
+        #local_filename = local_files[i]
+        zfile = zipfile.ZipFile(local_filename)
+        labels = _get_labels(zfile, start_indices[i])
+        _write_data_to_folder(zfile, labels, folders[i], isTrainingset)
+        os.remove(os.path.join(zfile.filename))
+        if i == 0:
+            print("Binary training data is ready!")
+        elif i == 1:
+            print("Colored training data is ready!")
+        elif i == 2:
+            print("Binary test data is ready!")
+        else:
+            print("Colored test data is ready!")
+
+    split_dataset_writerIdentification(dataset_folder=dataset_root, split=0.3)
+
 
 
 def _make_folder_if_not_exists(path):

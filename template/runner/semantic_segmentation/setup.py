@@ -1,16 +1,29 @@
 # Utils
 import logging
 import os
+import numpy as np
+import numbers
+
+
+# TODO: from __future__ import print_function
+import torch
+import torch.nn as nn
+
+import torch.optim as optim
+import torchvision
+from torchvision import datasets
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Torch
-import torchvision.transforms as transforms
+from template.runner.semantic_segmentation.transform_library import transforms
 
 # DeepDIVA
-from datasets.image_folder_dataset import load_dataset
+from datasets.image_folder_segmentation import load_dataset
 from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
 
-
-def set_up_dataloaders(model_expected_input_size, dataset_folder, n_triplets, batch_size, workers, inmem, **kwargs):
+# TODO: refactor into the image_folder_segmentation.py
+def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
     """
     Set up the dataloaders for the specified datasets.
 
@@ -46,6 +59,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, n_triplets, ba
     ###############################################################################################
     # Load the dataset splits as images
     train_ds, val_ds, test_ds = load_dataset(dataset_folder=dataset_folder,
+                                             args=kwargs,
                                              in_memory=inmem,
                                              workers=workers)
 
@@ -53,15 +67,14 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, n_triplets, ba
     # Set up dataset transforms
     logging.debug('Setting up dataset transforms')
 
-    standard_transform = transforms.Compose([
-        transforms.Resize(size=model_expected_input_size),
-        transforms.CenterCrop(size=(model_expected_input_size, model_expected_input_size * 2)),
-        transforms.ToTensor(),
+    image_gt_transform = transforms.Compose([
+        transforms.RandomTwinCrop(),
+        transforms.ToTensorTwinImage()
     ])
 
-    train_ds.transform = standard_transform
-    val_ds.transform = standard_transform
-    test_ds.transform = standard_transform
+    train_ds.transform = image_gt_transform
+    val_ds.transform = image_gt_transform
+    test_ds.transform = image_gt_transform
 
     train_loader, val_loader, test_loader = _dataloaders_from_datasets(batch_size=batch_size,
                                                                        train_ds=train_ds,
@@ -69,5 +82,3 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, n_triplets, ba
                                                                        test_ds=test_ds,
                                                                        workers=workers)
     return train_loader, val_loader, test_loader
-
-
