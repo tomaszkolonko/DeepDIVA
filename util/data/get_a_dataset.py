@@ -307,6 +307,7 @@ def historical_wi(args):
                      len("ScriptNet-HistoricalWI-2017-binarized/"), len("ScriptNet-HistoricalWI-2017-color/")]
 
     # Make output folders
+    """
     dataset_root = os.path.join(args.output_folder)
     train_folder = os.path.join(dataset_root, 'train')
     train_binarized_folder = os.path.join(train_folder, 'Binarized')
@@ -321,6 +322,23 @@ def historical_wi(args):
     _make_folder_if_not_exists(train_binarized_folder)
     _make_folder_if_not_exists(train_colored_folder)
     _make_folder_if_not_exists(test_folder)
+    _make_folder_if_not_exists(test_binarized_folder)
+    _make_folder_if_not_exists(test_colored_folder)
+    """
+    dataset_root = os.path.join(args.output_folder)
+    binarized_dataset = os.path.join(dataset_root, "BinarizedDataset")
+    train_binarized_folder = os.path.join(binarized_dataset, 'train')
+    test_binarized_folder = os.path.join(binarized_dataset, 'test')
+    colored_dataset = os.path.join(dataset_root, "ColoredDataset")
+    train_colored_folder = os.path.join(colored_dataset, 'train')
+    test_colored_folder = os.path.join(colored_dataset, 'test')
+    folders = [train_binarized_folder, train_colored_folder, test_binarized_folder, test_colored_folder]
+
+    _make_folder_if_not_exists(dataset_root)
+    _make_folder_if_not_exists(binarized_dataset)
+    _make_folder_if_not_exists(colored_dataset)
+    _make_folder_if_not_exists(train_binarized_folder)
+    _make_folder_if_not_exists(train_colored_folder)
     _make_folder_if_not_exists(test_binarized_folder)
     _make_folder_if_not_exists(test_colored_folder)
 
@@ -345,9 +363,6 @@ def historical_wi(args):
             labels.append(file_name[start_index:ind])
         return labels
 
-    local_files = ["icdar17-historicalwi-training-binarized.zip", "icdar17-historicalwi-training-color.zip",
-                   "ScriptNet-HistoricalWI-2017-binarized.zip", "ScriptNet-HistoricalWI-2017-color.zip"]
-
     #Prepare Datasets
 
     for i in range(len(urls)):
@@ -358,7 +373,6 @@ def historical_wi(args):
 
         print("Downloading " + urls[i])
         local_filename, headers = urllib.request.urlretrieve(urls[i], zip_names[i])
-        #local_filename = local_files[i]
         zfile = zipfile.ZipFile(local_filename)
         labels = _get_labels(zfile, start_indices[i])
         _write_data_to_folder(zfile, labels, folders[i], isTrainingset)
@@ -372,9 +386,9 @@ def historical_wi(args):
         else:
             print("Colored test data is ready!")
 
-    split_dataset_writerIdentification(dataset_folder=dataset_root, split=0.3)
+    split_dataset_writerIdentification(dataset_folder=dataset_root, split=0.2)
 
-
+    print("Historical WI dataset is ready!")
 
 def _make_folder_if_not_exists(path):
     if not os.path.exists(path):

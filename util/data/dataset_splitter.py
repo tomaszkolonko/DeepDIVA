@@ -131,18 +131,23 @@ def split_dataset_writerIdentification(dataset_folder, split):
     """
     print("Data Splitting for Writer Identification\n")
     # Getting the train dir
-    traindir = os.path.join(dataset_folder, 'train')
+    binarized_dataset = os.path.join(dataset_folder, "BinarizedDataset")
+    colored_dataset = os.path.join(dataset_folder, "ColoredDataset")
+    binarized_traindir = os.path.join(binarized_dataset, 'train')
+    colored_traindir = os.path.join(colored_dataset, 'train')
 
     # Rename the original train dir
-    shutil.move(traindir, os.path.join(dataset_folder, 'original_train'))
-    traindir = os.path.join(dataset_folder, 'original_train')
-    binarized_traindir = os.path.join(traindir, 'Binarized')
-    colored_traindir = os.path.join(traindir, 'Color')
+    shutil.move(binarized_traindir, os.path.join(binarized_dataset, 'original_train'))
+    shutil.move(colored_traindir, os.path.join(colored_dataset, 'original_train'))
 
-
+    binarized_traindir = os.path.join(binarized_dataset, 'original_train')
+    colored_traindir = os.path.join(colored_dataset, 'original_train')
     # Sanity check on the training folder
-    if not os.path.isdir(traindir):
-        print("Train folder not found in the args.dataset_folder={}".format(dataset_folder))
+    if not os.path.isdir(binarized_traindir):
+        print("Train folder not found in the args.dataset_folder={}".format(binarized_dataset))
+        sys.exit(-1)
+    if not os.path.isdir(colored_traindir):
+        print("Train folder not found in the args.dataset_folder={}".format(colored_dataset))
         sys.exit(-1)
 
     # Load the dataset file names
@@ -166,21 +171,17 @@ def split_dataset_writerIdentification(dataset_folder, split):
         print("split_val ({}) {}".format(c, np.size(np.where(y_val == train_binarized_ds.class_to_idx[c]))))
     '''
 
-    # Create the folder structure to accommodate the two new splits
-    split_train_dir = os.path.join(dataset_folder, "train")
-    if os.path.exists(split_train_dir):
-        shutil.rmtree(split_train_dir)
-    os.makedirs(split_train_dir)
-
-    split_train_binarized_dir = os.path.join(split_train_dir, "Binarized")
+    # Create the folder structure to accommodate the two new splits for binarized dataset
+    split_train_binarized_dir = os.path.join(binarized_dataset, "train")
     if os.path.exists(split_train_binarized_dir):
         shutil.rmtree(split_train_binarized_dir)
     os.makedirs(split_train_binarized_dir)
 
-    split_train_color_dir = os.path.join(split_train_dir, "Color")
+    split_train_color_dir = os.path.join(colored_dataset, "train")
     if os.path.exists(split_train_color_dir):
         shutil.rmtree(split_train_color_dir)
     os.makedirs(split_train_color_dir)
+
     print("Copying files to train folder\n")
     for tf in training_files:
         path_binarized = os.path.join(split_train_binarized_dir, tf)
@@ -203,17 +204,12 @@ def split_dataset_writerIdentification(dataset_folder, split):
             file = os.path.join(colored_file_path, subfiles_colored[i])
             shutil.copy(file, path_color)
 
-    split_val_dir = os.path.join(dataset_folder, "val")
-    if os.path.exists(split_val_dir):
-        shutil.rmtree(split_val_dir)
-    os.makedirs(split_val_dir)
-
-    split_val_binarized_dir = os.path.join(split_val_dir, "Binarized")
+    split_val_binarized_dir = os.path.join(binarized_dataset, "val")
     if os.path.exists(split_val_binarized_dir):
         shutil.rmtree(split_val_binarized_dir)
     os.makedirs(split_val_binarized_dir)
 
-    split_val_color_dir = os.path.join(split_val_dir, "Color")
+    split_val_color_dir = os.path.join(colored_dataset, "val")
     if os.path.exists(split_val_color_dir):
         shutil.rmtree(split_val_color_dir)
     os.makedirs(split_val_color_dir)
@@ -243,6 +239,8 @@ def split_dataset_writerIdentification(dataset_folder, split):
         for i in range(len(subfiles_colored)):
             file = os.path.join(colored_file_path, subfiles_colored[i])
             shutil.copy(file, path_color)
+
+    print("Splitting is done!")
 
     return
 
