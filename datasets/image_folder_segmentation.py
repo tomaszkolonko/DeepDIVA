@@ -213,10 +213,11 @@ class ImageFolder(data.Dataset):
         self.crops_per_page = crops_per_page
         self.crop_size = crop_size
 
-        self.counter_crops_per_page = 0
+        self.current_crop = 0
+        self.current_image = 0
+        self.current_page = 0
         self.images = [None] * pages_in_memory
         self.gt = [None] * pages_in_memory
-
 
     def __getitem__(self, index):
         """
@@ -227,45 +228,54 @@ class ImageFolder(data.Dataset):
             tuple: (image, groundtruth) where both are paths to the actual image.
         """
 
-        print(self.images)
-
         # Think about moving this initialization to the constructor !!!
-        if self.images[0] == None:
+        if self.images[0] is None:
             self.initialize_ram()
 
+        # Who is responsible for finishing the epoch?
+        while(self.current_page < self.pages_in_memory):
+            while(self.current_crop < self.crops_per_page):
+                if self.transform is not None:
+                    img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
+                    self.current_crop = self.current_crop + 1
+                    return img, gt
+            self.current_page = self.current_page + 1
+            self.current_crop = 0
+            if self.current_page == self.pages_in_memory:
+                self.update_ram()
+                self.current_page = 0
 
-
-        path_img, path_gt = self.imgs[index]
-        img = self.loader(path_img)
-        gt = self.loader(path_gt)
-
-
-        # TODO: make transform crop out of two arguments... controlling through variable N
-        # TODO: take N crops out of the same image.... you also should have a threshold
-        # value and you will use th same images for as long as you don't reach the threshold....
-        # return crops of img and return crops on gt of the one-hot encoder from linda.
-        while(self.counter_crops_per_page <= self.crops_per_page):
-            if self.transform is not None:
-                img, gt = self.transform(img, gt, self.crop_size)
-                self.counter_crops_per_page = self.counter_crops_per_page + 1
-                return img, gt
-        if(self.counter_crops_per_page > self.crops_per_page):
-            self.update_ram()
-            self.counter_crops_per_page = 0
-
-        #if self.transform is not None:
+        # if self.transform is not None:
         #    img = self.transform(img, gt)
-        #if self.target_transform is not None:
+        # if self.target_transform is not None:
         #    gt = self.transform(gt)
 
+    def __len__(self):
+        return len(self.imgs)
+
     def initialize_ram(self):
+        """
+        First time loading of #pages into memory. If pages_in_memory is set to 3 then the array self.images
+        and self.gt will have size of three and be here initialized to the first three images with ground truth.
+
+        :return:
+        """
         for i in range(0, self.pages_in_memory):
             temp_image, temp_gt = self.imgs[i]
+            self.current_image = self.current_image
 
             self.images[i] = self.loader(temp_image)
             self.gt[i] = self.loader(temp_gt)
 
     def update_ram(self):
+        """
+        When enough crops have been taken per image from all images residing in memory, the oldest image and
+        ground truth will be replaced by a new image and ground truth.
 
-    def __len__(self):
-        return len(self.imgs)
+        :return:
+        """
+        new_position_in_ram = self.current_image % self.pages_in_memory
+        new_image, new_gt = self.imgs[new_position_in_ram]
+
+        self.images[new_position_in_ram] = self.loader(new_image)
+        self.gt[new_position_in_ram] = self.loader(new_gt)
