@@ -77,8 +77,7 @@ class SemanticSegmentation:
 
         # For the multi-dimensional cross entropy the array shapes are as follows:
         # Input: (N, C, d_1, d_2, ..., d_K) where N is the mini-batch size, C are the number of classes and d_K the kth dimension
-        # Target: (N, d_1, d_2, ..., d_K)
-        # see https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/loss.py for more detail
+        # Target: (N, d_1, d_2, ..., d_K
         criterion = nn.CrossEntropyLoss()
 
         # Core routine
