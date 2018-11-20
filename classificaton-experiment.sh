@@ -33,7 +33,7 @@ python ./template/RunMe.py --runner-class image_classification --dataset-folder 
  --decay-lr 20
 
 python ./template/RunMe.py --runner-class image_classification --dataset-folder ../datasets/ICDAR2017-CLAMM/StyleClassification/ \
- --model-name 121 --epochs 50 --experiment-name classification --output-folder ../output/ --ignoregit --lr 0.01 --momentum 0.9 \
+ --model-name densenet121 --epochs 50 --experiment-name classification --output-folder ../output/ --ignoregit --lr 0.01 --momentum 0.9 \
  --decay-lr 20 --pretrained
 
 

@@ -267,7 +267,7 @@ def icdar2017_clamm(args):
 
     # Make output folders
     dataset_root = os.path.join(args.output_folder, 'ICDAR2017-CLAMM')
-    dataset_manuscriptDating = os.path.join(dataset_root , 'ManuscrpitDating')
+    dataset_manuscriptDating = os.path.join(dataset_root , 'ManuscriptDating')
     dataset_md_train = os.path.join(dataset_manuscriptDating , 'train')
     dataset_styleClassification = os.path.join(dataset_root , 'StyleClassification')
     dataset_sc_train = os.path.join(dataset_styleClassification, 'train')
