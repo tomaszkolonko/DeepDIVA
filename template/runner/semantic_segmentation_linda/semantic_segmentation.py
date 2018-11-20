@@ -65,7 +65,7 @@ class SemanticSegmentation:
         """
 
         # Setting up the dataloaders
-        train_loader, val_loader, test_loader = set_up_dataloaders(input_patch_size, **kwargs)
+        train_loader, val_loader, test_loader, num_classes = set_up_dataloaders(input_patch_size, **kwargs)
         num_classes = 8 #TODO: return this from set_up_dataloaders
 
         # Setting up model, optimizer, criterion

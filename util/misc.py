@@ -17,7 +17,6 @@ import torch
 from sklearn.preprocessing import OneHotEncoder
 
 
-
 def _prettyprint_logging_label(logging_label):
     """Format the logging label in a pretty manner.
 
@@ -334,7 +333,35 @@ def int_to_one_hot(x, n_classes):
     return list(map(int, list(s.format(x))))
 
 
-def multi_label_img_to_one_hot(np_array):
+def label_img_to_one_hot(np_array):
+    """
+    Convert ground truth label image to multi-one-hot encoded matrix of size image height x image width x #classes
+
+    Parameters
+    -------
+    np_array: numpy array
+        RGB image [W x H x C]
+    Returns
+    -------
+    numpy array of size [#C x W x H]
+        sparse one-hot encoded multi-class matrix, where #C is the number of classes
+    """
+    im_np = np_array[2, :, :].astype(np.uint8)
+
+    integer_encoded = np.array([i for i in range(8)])
+    onehot_encoder = OneHotEncoder(sparse=False)
+    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
+    onehot_encoded = onehot_encoder.fit_transform(integer_encoded).astype(np.int8)
+
+    replace_dict = {k: v for k, v in zip([1, 2, 4, 6, 8, 10, 12, 14], onehot_encoded)}
+    # create the one hot matrix
+    one_hot_matrix = np.asanyarray(
+        [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
+
+    return one_hot_matrix.astype(np.uint8)
+
+
+def multi_label_img_to_multi_hot(np_array):
     """
     TODO: There must be a faster way of doing this
     Convert ground truth label image to multi-one-hot encoded matrix of size image height x image width x #classes
@@ -381,35 +408,6 @@ def multi_one_hot_to_output(matrix):
     RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
 
     return RGB
-
-
-def label_img_to_one_hot(np_array):
-    """
-    Convert HisDB ground truth label image to one-hot encoded matrix
-
-    Parameters
-    -------
-    np_array: numpy array
-        RGB image [W x H x C]
-    Returns
-    -------
-    numpy array of size [#C x W x H]
-        sparse one-hot encoded matrix, where #C is the number of classes
-    """
-    im_np = np_array[:, :, 2].astype(np.int8)
-
-    integer_encoded = np.array([i for i in range(8)])
-    onehot_encoder = OneHotEncoder(sparse=False)
-    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    onehot_encoded = onehot_encoder.fit_transform(integer_encoded).astype(np.int8)
-
-    replace_dict = {k: v for k, v in zip([1, 2, 4, 6, 8, 10, 12, 14], onehot_encoded)}
-    # create the one hot matrix
-    one_hot_matrix = np.asanyarray(
-        [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
-
-    return np.rollaxis(one_hot_matrix.astype(np.uint8), 2, 0)
-
 
 def one_hot_to_output(matrix):
     """

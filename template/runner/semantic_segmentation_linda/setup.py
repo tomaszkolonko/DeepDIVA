@@ -6,7 +6,7 @@ import os
 import torchvision.transforms as transforms
 
 # DeepDIVA
-from datasets.image_folder_dataset import load_dataset
+from datasets.image_folder_segmentation import load_dataset
 from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
 
 
