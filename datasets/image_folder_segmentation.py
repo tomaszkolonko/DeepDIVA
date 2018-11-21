@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 
-from util.misc import int_to_one_hot, label_img_to_one_hot
+from util.misc import gt_tensor_to_one_hot
 
 import torch.utils.data as data
 
@@ -234,13 +234,14 @@ class ImageFolder(data.Dataset):
             self.initialize_ram()
 
         # Who is responsible for finishing the epoch?
-        while(self.current_page < self.pages_in_memory):
-            while(self.current_crop < self.crops_per_page):
+        while self.current_page < self.pages_in_memory:
+            while self.current_crop < self.crops_per_page:
                 if self.transform is not None:
                     img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
                     self.current_crop = self.current_crop + 1
+
                     # TODO convert gt to one-hot
-                    return img, gt
+                    return img, gt_tensor_to_one_hot(gt)
             self.current_page = self.current_page + 1
             self.current_crop = 0
             if self.current_page == self.pages_in_memory:
