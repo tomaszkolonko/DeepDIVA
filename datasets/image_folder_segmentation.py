@@ -240,7 +240,6 @@ class ImageFolder(data.Dataset):
                     img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
                     self.current_crop = self.current_crop + 1
 
-                    # TODO convert gt to one-hot
                     return img, gt_tensor_to_one_hot(gt)
             self.current_page = self.current_page + 1
             self.current_crop = 0
