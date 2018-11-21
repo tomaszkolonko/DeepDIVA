@@ -119,6 +119,7 @@ datasets/asbestos*
 datasets/CIFAR*
 datasets/MNIST*
 datasets/SVHN*
+datasets/SEGDB*
 
 # Don't push any outputs from previous runs
 output
