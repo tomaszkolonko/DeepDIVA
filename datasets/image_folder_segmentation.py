@@ -217,10 +217,12 @@ class ImageFolder(data.Dataset):
         self.current_crop = 0
         self.current_image = 0
         self.current_page = 0
+        self.memory_pass = 1
+        self.test_set = "test" in self.root
         self.images = [None] * pages_in_memory
         self.gt = [None] * pages_in_memory
 
-    def __getitem__(self, index):
+    def __getitem__(self, index, test=False):
         """
         Args:
             index (int): Index
@@ -229,22 +231,34 @@ class ImageFolder(data.Dataset):
             tuple: (image, groundtruth) where both are paths to the actual image.
         """
 
+        # if self.test_set:
+        # do some fancy sliding window stuff
+
         # Think about moving this initialization to the constructor !!!
         if self.images[0] is None:
             self.initialize_ram()
 
-        # Who is responsible for finishing the epoch?
-        while(self.current_page < self.pages_in_memory):
-            while(self.current_crop < self.crops_per_page):
+
+        while self.current_page < self.pages_in_memory:
+            while self.current_crop < self.crops_per_page:
                 if self.transform is not None:
                     img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
                     self.current_crop = self.current_crop + 1
-                    # TODO convert gt to one-hot
-                    return img, gt
+                    gt_one_hot = gt # label_img_to_one_hot
+                    if test:
+                        return img, gt_one_hot, self.current_page, self.current_crop, self.memory_pass
+                    else:
+                        return img, gt_one_hot
+                else:
+                    self.current_crop = self.current_crop + 1
+                    return self.images[self.current_page], self.gt[self.current_page], self.current_page,\
+                           self.current_crop
+
             self.current_page = self.current_page + 1
             self.current_crop = 0
             if self.current_page == self.pages_in_memory:
                 self.update_ram()
+                self.memory_pass = self.memory_pass + 1
                 self.current_page = 0
 
         # if self.transform is not None:
@@ -253,7 +267,11 @@ class ImageFolder(data.Dataset):
         #    gt = self.transform(gt)
 
     def __len__(self):
-        return len(self.imgs)
+        """
+        This function returns the length of an epoch so the dataloader knows when to stop
+        :return:
+        """
+        return len(self.imgs) * self.pages_in_memory * self.crops_per_page;
 
     def initialize_ram(self):
         """
