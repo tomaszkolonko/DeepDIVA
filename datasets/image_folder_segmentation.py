@@ -238,33 +238,45 @@ class ImageFolder(data.Dataset):
         if self.images[0] is None:
             self.initialize_ram()
 
-
         while self.current_page < self.pages_in_memory:
             while self.current_crop < self.crops_per_page:
-                if self.transform is not None:
-                    img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
-                    self.current_crop = self.current_crop + 1
-                    gt_one_hot = gt # label_img_to_one_hot
-                    if test:
-                        return img, gt_one_hot, self.current_page, self.current_crop, self.memory_pass
-                    else:
-                        return img, gt_one_hot
-                else:
-                    self.current_crop = self.current_crop + 1
-                    return self.images[self.current_page], self.gt[self.current_page], self.current_page,\
-                           self.current_crop
+                return self.apply_transformation(test)
 
-            self.current_page = self.current_page + 1
-            self.current_crop = 0
-            if self.current_page == self.pages_in_memory:
-                self.update_ram()
-                self.memory_pass = self.memory_pass + 1
-                self.current_page = 0
+            self.update_state_variables()
 
-        # if self.transform is not None:
-        #    img = self.transform(img, gt)
-        # if self.target_transform is not None:
-        #    gt = self.transform(gt)
+    def apply_transformation(self, test):
+        """
+        Applies the transformations that have been defined in the setup (setup.py). If no transformations
+        have been defined, the PIL image is returned instead.
+
+        :param test:
+        :return:
+        """
+        if self.transform is not None:
+            img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
+            self.current_crop = self.current_crop + 1
+            gt_one_hot = gt  # TODO: label_img_to_one_hot
+            if not test:
+                return img, gt_one_hot
+            else:
+                return img, gt_one_hot, self.current_page, self.current_crop, self.memory_pass
+        else:
+            self.current_crop = self.current_crop + 1
+            img = self.images[self.current_page]
+            gt = self.gt[self.current_page]
+            return img, gt
+
+    def update_state_variables(self):
+        """
+        Updates the current_page and the current_crop. If necessary calls update_memory()
+        :return:
+        """
+        self.current_page = self.current_page + 1
+        self.current_crop = 0
+        if self.current_page == self.pages_in_memory:
+            self.update_memory()
+            self.memory_pass = self.memory_pass + 1
+            self.current_page = 0
 
     def __len__(self):
         """
@@ -287,7 +299,7 @@ class ImageFolder(data.Dataset):
             self.images[i] = self.loader(temp_image)
             self.gt[i] = self.loader(temp_gt)
 
-    def update_ram(self):
+    def update_memory(self):
         """
         When enough crops have been taken per image from all images residing in memory, the oldest image and
         ground truth will be replaced by a new image and ground truth.
