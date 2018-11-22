@@ -215,8 +215,9 @@ class ImageFolder(data.Dataset):
         self.crop_size = crop_size
 
         self.current_crop = 0
-        self.current_image = 0
+        self.next_image = 0
         self.current_page = 0
+        self.memory_position_to_change = 0
         self.memory_pass = 1
         self.test_set = "test" in self.root
         self.images = [None] * pages_in_memory
@@ -294,7 +295,7 @@ class ImageFolder(data.Dataset):
         """
         for i in range(0, self.pages_in_memory):
             temp_image, temp_gt = self.imgs[i]
-            self.current_image = self.current_image
+            self.next_image = self.next_image + 1
 
             self.images[i] = self.loader(temp_image)
             self.gt[i] = self.loader(temp_gt)
@@ -306,10 +307,11 @@ class ImageFolder(data.Dataset):
 
         :return:
         """
-        new_position_in_memory = self.current_image % self.pages_in_memory
-        new_image, new_gt = self.imgs[new_position_in_memory]
+        new_image, new_gt = self.imgs[self.next_image]
+        self.next_image = (self.next_image + 1) % len(self.imgs)
 
-        self.images[new_position_in_memory] = self.loader(new_image)
-        self.gt[new_position_in_memory] = self.loader(new_gt)
+        self.images[self.memory_position_to_change] = self.loader(new_image)
+        self.gt[self.memory_position_to_change] = self.loader(new_gt)
+        self.memory_position_to_change = (self.memory_position_to_change + 1) % self.pages_in_memory
 
 

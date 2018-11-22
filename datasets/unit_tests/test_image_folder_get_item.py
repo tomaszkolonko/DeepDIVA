@@ -9,35 +9,32 @@ from datasets.image_folder_segmentation import find_classes, is_image_file, Imag
 
 
 class Test_get_item(TestCase):
+    def setUp(self):
+        self.train_dir = "/Users/tomasz/DeepDIVA/datasets/unit_tests/train"
+        self.pages_in_memory = 3
+        self.crops_per_image = 10
+        self.crop_size = 200
+        self.train_ds = ImageFolder(self.train_dir, self.pages_in_memory, self.crops_per_image, self.crop_size)
+
     def test_length_of_epoch(self):
-        train_dir = "/Users/tomasz/DeepDIVA/datasets/SEGDB/train"
-        pages_in_memory = 3
-        crops_per_image = 10
-        train_ds = ImageFolder(train_dir, pages_in_memory, crops_per_image)
-        length_of_epoch = pages_in_memory * crops_per_image * len(train_ds.imgs)
-        self.assertEqual(train_ds.__len__(), length_of_epoch)
+        length_of_epoch = self.pages_in_memory * self.crops_per_image * len(self.train_ds.imgs)
+        self.assertEqual(self.train_ds.__len__(), length_of_epoch)
 
     def test_get_item(self):
-        train_dir = "/Users/tomasz/DeepDIVA/datasets/SEGDB/train"
-        pages_in_memory = 3
-        crops_per_image = 10
-        crop_size = 200
-        train_ds = ImageFolder(train_dir, pages_in_memory, crops_per_image, crop_size)
-
         image_gt_transform = transforms.Compose([
             transforms.RandomTwinCrop()
         ])
-        train_ds.transform = image_gt_transform
+        self.train_ds.transform = image_gt_transform
 
         index = 0 # value that is not used at all
 
-        length_of_dataset = train_ds.__len__()
+        length_of_dataset = self.train_ds.__len__()
 
         for i in range(length_of_dataset):
-            img, gt_one_hot, current_page, current_crop, memory_pass = train_ds.__getitem__(index, test=True)
+            img, gt_one_hot, current_page, current_crop, memory_pass = self.train_ds.__getitem__(index, test=True)
 
             # Getting the train dir
-            current_memory_pass = os.path.join(train_dir, 'memory_pass_' + str(memory_pass))
+            current_memory_pass = os.path.join(self.train_dir, 'memory_pass_' + str(memory_pass))
             current_page_folder = os.path.join(current_memory_pass, 'page_' + str(current_page))
             current_crop_folder = os.path.join(current_page_folder, 'crop_' + str(current_crop))
 
@@ -52,14 +49,43 @@ class Test_get_item(TestCase):
             gt_one_hot.save(current_crop_folder + "/gt_" + str(i), "png")
 
     def test_initialize_memory(self):
-        train_dir = "/Users/tomasz/DeepDIVA/datasets/SEGDB/train"
-        pages_in_memory = 3
-        crops_per_image = 10
-        crop_size = 200
-        train_ds = ImageFolder(train_dir, pages_in_memory, crops_per_image, crop_size)
-        train_ds.initialize_memory()
+        self.train_ds.initialize_memory()
+        self.assertEqual(len(self.train_ds.images), self.pages_in_memory)
+        self.assertEqual(len(self.train_ds.images), len(self.train_ds.gt))
+        self.assertIsInstance(self.train_ds.images, type([PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]))
+        self.assertIsInstance(self.train_ds.gt, type([PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]))
+        self.assertEqual(self.train_ds.next_image, 3)
+        self.assertEqual(len(self.train_ds.imgs), 5)
 
-        self.assertEqual(len(train_ds.images), pages_in_memory)
-        self.assertEqual(len(train_ds.images), len(train_ds.gt))
-        self.assertIsInstance(train_ds.images, [PIL.Image.Image, PIL.Image.Image, PIL.Image.Image])
-        self.assertIsInstance(train_ds.gt, [PIL.Image.Image, PIL.Image.Image, PIL.Image.Image])
+    def test_update_memory(self):
+        self.train_ds.initialize_memory()
+
+        # check visually with print statements.
+
+        list_of_previous_images = [hex(id(x)) for x in self.train_ds.images]
+        list_of_previous_gt = [hex(id(x)) for x in self.train_ds.gt]
+
+        for i in range(len(self.train_ds.imgs)):
+            self.train_ds.update_memory()
+
+            list_of_current_images = [hex(id(x)) for x in self.train_ds.images]
+            list_of_current_gt = [hex(id(x)) for x in self.train_ds.gt]
+
+            # First element in imgages and gt get's changed
+            self.assertNotEqual(list_of_previous_images[i % self.pages_in_memory],
+                                list_of_current_images[i % self.pages_in_memory])
+            self.assertEqual(list_of_previous_images[(i+1) % self.pages_in_memory],
+                             list_of_current_images[(i+1) % self.pages_in_memory])
+            self.assertEqual(list_of_previous_images[(i+2) % self.pages_in_memory],
+                             list_of_current_images[(i+2) % self.pages_in_memory])
+
+            self.assertNotEqual(list_of_previous_gt[i % self.pages_in_memory],
+                                list_of_current_gt[i % self.pages_in_memory])
+            self.assertEqual(list_of_previous_gt[(i + 1) % self.pages_in_memory],
+                             list_of_current_gt[(i + 1) % self.pages_in_memory])
+            self.assertEqual(list_of_previous_gt[(i + 2) % self.pages_in_memory],
+                             list_of_current_gt[(i + 2) % self.pages_in_memory])
+
+            list_of_previous_images = list_of_current_images
+            list_of_previous_gt = list_of_current_gt
+
