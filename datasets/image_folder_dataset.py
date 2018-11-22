@@ -177,7 +177,8 @@ class ImageFolderInMemory(data.Dataset):
         return img, target
 
     def __len__(self):
-        return len(self.data)
+        # 4 rotations and 2 flips
+        return len(self.data)*6
 
 
 class ImageFolderApply(data.Dataset):
