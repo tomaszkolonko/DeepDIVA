@@ -256,16 +256,15 @@ class ImageFolder(data.Dataset):
         if self.transform is not None:
             img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
             self.current_crop = self.current_crop + 1
-            gt_one_hot = gt  # TODO: label_img_to_one_hot
             if not test:
-                return img, gt_one_hot
+                return img, label_img_to_one_hot(gt)
             else:
-                return img, gt_one_hot, self.current_page, self.current_crop, self.memory_pass
+                return img, gt, self.current_page, self.current_crop, self.memory_pass
         else:
             self.current_crop = self.current_crop + 1
             img = self.images[self.current_page]
             gt = self.gt[self.current_page]
-            return img, gt
+            return img, label_img_to_one_hot(gt)
 
     def update_state_variables(self):
         """
