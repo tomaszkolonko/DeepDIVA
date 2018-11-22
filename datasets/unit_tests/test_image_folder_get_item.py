@@ -1,6 +1,7 @@
 import os
 
 from unittest import TestCase
+import PIL
 from PIL import Image
 from template.runner.semantic_segmentation.transform_library import transforms
 
@@ -49,3 +50,16 @@ class Test_get_item(TestCase):
 
             img.save(current_crop_folder + "/img_" + str(i), "png")
             gt_one_hot.save(current_crop_folder + "/gt_" + str(i), "png")
+
+    def test_initialize_memory(self):
+        train_dir = "/Users/tomasz/DeepDIVA/datasets/SEGDB/train"
+        pages_in_memory = 3
+        crops_per_image = 10
+        crop_size = 200
+        train_ds = ImageFolder(train_dir, pages_in_memory, crops_per_image, crop_size)
+        train_ds.initialize_memory()
+
+        self.assertEqual(len(train_ds.images), pages_in_memory)
+        self.assertEqual(len(train_ds.images), len(train_ds.gt))
+        self.assertIsInstance(train_ds.images, [PIL.Image.Image, PIL.Image.Image, PIL.Image.Image])
+        self.assertIsInstance(train_ds.gt, [PIL.Image.Image, PIL.Image.Image, PIL.Image.Image])

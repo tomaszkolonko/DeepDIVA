@@ -236,7 +236,7 @@ class ImageFolder(data.Dataset):
 
         # Think about moving this initialization to the constructor !!!
         if self.images[0] is None:
-            self.initialize_ram()
+            self.initialize_memory()
 
         while self.current_page < self.pages_in_memory:
             while self.current_crop < self.crops_per_page:
@@ -285,7 +285,7 @@ class ImageFolder(data.Dataset):
         """
         return len(self.imgs) * self.pages_in_memory * self.crops_per_page;
 
-    def initialize_ram(self):
+    def initialize_memory(self):
         """
         First time loading of #pages into memory. If pages_in_memory is set to 3 then the array self.images
         and self.gt will have size of three and be here initialized to the first three images with ground truth.
@@ -306,10 +306,10 @@ class ImageFolder(data.Dataset):
 
         :return:
         """
-        new_position_in_ram = self.current_image % self.pages_in_memory
-        new_image, new_gt = self.imgs[new_position_in_ram]
+        new_position_in_memory = self.current_image % self.pages_in_memory
+        new_image, new_gt = self.imgs[new_position_in_memory]
 
-        self.images[new_position_in_ram] = self.loader(new_image)
-        self.gt[new_position_in_ram] = self.loader(new_gt)
+        self.images[new_position_in_memory] = self.loader(new_image)
+        self.gt[new_position_in_memory] = self.loader(new_gt)
 
 
