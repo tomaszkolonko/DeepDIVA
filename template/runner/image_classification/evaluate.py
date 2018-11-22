@@ -71,6 +71,9 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
     preds = []
     targets = []
 
+    total_length = len(data_loader)
+    # length of the dataloader the size of the image array.
+    # it's overlaoded and can be found in the dataset class
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
 
@@ -137,11 +140,11 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
     if multi_run is None:
         writer.add_scalar(logging_label + '/accuracy', top1.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix',
-                                          image_tensor=confusion_matrix_heatmap, global_step=epoch)
+                                          image=confusion_matrix_heatmap, global_step=epoch)
     else:
         writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), top1.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
-                                          image_tensor=confusion_matrix_heatmap, global_step=epoch)
+                                          image=confusion_matrix_heatmap, global_step=epoch)
 
     logging.info(_prettyprint_logging_label(logging_label) +
                  ' epoch[{}]: '

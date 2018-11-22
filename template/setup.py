@@ -25,7 +25,7 @@ from tensorboardX import SummaryWriter
 # DeepDIVA
 import models
 from datasets import image_folder_dataset, bidimensional_dataset
-from util.data.dataset_analytics import compute_mean_std
+from util.data.dataset_analytics import compute_mean_std, compute_mean_std_semantic_segmentation
 from util.data.dataset_integrity import verify_integrity_quick, verify_integrity_deep
 from util.misc import get_all_files_in_folders_and_subfolders
 
@@ -96,7 +96,7 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
         criterion = nn.CrossEntropyLoss()
     else:
         try:
-            weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers)
+            weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, kwargs['runner_class'])
             criterion = nn.CrossEntropyLoss(weight=torch.from_numpy(weights).type(torch.FloatTensor))
             logging.info('Loading weights for data balancing')
         except:
@@ -144,7 +144,7 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
     return model, criterion, optimizer, best_value, start_epoch
 
 
-def _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers):
+def _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class):
     """
     This function simply recovers class_frequencies_weights from the analytics.csv file
 
@@ -157,14 +157,17 @@ def _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers):
         on demand. This is slower than storing everything in memory.
     workers : int
         Number of workers to use for the mean/std computation
+    runner_class: string
+        specifies the runner class (mean and std have to be computed differently for the semantic segmentation)
 
     Returns
     -------
     ndarray[double]
         Class frequencies for the selected dataset, contained in the analytics.csv file.
     """
-    csv_file = _load_analytics_csv(dataset_folder, inmem, workers)
-    return csv_file.ix[2, 1:].as_matrix().astype(float)
+    csv_file = _load_analytics_csv(dataset_folder, inmem, workers, runner_class)
+    class_frequencies_weights = csv_file.ix[2, 1:].as_matrix().astype(float)
+    return class_frequencies_weights[np.logical_not(np.isnan(class_frequencies_weights))]
 
 
 def _get_optimizer(optimizer_name, model, **kwargs):
@@ -235,19 +238,27 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     ###############################################################################################
     # Load the dataset splits as images
     try:
-        logging.debug("Try to load dataset as images")
         train_ds, val_ds, test_ds = image_folder_dataset.load_dataset(dataset_folder, inmem, workers)
 
         # Loads the analytics csv and extract mean and std
-        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers)
+        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers, kwargs['runner_class'])
 
         # Set up dataset transforms
         logging.debug('Setting up dataset transforms')
-        transform = transforms.Compose([
-            transforms.Resize(model_expected_input_size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std)
-        ])
+        # TODO:TZ resizing might become a problem for GT !!! Maybe for segmentation we simply wont resize for starters
+        # TODO:TZ implement all transformations with twin images !!!
+        if (kwargs['runner_class'] == 'image_segmentation'):
+            transform = transforms.Compose([
+                transforms.randomTwinCrop(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ])
+        else:
+            transform = transforms.Compose([
+                transforms.Resize(model_expected_input_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ])
 
         train_ds.transform = transform
         val_ds.transform = transform
@@ -270,7 +281,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
 
         # Loads the analytics csv and extract mean and std
         # TODO: update bidimensional to work with new load_mean_std functions
-        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers)
+        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers, kwargs['runner_class'])
 
         # Bring mean and std into range [0:1] from original domain
         mean = np.divide((mean - train_ds.min_coords), np.subtract(train_ds.max_coords, train_ds.min_coords))
@@ -328,7 +339,7 @@ def _verify_dataset_integrity(dataset_folder, disable_dataset_integrity, enable_
             verify_integrity_quick(dataset_folder)
 
 
-def _load_mean_std_from_file(dataset_folder, inmem, workers):
+def _load_mean_std_from_file(dataset_folder, inmem, workers, runner_class):
     """
     This function simply recovers mean and std from the analytics.csv file
 
@@ -341,6 +352,9 @@ def _load_mean_std_from_file(dataset_folder, inmem, workers):
         on demand. This is slower than storing everything in memory.
     workers : int
         Number of workers to use for the mean/std computation
+    runner_class: string
+        specifies the runner class (mean and std have to be computed differently for the semantic segmentation)
+
 
     Returns
     -------
@@ -349,7 +363,7 @@ def _load_mean_std_from_file(dataset_folder, inmem, workers):
     """
     # Loads the analytics csv and extract mean and std
     try:
-        csv_file = _load_analytics_csv(dataset_folder, inmem, workers)
+        csv_file = _load_analytics_csv(dataset_folder, inmem, workers, runner_class)
         mean = np.asarray(csv_file.ix[0, 1:3])
         std = np.asarray(csv_file.ix[1, 1:3])
     except KeyError:
@@ -360,7 +374,7 @@ def _load_mean_std_from_file(dataset_folder, inmem, workers):
     return mean, std
 
 
-def _load_analytics_csv(dataset_folder, inmem, workers):
+def _load_analytics_csv(dataset_folder, inmem, workers, runner_class):
     """
     This function loads the analytics.csv file and attempts creating it, if it is missing
 
@@ -373,18 +387,22 @@ def _load_analytics_csv(dataset_folder, inmem, workers):
         on demand. This is slower than storing everything in memory.
     workers : int
         Number of workers to use for the mean/std computation
+    runner_class: string
+        specifies the runner class (mean and std have to be computed differently for the semantic segmentation)
 
     Returns
     -------
     file
-        The csv file
     """
     # If analytics.csv file not present, run the analytics on the dataset
     if not os.path.exists(os.path.join(dataset_folder, "analytics.csv")):
         logging.warning('Missing analytics.csv file for dataset located at {}'.format(dataset_folder))
         try:
             logging.warning('Attempt creating analytics.csv file for dataset located at {}'.format(dataset_folder))
-            compute_mean_std(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
+            if runner_class == 'semantic_segmentation':
+                compute_mean_std_semantic_segmentation(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
+            else:
+                compute_mean_std(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
             logging.warning('Created analytics.csv file for dataset located at {} '.format(dataset_folder))
         except:
             logging.error('Creation of analytics.csv failed.')
