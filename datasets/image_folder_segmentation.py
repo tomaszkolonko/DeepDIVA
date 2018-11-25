@@ -215,12 +215,15 @@ class ImageFolder(data.Dataset):
         self.crop_size = crop_size
 
         self.current_crop = 0
-        self.current_image = 0
+        self.next_image = 0
         self.current_page = 0
+        self.memory_position_to_change = 0
+        self.memory_pass = 1
+        self.test_set = "test" in self.root
         self.images = [None] * pages_in_memory
         self.gt = [None] * pages_in_memory
 
-    def __getitem__(self, index):
+    def __getitem__(self, index, test=False):
         """
         Args:
             index (int): Index
@@ -229,33 +232,60 @@ class ImageFolder(data.Dataset):
             tuple: (image, groundtruth) where both are paths to the actual image.
         """
 
+        # if self.test_set:
+        # do some fancy sliding window stuff
+
         # Think about moving this initialization to the constructor !!!
         if self.images[0] is None:
-            self.initialize_ram()
+            self.initialize_memory()
 
-        # Who is responsible for finishing the epoch?
         while self.current_page < self.pages_in_memory:
             while self.current_crop < self.crops_per_page:
-                if self.transform is not None:
-                    img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
-                    self.current_crop = self.current_crop + 1
+                return self.apply_transformation(test)
 
-                    return img, gt_tensor_to_one_hot(gt)
-            self.current_page = self.current_page + 1
-            self.current_crop = 0
-            if self.current_page == self.pages_in_memory:
-                self.update_ram()
-                self.current_page = 0
+            self.update_state_variables()
 
-        # if self.transform is not None:
-        #    img = self.transform(img, gt)
-        # if self.target_transform is not None:
-        #    gt = self.transform(gt)
+    def apply_transformation(self, test):
+        """
+        Applies the transformations that have been defined in the setup (setup.py). If no transformations
+        have been defined, the PIL image is returned instead.
+
+        :param test:
+        :return:
+        """
+        if self.transform is not None:
+            img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
+            self.current_crop = self.current_crop + 1
+            if not test:
+                return img, gt_tensor_to_one_hot(gt)
+            else:
+                return img, gt_tensor_to_one_hot(gt), self.current_page, self.current_crop, self.memory_pass
+        else:
+            self.current_crop = self.current_crop + 1
+            img = self.images[self.current_page]
+            gt = self.gt[self.current_page]
+            return img, gt_tensor_to_one_hot(gt)
+
+    def update_state_variables(self):
+        """
+        Updates the current_page and the current_crop. If necessary calls update_memory()
+        :return:
+        """
+        self.current_page = self.current_page + 1
+        self.current_crop = 0
+        if self.current_page == self.pages_in_memory:
+            self.update_memory()
+            self.memory_pass = self.memory_pass + 1
+            self.current_page = 0
 
     def __len__(self):
-        return len(self.imgs)
+        """
+        This function returns the length of an epoch so the dataloader knows when to stop
+        :return:
+        """
+        return len(self.imgs) * self.pages_in_memory * self.crops_per_page;
 
-    def initialize_ram(self):
+    def initialize_memory(self):
         """
         First time loading of #pages into memory. If pages_in_memory is set to 3 then the array self.images
         and self.gt will have size of three and be here initialized to the first three images with ground truth.
@@ -264,22 +294,23 @@ class ImageFolder(data.Dataset):
         """
         for i in range(0, self.pages_in_memory):
             temp_image, temp_gt = self.imgs[i]
-            self.current_image = self.current_image
+            self.next_image = self.next_image + 1
 
             self.images[i] = self.loader(temp_image)
             self.gt[i] = self.loader(temp_gt)
 
-    def update_ram(self):
+    def update_memory(self):
         """
         When enough crops have been taken per image from all images residing in memory, the oldest image and
         ground truth will be replaced by a new image and ground truth.
 
         :return:
         """
-        new_position_in_ram = self.current_image % self.pages_in_memory
-        new_image, new_gt = self.imgs[new_position_in_ram]
+        new_image, new_gt = self.imgs[self.next_image]
+        self.next_image = (self.next_image + 1) % len(self.imgs)
 
-        self.images[new_position_in_ram] = self.loader(new_image)
-        self.gt[new_position_in_ram] = self.loader(new_gt)
+        self.images[self.memory_position_to_change] = self.loader(new_image)
+        self.gt[self.memory_position_to_change] = self.loader(new_gt)
+        self.memory_position_to_change = (self.memory_position_to_change + 1) % self.pages_in_memory
 
 
