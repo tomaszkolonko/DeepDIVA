@@ -95,19 +95,19 @@ def load_dataset(dataset_folder, args, in_memory=False, workers=1, testing=False
         'dataset_folder'/test
 
     In each of the three splits (train, val, test) there are two folders. One for the ground truth ("gt")
-    and the other for the images ("img"). The ground truth image is of equal size and and encoded the
+    and the other for the images ("data"). The ground truth image is of equal size and and encoded the
     following classes: background, foreground, text and decoration.
 
     Example:
 
-        ../CB55/train/img/page23.png
-        ../CB55/train/img/page231.png
+        ../CB55/train/data/page23.png
+        ../CB55/train/data/page231.png
         ../CB55/train/gt/page23.png
         ../CB55/train/gt/page231.png
 
-        ../CB55/val/img
+        ../CB55/val/data
         ../CB55/val/gt
-        ../CB55/test/img
+        ../CB55/test/data
         ../CB55/test/gt
 
 
@@ -177,9 +177,9 @@ class ImageFolder(data.Dataset):
         root/gt/xxy.png
         root/gt/xxz.png
 
-        root/img/xxx.png
-        root/img/xxy.png
-        root/img/xxz.png
+        root/data/xxx.png
+        root/data/xxy.png
+        root/data/xxz.png
 
     Args:
         root (string): Root directory path.
