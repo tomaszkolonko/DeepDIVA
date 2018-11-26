@@ -23,7 +23,7 @@ from .setup import set_up_dataloaders
 from util.misc import checkpoint, adjust_learning_rate
 
 
-class SemanticSegmentationHisDB:
+class SemanticSegmentationHisdb:
     @staticmethod
     def single_run(writer, current_log_folder, model_name, epochs, lr, decay_lr,
                    validation_interval, checkpoint_all_epochs,
@@ -65,7 +65,7 @@ class SemanticSegmentationHisDB:
         """
 
         # Setting up the dataloaders
-        train_loader, val_loader, test_loader, num_classes = set_up_dataloaders(input_patch_size, **kwargs)
+        train_loader, val_loader, test_loader = set_up_dataloaders(input_patch_size, **kwargs)
         num_classes = 8 #TODO: return this from set_up_dataloaders
 
         # Setting up model, optimizer, criterion
@@ -85,15 +85,15 @@ class SemanticSegmentationHisDB:
         val_value = np.zeros((epochs + 1 - start_epoch))
         train_value = np.zeros((epochs - start_epoch))
 
-        val_value[-1] = SemanticSegmentationHisDB._validate(val_loader, model, criterion, writer, -1, **kwargs)
+        val_value[-1] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, -1, **kwargs)
         for epoch in range(start_epoch, epochs):
             # Train
-            train_value[epoch] = SemanticSegmentationHisDB._train(train_loader, model, criterion, optimizer, writer, epoch,
+            train_value[epoch] = SemanticSegmentationHisdb._train(train_loader, model, criterion, optimizer, writer, epoch,
                                                                   **kwargs)
 
             # Validate
             if epoch % validation_interval == 0:
-                val_value[epoch] = SemanticSegmentationHisDB._validate(val_loader, model, criterion, writer, epoch, **kwargs)
+                val_value[epoch] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, epoch, **kwargs)
             if decay_lr is not None:
                 adjust_learning_rate(lr=lr, optimizer=optimizer, epoch=epoch, decay_lr_epochs=decay_lr)
             best_value = checkpoint(epoch=epoch, new_value=val_value[epoch],
@@ -113,7 +113,7 @@ class SemanticSegmentationHisDB:
                                          **kwargs)
 
         # Test
-        test_value = SemanticSegmentationHisDB._test(test_loader, model, criterion, writer, epochs - 1, **kwargs)
+        test_value = SemanticSegmentationHisdb._test(test_loader, model, criterion, writer, epochs - 1, **kwargs)
         logging.info('Training completed')
 
         return train_value, val_value, test_value

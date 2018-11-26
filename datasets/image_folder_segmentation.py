@@ -177,9 +177,9 @@ class ImageFolder(data.Dataset):
         root/gt/xxy.png
         root/gt/xxz.png
 
-        root/img/xxx.png
-        root/img/xxy.png
-        root/img/xxz.png
+        root/data/xxx.png
+        root/data/xxy.png
+        root/data/xxz.png
 
     Args:
         root (string): Root directory path.
@@ -199,7 +199,7 @@ class ImageFolder(data.Dataset):
     def __init__(self, root, pages_in_memory=0, crops_per_page=0, crop_size=10, transform=None, target_transform=None,
                  loader=default_loader):
         classes = find_classes()
-        imgs = make_dataset(root)
+        imgs = make_dataset(root) # TODO: ajust folder path
         if len(imgs) == 0:
             raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
                                "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))

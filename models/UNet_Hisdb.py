@@ -9,10 +9,10 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 
 
-class Unet(nn.Module):
+class Unet_Hisdb(nn.Module):
 
 	def __init__(self, input_channels=3, output_channels=8, num_filter=64, **kwargs):
-		super(Unet, self).__init__()
+		super(Unet_Hisdb, self).__init__()
 		self.in_dim = input_channels
 		self.out_dim = output_channels
 		self.num_filter = num_filter
