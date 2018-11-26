@@ -43,11 +43,11 @@ def make_dataset(directory):
     directory = os.path.expanduser(directory)
 
     # TODO: fix this as soon it is working
-    path_imgs = os.path.join(directory, "img")
+    path_imgs = os.path.join(directory, "data")
     path_gts = os.path.join(directory, "gt")
 
     if not (os.path.isdir(path_imgs) or os.path.isdir(path_gts)):
-        logging.error("folder img or gt not found in " + str(directory))
+        logging.error("folder data or gt not found in " + str(directory))
 
     for _, _, fnames in sorted(os.walk(path_imgs)):
         for fname in sorted(fnames):
