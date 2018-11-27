@@ -120,8 +120,8 @@ def compute_mean_std_semantic_segmentation(dataset_folder, inmem, workers):
 
     # Extract the actual file names and labels as entries
     file_names_all = np.asarray([item[0] for item in train_ds.imgs])
-    file_names_gt = [f for f in file_names_all if '/gt/' in f]
-    file_names_data = [f for f in file_names_all if '/data/' in f]
+    file_names_gt = np.asarray([f for f in file_names_all if '/gt/' in f])
+    file_names_data = np.asarray([f for f in file_names_all if '/data/' in f])
 
     # Compute mean and std
     if inmem:
@@ -131,7 +131,7 @@ def compute_mean_std_semantic_segmentation(dataset_folder, inmem, workers):
 
     # Compute class frequencies weights
     class_frequencies_weights = _get_class_frequencies_weights_HisDB(file_names_gt)
-    print(class_frequencies_weights)
+    # print(class_frequencies_weights)
     # Save results as CSV file in the dataset folder
     df = pd.DataFrame([mean, std, class_frequencies_weights])
     df.index = ['mean[RGB]', 'std[RGB]', 'class_frequencies_weights[num_classes]']

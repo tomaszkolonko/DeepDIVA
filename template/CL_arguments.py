@@ -293,10 +293,13 @@ def _semantic_segmentation_options(parser):
     These parameters are used by the runner class template.runner.semantic_segmentation
     """
     semantic_segmentation = parser.add_argument_group('Semantic', 'Semantic Segmentation')
+
     semantic_segmentation.add_argument('--input-patch-size',
                                 type=int,
                                 default=256, metavar='N',
                                 help='size of the square input patch e.g. with 32 the input will be re-sized to 32x32')
+
+    # parameters for HisDB
     semantic_segmentation.add_argument('--pages-in-memory',
                                        type=int,
                                        default=3, metavar='N',
