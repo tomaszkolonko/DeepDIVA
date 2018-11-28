@@ -3,6 +3,7 @@ import logging
 import time
 import warnings
 import numpy as np
+from PIL import Image
 
 # Torch related stuff
 import torch
@@ -10,7 +11,8 @@ from sklearn.metrics import classification_report
 from tqdm import tqdm
 
 # DeepDIVA
-from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, tensor_to_image, one_hot_to_output
+from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, tensor_to_image,\
+    one_hot_to_image, one_hot_to_full_output
 
 
 def validate(val_loader, model, criterion, writer, epoch, no_cuda=False, log_interval=20, **kwargs):
@@ -76,8 +78,14 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
     preds = []
     targets = []
 
+    combined_one_hot = []  # only needed for test phase
+    current_output_filepath = ""  # only needed for test phase
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
+        # get_item returns more during "test", as the output of a whole image needs to be combined
+        if logging_label == "test":
+            input, orig_img_shape, top_left_coordinates, output_filepath = input
+
         # keep the original target for computing the output for the test
         target_one_hot = target
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
@@ -95,8 +103,24 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
         input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target)
 
-        # Compute output TODO: Is it here that I get (output_patch, filename, top_left coordinates?
+        # Compute output
         output = model(input_var)
+
+        # if we are in testing, the output needs to be patched together to form the complete output of the full image
+        # patches are returned as a sliding window over the full image, overlapping sections are averaged
+        if logging_label == "test":
+            if len(current_output_filepath) or output_filepath == current_output_filepath:
+                # on the same image / first iteration
+                combined_one_hot = one_hot_to_full_output(output.numpy(), top_left_coordinates, combined_one_hot, orig_img_shape)
+            else:
+                # finished image, moving to next image
+                # save the old one before starting the new one
+                img = one_hot_to_image(combined_one_hot)
+                img.save(output_filepath+'.png')
+                print("Saved segmentation output to {}".format(output_filepath))
+
+                # start the combination of the new image
+                combined_one_hot = one_hot_to_full_output(output.numpy(), top_left_coordinates, [], orig_img_shape)
 
         # Compute and record the loss
         loss = criterion(output, target_var)
