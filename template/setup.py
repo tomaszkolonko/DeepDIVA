@@ -90,7 +90,6 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
 
     # Get the optimizer created with the specified parameters in kwargs (such as lr, momentum, ... )
     optimizer = _get_optimizer(optimizer_name, model, **kwargs)
-
     # Get the criterion
     if disable_databalancing:
         criterion = nn.CrossEntropyLoss()
