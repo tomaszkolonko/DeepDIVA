@@ -77,7 +77,7 @@ def default_loader(path):
         sys.exit(-1)
 
 
-def load_dataset(dataset_folder, args, in_memory=False, workers=1, testing=False):
+def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False, **kwargs):
     """
     Loads the dataset from file system and provides the dataset splits for train validation and test
 
@@ -164,9 +164,9 @@ def load_dataset(dataset_folder, args, in_memory=False, workers=1, testing=False
         return train_dir, val_dir, test_dir
 
     # Get an online dataset for each split
-    train_ds = ImageFolder(train_dir, args['pages_in_memory'], args['crops_per_page'])
-    val_ds = ImageFolder(val_dir, args['pages_in_memory'], args['crops_per_page'])
-    test_ds = ImageFolder(test_dir, args['pages_in_memory'], args['crops_per_page'])
+    train_ds = ImageFolder(train_dir, **kwargs)
+    val_ds = ImageFolder(val_dir, **kwargs)
+    test_ds = ImageFolder(test_dir, **kwargs)
     return train_ds, val_ds, test_ds
 
 
@@ -197,7 +197,7 @@ class ImageFolder(data.Dataset):
 
     # TODO: transform and target_transform could be the correct places for your cropping
     def __init__(self, root, pages_in_memory=0, crops_per_page=0, crop_size=10, transform=None, target_transform=None,
-                 loader=default_loader):
+                 loader=default_loader, **kwargs):
         classes = find_classes()
         imgs = make_dataset(root) # TODO: ajust folder path
         if len(imgs) == 0:

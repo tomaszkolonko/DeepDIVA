@@ -3,7 +3,6 @@ import logging
 import time
 import warnings
 import numpy as np
-from PIL import Image
 
 # Torch related stuff
 import torch
@@ -89,7 +88,7 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
         # keep the original target for computing the output for the test
         target_one_hot = target
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
-        target = torch.LongTensor([np.argmax(a, axis=0) for a in target.numpy()])
+        target = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target.numpy()]))
 
         # Measure data loading time
         data_time.update(time.time() - end)
@@ -137,7 +136,7 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
         # Add loss and accuracy to Tensorboard
         if multi_run is None:
             writer.add_scalar(logging_label + '/mb_loss', loss.data[0], epoch * len(data_loader) + batch_idx)
-           # writer.add_scalar(logging_label + '/mb_accuracy', acc1.cpu().numpy(), epoch * len(data_loader) + batch_idx)
+            # writer.add_scalar(logging_label + '/mb_accuracy', acc1.cpu().numpy(), epoch * len(data_loader) + batch_idx)
         else:
             writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), loss.data[0],
                               epoch * len(data_loader) + batch_idx)
@@ -185,8 +184,6 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
     #
     # # Generate a classification report for each epoch TODO
     # _log_classification_report(data_loader, epoch, preds, targets, writer)
-
-    # generate full image output during test TODO
 
     # return top1.avg
 

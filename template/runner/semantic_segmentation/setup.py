@@ -59,9 +59,9 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     ###############################################################################################
     # Load the dataset splits as images
     train_ds, val_ds, test_ds = load_dataset(dataset_folder=dataset_folder,
-                                             args=kwargs,
                                              in_memory=inmem,
-                                             workers=workers)
+                                             workers=workers,
+                                             **kwargs)
 
 
     # Set up dataset transforms

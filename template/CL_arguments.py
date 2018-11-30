@@ -310,6 +310,6 @@ def _semantic_segmentation_options(parser):
                                        help='size of each crop taken (default 32x32)')
     semantic_segmentation.add_argument('--crops-per-page',
                                        type=int,
-                                       default=10, metavar='N',
+                                       default=32, metavar='N',
                                        help='number of crops per iterations per page')
 
