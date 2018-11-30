@@ -160,7 +160,7 @@ class _HQ_ResNet(nn.Module):
         x = self.conv00(x)
         x = self.bn00(x)
         x = self.relu(x)
-        
+
         x = self.conv01(x)
         x = self.bn01(x)
         x = self.relu(x)
