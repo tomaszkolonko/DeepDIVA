@@ -96,6 +96,7 @@ class SemanticSegmentationHisdb:
                 val_value[epoch] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, epoch, **kwargs)
             if decay_lr is not None:
                 adjust_learning_rate(lr=lr, optimizer=optimizer, epoch=epoch, decay_lr_epochs=decay_lr)
+            # TODO best model is not saved
             best_value = checkpoint(epoch=epoch, new_value=val_value[epoch],
                                     best_value=best_value, model=model,
                                     optimizer=optimizer,

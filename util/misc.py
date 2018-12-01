@@ -414,7 +414,7 @@ def multi_one_hot_to_output(matrix):
     return RGB
 
 
-def one_hot_to_image(matrix):
+def one_hot_to_np_rgb(matrix):
     """
     This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
 
@@ -424,7 +424,7 @@ def one_hot_to_image(matrix):
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     Returns
     -------
-    PIL Image
+    numpy array of size [C x H x W] (RGB)
     """
     matrix = np.argmax(matrix.numpy(), axis=0)
     class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
@@ -435,7 +435,7 @@ def one_hot_to_image(matrix):
 
     RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
 
-    return Image.fromarray(RGB.astype(np.uint8))
+    return RGB
 
 
 def one_hot_to_full_output(crop, coor, combined_one_hot, output_dim):
