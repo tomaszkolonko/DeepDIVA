@@ -361,7 +361,7 @@ def gt_tensor_to_one_hot(gt_tensor):
     one_hot_matrix = np.asanyarray(
         [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])]).astype(np.uint8)
 
-    return torch.from_numpy(one_hot_matrix.transpose((2, 0, 1)))
+    return torch.LongTensor(one_hot_matrix.transpose((2, 0, 1)))
 
 
 def multi_label_img_to_multi_hot(np_array):

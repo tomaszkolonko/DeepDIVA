@@ -67,6 +67,7 @@ class SemanticSegmentationHisdb:
         # Setting up the dataloaders
         train_loader, val_loader, test_loader = set_up_dataloaders(input_patch_size, **kwargs)
         num_classes = 8 #TODO: return this from set_up_dataloaders
+        class_names = [str(i) for i in range(num_classes)] #TODO add real class names
 
         # Setting up model, optimizer, criterion
         model, _, optimizer, best_value, start_epoch = set_up_model(num_classes=num_classes, # In this case is the num dimension of the output
@@ -85,7 +86,7 @@ class SemanticSegmentationHisdb:
         val_value = np.zeros((epochs + 1 - start_epoch))
         train_value = np.zeros((epochs - start_epoch))
 
-        val_value[-1] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, -1, **kwargs)
+        val_value[-1] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, -1, class_names, **kwargs)
         for epoch in range(start_epoch, epochs):
             # Train
             train_value[epoch] = SemanticSegmentationHisdb._train(train_loader, model, criterion, optimizer, writer, epoch,
@@ -93,7 +94,7 @@ class SemanticSegmentationHisdb:
 
             # Validate
             if epoch % validation_interval == 0:
-                val_value[epoch] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, epoch, **kwargs)
+                val_value[epoch] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, epoch, class_names, **kwargs)
             if decay_lr is not None:
                 adjust_learning_rate(lr=lr, optimizer=optimizer, epoch=epoch, decay_lr_epochs=decay_lr)
             # TODO best model is not saved
@@ -155,9 +156,9 @@ class SemanticSegmentationHisdb:
         return train.train(train_loader, model, criterion, optimizer, writer, epoch, **kwargs)
 
     @classmethod
-    def _validate(cls, val_loader, model, criterion, writer, epoch, **kwargs):
-        return evaluate.validate(val_loader, model, criterion, writer, epoch, **kwargs)
+    def _validate(cls, val_loader, model, criterion, writer, epoch, class_names, **kwargs):
+        return evaluate.validate(val_loader, model, criterion, writer, epoch, class_names, **kwargs)
 
     @classmethod
-    def _test(cls, test_loader, model, criterion, writer, epoch, **kwargs):
-        return evaluate.test(test_loader, model, criterion, writer, epoch, **kwargs)
+    def _test(cls, test_loader, model, criterion, writer, epoch, class_names, **kwargs):
+        return evaluate.test(test_loader, model, criterion, writer, epoch, class_names, **kwargs)

@@ -25,7 +25,7 @@ def test(test_loader, model, criterion, writer, epoch, no_cuda=False, log_interv
     return _evaluate(test_loader, model, criterion, writer, epoch, 'test', no_cuda, log_interval, **kwargs)
 
 
-def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cuda=False, log_interval=10, **kwargs):
+def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, num_classes, no_cuda=False, log_interval=10, **kwargs):
     """
     The evaluation routine
 
