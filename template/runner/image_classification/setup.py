@@ -67,14 +67,13 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     # Set up dataset transforms
     logging.debug('Setting up dataset transforms')
 
-    image_gt_transform = transforms.Compose([
-        transforms.Rotate(),
-        transforms.ToTensorTwinImage()
+    transform = transforms.Compose([
+        transforms.ToTensor()
     ])
 
-    train_ds.transform = image_gt_transform
-    val_ds.transform = image_gt_transform
-    test_ds.transform = image_gt_transform
+    train_ds.transform = transform
+    val_ds.transform = transform
+    test_ds.transform = transform
 
     train_loader, val_loader, test_loader = _dataloaders_from_datasets(batch_size=batch_size,
                                                                        train_ds=train_ds,
