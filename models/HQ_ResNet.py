@@ -114,10 +114,20 @@ class _HQ_ResNet(nn.Module):
                                 bias=False)
         self.bn01 = nn.BatchNorm2d(64)
 
+        # TODO: A new convolution and batch norm is defined
+        self.conv02 = nn.Conv2d(64, 128, kernel_size=7, stride=1, padding=3,
+                                bias=False)
+        self.bn02 = nn.BatchNorm2d(128)
+
+        # TODO: A new convolution and batch norm is defined
+        self.conv03 = nn.Conv2d(128, 128, kernel_size=7, stride=2, padding=3,
+                                bias=False)
+        self.bn03 = nn.BatchNorm2d(128)
+
         # TODO: only the filter dimensions are changed now
-        self.conv1 = nn.Conv2d(64, 128, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn1 = nn.BatchNorm2d(128)
+        #self.conv1 = nn.Conv2d(64, 128, kernel_size=7, stride=2, padding=3,
+        #                       bias=False)
+        #self.bn1 = nn.BatchNorm2d(128)
 
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -166,9 +176,17 @@ class _HQ_ResNet(nn.Module):
         x = self.bn01(x)
         x = self.relu(x)
 
-        x = self.conv1(x)
-        x = self.bn1(x)
+        x = self.conv02(x)
+        x = self.bn02(x)
         x = self.relu(x)
+
+        x = self.conv03(x)
+        x = self.bn03(x)
+        x = self.relu(x)
+
+        #x = self.conv1(x)
+        #x = self.bn1(x)
+        #x = self.relu(x)
 
         x = self.maxpool(x)
 
