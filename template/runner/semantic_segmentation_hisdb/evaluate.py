@@ -142,7 +142,7 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
 
             pbar.set_postfix(Time='{batch_time.avg:.3f}\t'.format(batch_time=batch_time),
                              Loss='{loss.avg:.4f}\t'.format(loss=losses),
-                             # Acc1='{meanIU.avg:.3f}\t'.format(meanIU=meanIU),
+                             meanIU='{meanIU.avg:.3f}\t'.format(meanIU=meanIU),
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
 
     # Make a confusion matrix TODO: ajust for class frequency
@@ -201,7 +201,7 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
                  .format(epoch, batch_time=batch_time, data_time=data_time, loss=losses, meanIU=meanIU))
     #
     # # Generate a classification report for each epoch TODO
-    #_log_classification_report(data_loader, epoch, preds, targets, writer)
+    # _log_classification_report(data_loader, epoch, preds, targets, writer)
 
     return meanIU.avg
 

@@ -199,7 +199,7 @@ class ImageFolder(data.Dataset):
     def __init__(self, root, pages_in_memory=0, crops_per_page=0, crop_size=10, transform=None, target_transform=None,
                  loader=default_loader, **kwargs):
         classes = find_classes()
-        imgs = make_dataset(root) # TODO: ajust folder path
+        imgs = make_dataset(root)
         if len(imgs) == 0:
             raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
                                "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))

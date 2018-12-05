@@ -302,7 +302,7 @@ def _semantic_segmentation_options(parser):
     # parameters for HisDB
     semantic_segmentation.add_argument('--pages-in-memory',
                                        type=int,
-                                       default=3, metavar='N',
+                                       default=4, metavar='N',
                                        help='number of pages that are loaded into RAM and learned on')
     semantic_segmentation.add_argument('--crop-size',
                                        type=int,
@@ -310,6 +310,6 @@ def _semantic_segmentation_options(parser):
                                        help='size of each crop taken (default 32x32)')
     semantic_segmentation.add_argument('--crops-per-page',
                                        type=int,
-                                       default=32, metavar='N',
+                                       default=50, metavar='N',
                                        help='number of crops per iterations per page')
 

@@ -88,7 +88,7 @@ def accuracy_segmentation(label_trues, label_preds, n_class):
     mean_iu = np.nanmean(iu)
     freq = hist.sum(axis=1) / hist.sum()
     fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
-    return acc, acc_cls, mean_iu, fwavacc
+    return acc*100, acc_cls*100, mean_iu*100, fwavacc*100
 
 
 def _fast_hist(label_true, label_pred, n_class):
