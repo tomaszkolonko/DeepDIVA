@@ -99,34 +99,30 @@ class _HQ_ResNet(nn.Module):
     def __init__(self, block, layers, output_channels=1000):
         # TODO: understand what that is and why it is always (for all layers)
         # TODO: set to 64.... at the moment set to 128 and it works
-        self.inplanes = 256
+        self.inplanes = 128
         super(_HQ_ResNet, self).__init__()
 
-        self.expected_input_size = (896, 896)
+        self.expected_input_size = (448, 448)
 
         # TODO: A new convolution and batch norm is defined
         self.conv00 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn00 = nn.BatchNorm2d(64)
 
-        # TODO: A new convolution and batch norm is defined
-        self.conv01 = nn.Conv2d(64, 128, kernel_size=7, stride=2, padding=3,
-                               bias=False)
-        self.bn01 = nn.BatchNorm2d(128)
-
         # TODO: only the filter dimensions are changed now
-        self.conv1 = nn.Conv2d(128, 256, kernel_size=7, stride=2, padding=3,
+        self.conv1 = nn.Conv2d(64, 128, kernel_size=7, stride=2, padding=3,
                                bias=False)
-        self.bn1 = nn.BatchNorm2d(256)
+        self.bn1 = nn.BatchNorm2d(128)
+
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        self.layer1 = self._make_layer(block, 256, layers[0])
-        self.layer2 = self._make_layer(block, 512, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 1024, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 2048, layers[3], stride=2)
+        self.layer1 = self._make_layer(block, 128, layers[0])
+        self.layer2 = self._make_layer(block, 256, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 512, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 1024, layers[3], stride=2)
         self.avgpool = nn.AvgPool2d(7, stride=1)
-        self.fc = nn.Linear(2048 * block.expansion, output_channels)
+        self.fc = nn.Linear(1024 * block.expansion, output_channels)
 
         # todo: understand this part. Is it normalization and BatchNorm?
         for m in self.modules():
@@ -159,10 +155,6 @@ class _HQ_ResNet(nn.Module):
         # TODO: the size that was previously expected.
         x = self.conv00(x)
         x = self.bn00(x)
-        x = self.relu(x)
-
-        x = self.conv01(x)
-        x = self.bn01(x)
         x = self.relu(x)
 
         x = self.conv1(x)
