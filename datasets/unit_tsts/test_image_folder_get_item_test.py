@@ -21,7 +21,7 @@ class Test_get_item(TestCase):
         # vertical crops: 25
         # horizontal crops: 33
         # number of test images: 5
-        self.assertEqual(self.test_ds.__len__(), 25*33*5)
+        self.assertEqual(self.test_ds.__len__(), 25*33*2)
 
     def test_get_item(self):
         image_gt_transform = transforms.Compose([
@@ -35,21 +35,21 @@ class Test_get_item(TestCase):
         length_of_dataset = self.test_ds.__len__()
 
         for i in range(length_of_dataset):
-            img, gt_one_hot, current_page, current_crop, memory_pass = self.test_ds.__getitem__(index, unittesting=True)
+            (window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, one_hot_matrix) = self.test_ds.__getitem__(index, unittesting=True)
+            if(is_new_image):
+                print("************************************************")
+                print("***************  NEW  IMAGE  *******************")
+                print("************************************************")
+            print("img_heigth: " + str(self.img_heigth) + " img_width: " + str(self.img_width) + " x: " + str(x_position) + " y: " + str(y_position))
 
-            # Getting the train dir
-            current_memory_pass = os.path.join(self.test_ds, 'memory_pass_' + str(memory_pass))
-            current_page_folder = os.path.join(current_memory_pass, 'page_' + str(current_page))
-            current_crop_folder = os.path.join(current_page_folder, 'crop_' + str(current_crop))
+            # because of time constraints only manual testing performed
+            # If you want to run this part that saves all the crops to disk for further analysis
+            # make sure not to change the PIL.image.image into an torch array and not to do the one_hot transformation
+            # uncomment: 3 lines in test_crop()
 
-            if not os.path.isdir(current_memory_pass):
-                os.makedirs(current_memory_pass)
-            if not os.path.isdir(current_page_folder):
-                os.makedirs(current_page_folder)
-            if not os.path.isdir(current_crop_folder):
-                os.makedirs(current_crop_folder)
+            # yolo_pass = os.path.join(self.test_dir, 'yolo')
+            # if not os.path.isdir(yolo_pass):
+            #     os.makedirs(yolo_pass)
 
-            img.save(current_crop_folder + "/img_" + str(i), "png")
-            gt_one_hot.save(current_crop_folder + "/gt_" + str(i), "png")
-
-
+            # window_input_torch.save(yolo_pass + "/img_" + str(i), "png")
+            # one_hot_matrix.save(yolo_pass + "/gt_" + str(i), "png")

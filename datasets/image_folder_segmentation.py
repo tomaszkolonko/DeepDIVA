@@ -266,10 +266,13 @@ class ImageFolder(data.Dataset):
                         if self.current_horiz_crop == self.num_horiz_crops - 1:
                             output = self.test_crop()
                             self.current_horiz_crop = 0
-                            self.current_vert_crop = self.current_vert_crop + 1
+                            self.current_vert_crop += 1
+                            print("current_vert_crop: " + str(self.current_vert_crop) + " of " + str(self.num_vert_crops))
+
                             return output
                         output = self.test_crop()
                         self.current_horiz_crop += 1
+                        print("current_horiz_crop: " + str(self.current_horiz_crop) + " of " + str(self.num_horiz_crops))
                         return output
 
                 self.load_new_test_data()
@@ -310,6 +313,7 @@ class ImageFolder(data.Dataset):
         window_input_image = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
         window_target_image = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
 
+
         window_input_torch = functional.to_tensor(window_input_image)
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
@@ -317,12 +321,13 @@ class ImageFolder(data.Dataset):
         return (window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, one_hot_matrix)
 
     def get_crop_coordinates(self):
-        if self.current_horiz_crop == self.num_horiz_crops:
+        if self.current_horiz_crop == self.num_horiz_crops - 1:
             x_position = self.img_width - self.crop_size
         else:
             x_position = self.crop_size * self.current_horiz_crop
-        if self.current_vert_crop == self.num_horiz_crops:
-            y_position = self.img_height - self.crop_size
+
+        if self.current_vert_crop == self.num_vert_crops - 1:
+            y_position = self.img_heigth - self.crop_size
         else:
             y_position = self.crop_size * self.current_vert_crop
         return x_position, y_position
