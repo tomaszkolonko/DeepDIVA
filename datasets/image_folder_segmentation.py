@@ -229,7 +229,7 @@ class ImageFolder(data.Dataset):
         # Variables for test set
         self.current_page = 0
 
-        if(self.test_set):
+        if(True):
             self.current_test_image = default_loader(self.imgs[0][0])
             self.current_test_gt = default_loader(self.imgs[0][1])
             self.current_test_image_counter = 0
@@ -276,7 +276,7 @@ class ImageFolder(data.Dataset):
                 self.reset_counter()
                 output = self.test_crop(is_new_image=True)
                 self.current_horiz_crop += 1
-                return output;
+                return output
 
 
         # Think about moving this initialization to the constructor !!!
@@ -307,10 +307,14 @@ class ImageFolder(data.Dataset):
                     is_new_image, target)
         """
         x_position, y_position = self.get_crop_coordinates()
-        window_input = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
-        window_target = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
+        window_input_image = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
+        window_target_image = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
 
-        return (window_input, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, window_target)
+        window_input_torch = functional.to_tensor(window_input_image)
+        window_target_torch = functional.to_tensor(window_target_image)
+        one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
+
+        return (window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, one_hot_matrix)
 
     def get_crop_coordinates(self):
         if self.current_horiz_crop == self.num_horiz_crops:
@@ -336,7 +340,7 @@ class ImageFolder(data.Dataset):
             img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
             self.current_crop = self.current_crop + 1
             if unittesting:
-                return img, gt, self.current_page, self.current_crop, self.memory_pass
+                return img, gt_tensor_to_one_hot(gt), self.current_page, self.current_crop, self.memory_pass
             else:
                 return img, gt_tensor_to_one_hot(gt)
         else:
@@ -362,7 +366,6 @@ class ImageFolder(data.Dataset):
         This function returns the length of an epoch so the dataloader knows when to stop
         :return:
         """
-        print("YOLO: " + str(self.test_set))
         if self.test_set:
             return self.crops_per_image * len(self.imgs)
         else:
