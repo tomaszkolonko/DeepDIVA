@@ -6,8 +6,11 @@ Load a dataset of historic documents by specifying the folder where its located.
 import logging
 import os
 import sys
+import math
 
 from util.misc import gt_tensor_to_one_hot
+
+from template.runner.semantic_segmentation.transform_library import transforms, functional
 
 import torch.utils.data as data
 
@@ -210,30 +213,71 @@ class ImageFolder(data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
+
+        # Variables for train and validation sets
         self.pages_in_memory = pages_in_memory
         self.crops_per_page = crops_per_page
         self.crop_size = crop_size
-
         self.current_crop = 0
         self.next_image = 0
-        self.current_page = 0
         self.memory_position_to_change = 0
         self.memory_pass = 1
         self.test_set = "test" in self.root
         self.images = [None] * pages_in_memory
         self.gt = [None] * pages_in_memory
 
-    def __getitem__(self, index, test=False):
+        # Variables for test set
+        self.current_page = 0
+
+        if(self.test_set):
+            self.current_test_image = default_loader(self.imgs[0][0])
+            self.current_test_gt = default_loader(self.imgs[0][1])
+            self.current_test_image_counter = 0
+            self.crops_per_test_image = 0
+
+            # TODO: super disgusting... but __len__() needs to know and for that we need
+            # TODO: the dimensions of the image
+            img = Image.open(open(self.imgs[0][0], 'rb'))
+            self.img_heigth = img.size[0]
+            self.img_width = img.size[1]
+            self.num_vert_crops = math.ceil(img.size[0] / crop_size)
+            self.current_vert_crop = 0
+            self.num_horiz_crops = math.ceil(img.size[1] / crop_size)
+            self.current_horiz_crop = 0
+            self.crops_per_image = self.num_vert_crops * self.num_horiz_crops
+
+
+    def __getitem__(self, index, unittesting=False):
         """
         Args:
             index (int): Index
 
         Returns:
             tuple: (image, groundtruth) where both are paths to the actual image.
+            tuple: for test ((window_input, orig_img_shape, top_left_coordinates_of_crop,
+                is_new_img), target)
         """
 
-        # if self.test_set:
-        # do some fancy sliding window stuff
+        if self.test_set:
+            # load first image
+            if self.current_test_image_counter < len(self.imgs):
+                if self.current_vert_crop < self.num_vert_crops:
+                    if self.current_horiz_crop < self.num_horiz_crops:
+                        if self.current_horiz_crop == self.num_horiz_crops - 1:
+                            output = self.test_crop()
+                            self.current_horiz_crop = 0
+                            self.current_vert_crop = self.current_vert_crop + 1
+                            return output
+                        output = self.test_crop()
+                        self.current_horiz_crop += 1
+                        return output
+
+                self.load_new_test_data()
+                self.reset_counter()
+                output = self.test_crop(is_new_image=True)
+                self.current_horiz_crop += 1
+                return output;
+
 
         # Think about moving this initialization to the constructor !!!
         if self.images[0] is None:
@@ -241,11 +285,46 @@ class ImageFolder(data.Dataset):
 
         while self.current_page < self.pages_in_memory:
             while self.current_crop < self.crops_per_page:
-                return self.apply_transformation(test)
+                return self.apply_transformation(unittesting)
 
             self.update_state_variables()
 
-    def apply_transformation(self, test):
+
+    def load_new_test_data(self):
+        self.current_test_image_counter = self.current_test_image_counter + 1
+        self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
+        self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
+
+    def reset_counter(self):
+        self.current_horiz_crop = 0
+        self.current_vert_crop = 0
+
+
+    def test_crop(self, is_new_image = False):
+        """
+
+        :return: (window_input,(original_img_shape), (top_left_coordinates_of_crop),
+                    is_new_image, target)
+        """
+        x_position, y_position = self.get_crop_coordinates()
+        window_input = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
+        window_target = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
+
+        return (window_input, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, window_target)
+
+    def get_crop_coordinates(self):
+        if self.current_horiz_crop == self.num_horiz_crops:
+            x_position = self.img_width - self.crop_size
+        else:
+            x_position = self.crop_size * self.current_horiz_crop
+        if self.current_vert_crop == self.num_horiz_crops:
+            y_position = self.img_height - self.crop_size
+        else:
+            y_position = self.crop_size * self.current_vert_crop
+        return x_position, y_position
+
+
+    def apply_transformation(self, unittesting):
         """
         Applies the transformations that have been defined in the setup (setup.py). If no transformations
         have been defined, the PIL image is returned instead.
@@ -256,10 +335,10 @@ class ImageFolder(data.Dataset):
         if self.transform is not None:
             img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
             self.current_crop = self.current_crop + 1
-            if not test:
-                return img, gt_tensor_to_one_hot(gt)
+            if unittesting:
+                return img, gt, self.current_page, self.current_crop, self.memory_pass
             else:
-                return img, gt_tensor_to_one_hot(gt), self.current_page, self.current_crop, self.memory_pass
+                return img, gt_tensor_to_one_hot(gt)
         else:
             self.current_crop = self.current_crop + 1
             img = self.images[self.current_page]
@@ -283,7 +362,11 @@ class ImageFolder(data.Dataset):
         This function returns the length of an epoch so the dataloader knows when to stop
         :return:
         """
-        return len(self.imgs) * self.pages_in_memory * self.crops_per_page;
+        print("YOLO: " + str(self.test_set))
+        if self.test_set:
+            return self.crops_per_image * len(self.imgs)
+        else:
+            return len(self.imgs) * self.pages_in_memory * self.crops_per_page
 
     def initialize_memory(self):
         """
