@@ -140,7 +140,13 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var, los
     output = model(input_var)
 
     # Compute and record the loss
-    loss = criterion(output, target_var)
+    if len(output) > 1:
+        loss1 = criterion(output[0], target_var)
+        loss2 = criterion(output[1], target_var)
+        loss = loss1 + 0.4*loss2
+        output = output[0]
+    else:
+        loss = criterion(output, target_var)
     loss_meter.update(loss.data[0], len(input_var))
 
     # Compute and record the accuracy
