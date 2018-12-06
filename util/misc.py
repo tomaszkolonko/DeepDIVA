@@ -11,6 +11,7 @@ import shutil
 import string
 
 import cv2
+from PIL import Image
 import numpy as np
 import torch
 
@@ -333,19 +334,21 @@ def int_to_one_hot(x, n_classes):
     return list(map(int, list(s.format(x))))
 
 
-def label_img_to_one_hot(np_array):
+def gt_tensor_to_one_hot(gt_tensor):
     """
-    Convert ground truth label image to multi-one-hot encoded matrix of size image height x image width x #classes
+    Convert ground truth tensor to one-hot encoded matrix
 
     Parameters
     -------
-    np_array: numpy array
-        RGB image [W x H x C]
+    gt_tensor: float tensor from to_tensor()
+        torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
     Returns
     -------
-    numpy array of size [#C x W x H]
+    numpy array of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     """
+    # TODO: ugly fix -> better to not normalize in the first place
+    np_array =(gt_tensor*255).numpy().astype(np.uint8)
     im_np = np_array[2, :, :].astype(np.uint8)
 
     integer_encoded = np.array([i for i in range(8)])
@@ -356,14 +359,14 @@ def label_img_to_one_hot(np_array):
     replace_dict = {k: v for k, v in zip([1, 2, 4, 6, 8, 10, 12, 14], onehot_encoded)}
     # create the one hot matrix
     one_hot_matrix = np.asanyarray(
-        [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])])
+        [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])]).astype(np.uint8)
 
-    return one_hot_matrix.astype(np.uint8)
+    return torch.LongTensor(one_hot_matrix.transpose((2, 0, 1)))
 
 
 def multi_label_img_to_multi_hot(np_array):
     """
-    TODO: There must be a faster way of doing this
+    TODO: There must be a faster way of doing this + ajust to correct input format (see gt_tensor_to_one_hot)
     Convert ground truth label image to multi-one-hot encoded matrix of size image height x image width x #classes
 
     Parameters
@@ -392,15 +395,16 @@ def multi_one_hot_to_output(matrix):
 
     Parameters
     -------
-    numpy array of size [#C x W x H]
+    tensor of size [#C x W x H]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     Returns
     -------
     np_array: numpy array
         RGB image [C x W x H]
     """
+    # TODO: fix input and output dims (see one_hot_to_output)
     # create RGB
-    matrix = np.rollaxis(np.char.mod('%d', matrix), 0, 3)
+    matrix = np.rollaxis(np.char.mod('%d', matrix.numpy()), 0, 3)
     zeros = (32 - matrix.shape[2]) * '0'
     B = np.array([[int('{}{}'.format(zeros, ''.join(matrix[i][j])), 2) for j in range(matrix.shape[1])] for i in
                   range(matrix.shape[0])])
@@ -409,20 +413,20 @@ def multi_one_hot_to_output(matrix):
 
     return RGB
 
-def one_hot_to_output(matrix):
+
+def one_hot_to_np_rgb(matrix):
     """
     This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
 
     Parameters
     -------
-    numpy array of size [#C x W x H]
+    tensor of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     Returns
     -------
-    np_array: numpy array
-        RGB image [C x W x H]
+    numpy array of size [C x H x W] (RGB)
     """
-    matrix = np.argmax(matrix, axis=0)
+    matrix = np.argmax(matrix.numpy(), axis=0)
     class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
 
     for old, new in class_to_B.items():
@@ -432,6 +436,36 @@ def one_hot_to_output(matrix):
     RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
 
     return RGB
+
+
+def one_hot_to_full_output(crop, coor, combined_one_hot, output_dim):
+    """
+    This function combines the one-hot matrix of all the patches in one image to one large output matrix. Overlapping
+    values are averaged.
+
+    Parameters
+    ----------
+    output_dim: tuple [Channels x Htot x Wtot]
+        dimension of the large image
+    crop: numpy matrix of size [#C x H x W]
+        one patch of the larger image
+    coor: tuple
+        top left coordinates of the patch within the larger image
+    combined_one_hot: numpy matrix of size [#C x Htot x Wtot]
+        one hot encoding of the full image
+    Returns
+    -------
+    numpy matrix of size [#C x Htot x Wtot]
+    """
+    if len(combined_one_hot) == 0:
+        combined_one_hot = np.zeros(output_dim)
+
+    top, left = coor
+    bottom, right = (min(top + crop.shape[1], output_dim[1]), min(left + crop.shape[2], output_dim[1]))
+    zero_mask = combined_one_hot[:, top:bottom, left:right] == 0
+    # if still zero in combined_one_hot just insert value from crop, if there is a value average
+    combined_one_hot[:, top:bottom, left:right] = np.where(zero_mask, crop, (crop + combined_one_hot[:, top:bottom, left:right]) / 2)
+    return combined_one_hot
 
 
 

@@ -55,7 +55,7 @@ def _general_parameters(parser):
     # List of possible custom runner class. A runner class is defined as a module in template.runner
     runner_class_options = ["image_classification", "point_cloud", "triplet",
                             "apply_model", "image_auto_encoding", "image_segmentation",
-                            "semantic_segmentation"]
+                            "semantic_segmentation", "semantic_segmentation_hisdb"]
 
     parser_general = parser.add_argument_group('GENERAL', 'General Options')
     parser_general.add_argument('--experiment-name',
@@ -293,13 +293,16 @@ def _semantic_segmentation_options(parser):
     These parameters are used by the runner class template.runner.semantic_segmentation
     """
     semantic_segmentation = parser.add_argument_group('Semantic', 'Semantic Segmentation')
+
     semantic_segmentation.add_argument('--input-patch-size',
                                 type=int,
                                 default=256, metavar='N',
                                 help='size of the square input patch e.g. with 32 the input will be re-sized to 32x32')
+
+    # parameters for HisDB
     semantic_segmentation.add_argument('--pages-in-memory',
                                        type=int,
-                                       default=3, metavar='N',
+                                       default=4, metavar='N',
                                        help='number of pages that are loaded into RAM and learned on')
     semantic_segmentation.add_argument('--crop-size',
                                        type=int,
@@ -307,6 +310,6 @@ def _semantic_segmentation_options(parser):
                                        help='size of each crop taken (default 32x32)')
     semantic_segmentation.add_argument('--crops-per-page',
                                        type=int,
-                                       default=10, metavar='N',
+                                       default=50, metavar='N',
                                        help='number of crops per iterations per page')
 

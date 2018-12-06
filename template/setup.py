@@ -247,7 +247,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
         logging.debug('Setting up dataset transforms')
         # TODO:TZ resizing might become a problem for GT !!! Maybe for segmentation we simply wont resize for starters
         # TODO:TZ implement all transformations with twin images !!!
-        if (kwargs['runner_class'] == 'image_segmentation'):
+        if kwargs['runner_class'] == 'semantic_segmentation_hisdb':
             transform = transforms.Compose([
                 transforms.randomTwinCrop(),
                 transforms.ToTensor(),
@@ -399,7 +399,7 @@ def _load_analytics_csv(dataset_folder, inmem, workers, runner_class):
         logging.warning('Missing analytics.csv file for dataset located at {}'.format(dataset_folder))
         try:
             logging.warning('Attempt creating analytics.csv file for dataset located at {}'.format(dataset_folder))
-            if runner_class == 'semantic_segmentation':
+            if 'semantic_segmentation' in runner_class:
                 compute_mean_std_semantic_segmentation(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
             else:
                 compute_mean_std(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
