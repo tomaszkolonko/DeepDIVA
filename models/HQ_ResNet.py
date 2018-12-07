@@ -112,11 +112,11 @@ class _HQ_ResNet(nn.Module):
                                 bias=False)
         self.bn01 = nn.BatchNorm2d(32)
 
-        self.conv02 = nn.Conv2d(32, 64, kernel_size=7, stride=2, padding=3,
+        self.conv02 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=0,
                                 bias=False)
         self.bn02 = nn.BatchNorm2d(64)
 
-        self.conv03 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0,
+        self.conv03 = nn.Conv2d(64, 64, kernel_size=7, stride=2, padding=3,
                                 bias=False)
         self.bn03 = nn.BatchNorm2d(64)
         # ReLU reused and not self-implemented
