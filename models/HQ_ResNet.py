@@ -102,7 +102,7 @@ class _HQ_ResNet(nn.Module):
         self.inplanes = 128
         super(_HQ_ResNet, self).__init__()
 
-        self.expected_input_size = (452, 452)
+        self.expected_input_size = (454, 454)
 
         self.conv00 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=0,
                                 bias=False)
@@ -115,6 +115,10 @@ class _HQ_ResNet(nn.Module):
         self.conv02 = nn.Conv2d(32, 64, kernel_size=7, stride=2, padding=3,
                                 bias=False)
         self.bn02 = nn.BatchNorm2d(64)
+
+        self.conv03 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0,
+                                bias=False)
+        self.bn03 = nn.BatchNorm2d(64)
         # ReLU reused and not self-implemented
 
         # TODO: only the filter dimensions are changed now
@@ -171,6 +175,10 @@ class _HQ_ResNet(nn.Module):
 
         x = self.conv02(x)
         x = self.bn02(x)
+        x = self.relu(x)
+
+        x = self.conv03(x)
+        x = self.bn03(x)
         x = self.relu(x)
 
         x = self.conv1(x)
