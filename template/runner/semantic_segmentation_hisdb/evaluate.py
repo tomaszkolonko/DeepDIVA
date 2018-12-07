@@ -56,12 +56,7 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
     meanIU.avg : float
         Accuracy of the model of the evaluated split
     """
-    #TODO All parts computing the accuracy are commented out. It is necessary to
-    #TODO implement a 2D softmax and instead of regressing the output class have it
-    #TODO work with class labels. Notice that, however, it would be
-    #TODO of interest leaving open the possibility to work with soft labels
-    #TODO (e.g. the ground truth for pixel X,Y is an array of probabilities instead
-    #TODO of an integer.
+
     num_classes = len(class_names)
     multi_run = kwargs['run'] if 'run' in kwargs else None
 
@@ -82,12 +77,14 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
     targets = []
 
     combined_one_hot = []  # only needed for test phase
-    current_output_filepath = ""  # only needed for test phase
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
         # get_item returns more during "test", as the output of a whole image needs to be combined
+        # TODO recreate whole image during testing -> sliding window NOT IMPLEMENTED YET
         if logging_label == "test":
-            input, orig_img_shape, top_left_coordinates, output_filepath = input
+            input, orig_img_shape, top_left_coordinates, is_new = input
+            orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
+            is_new = sum(is_new.numpy())
 
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
         target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target.numpy()]))
@@ -114,11 +111,11 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
         loss = criterion(output, target_argmax_var)
         losses.update(loss.data[0], input.size(0))
 
-        # Compute and record the accuracy TODO
+        # Compute and record the accuracy TODO check with Vinay & Michele if correct
         acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target_argmax.cpu().numpy(), output_argmax, num_classes)
         meanIU.update(mean_iu, input.size(0))
 
-        # Get the predictions TODO
+        # Get the predictions
         _ = [preds.append(item) for item in output_argmax]
         _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
 
@@ -145,6 +142,37 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
                              meanIU='{meanIU.avg:.3f}\t'.format(meanIU=meanIU),
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
 
+        # TODO saving the output images
+        # if we are in testing, the output needs to be patched together to form the complete output of the full image
+        # patches are returned as a sliding window over the full image, overlapping sections are averaged
+        if logging_label == "test":
+            # TODO change this so that there is a flag, when a new image is started
+            if not is_new:
+                # on the same image / first iteration
+                combined_one_hot = one_hot_to_full_output(output, top_left_coordinates, combined_one_hot,
+                                                          orig_img_shape)
+            else:
+                # finished image, moving to next image
+                # save the old one before starting the new one
+                np_rgb = one_hot_to_np_rgb(combined_one_hot)
+                # TODO: also save input and gt image
+
+                if multi_run is None:
+                    writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
+                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output-scaled',
+                                                      image=np_rgb, global_step=epoch)
+                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output',
+                                                      image=np_rgb, global_step=epoch, segmentation=True)
+                else:
+                    writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
+                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output-scaled_{}'.format(multi_run),
+                                                      image=np_rgb, global_step=epoch)
+                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output_{}'.format(multi_run),
+                                                      image=np_rgb/255, global_step=epoch, segmentation=True)
+                # start the combination of the new image
+                print("starting new image")
+                combined_one_hot = one_hot_to_full_output(output, top_left_coordinates, [], orig_img_shape)
+
     # Make a confusion matrix TODO: ajust for class frequency
     try:
         targets_flat = np.array(targets).flatten()
@@ -152,7 +180,7 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
         # targets_flat = np.array([[np.argmax(a, axis=0) for a in target.numpy()] for target in targets]).flatten()
         # preds_flat = np.array([[np.argmax(a, axis=0) for a in pred.numpy()] for pred in preds]).flatten()
         cm = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)])
-        confusion_matrix_heatmap = make_heatmap(cm, class_names) #TODO: continue here!!!
+        confusion_matrix_heatmap = make_heatmap(cm, class_names)
     except ValueError:
         logging.warning('Confusion Matrix did not work as expected')
 
@@ -166,32 +194,6 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
     else:
         writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run))
-
-    # Logging and saving the output images
-    # if we are in testing, the output needs to be patched together to form the complete output of the full image
-    # patches are returned as a sliding window over the full image, overlapping sections are averaged
-    if logging_label == "test":
-        # TODO change this so that there is a flag, when a new image is started
-        if len(current_output_filepath) == 0 or output_filepath == current_output_filepath:
-            # on the same image / first iteration
-            combined_one_hot = one_hot_to_full_output(output.numpy(), top_left_coordinates, combined_one_hot,
-                                                      orig_img_shape)
-        else:
-            # finished image, moving to next image
-            # save the old one before starting the new one
-            output = one_hot_to_np_rgb(combined_one_hot)
-            # TODO: also save input and gt image
-
-            if multi_run is None:
-                writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
-                save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output',
-                                                  image=output, global_step=epoch)
-            else:
-                writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-                save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
-                                                  image=confusion_matrix_heatmap, global_step=epoch)
-            # start the combination of the new image
-            combined_one_hot = one_hot_to_full_output(output.numpy(), top_left_coordinates, [], orig_img_shape)
 
     logging.info(_prettyprint_logging_label(logging_label) +
                  ' epoch[{}]: '

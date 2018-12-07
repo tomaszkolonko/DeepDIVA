@@ -252,7 +252,7 @@ def tensor_to_image(image):
 
     return image
 
-def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_step=None):
+def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_step=None, segmentation=False):
     """Utility function to save image in the output folder and also log it to Tensorboard.
 
     Parameters
@@ -287,7 +287,14 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
         os.makedirs(os.path.dirname(dest_filename))
 
     # Ensuring the data passed as parameter is healthy
-    image = tensor_to_image(image)
+    if segmentation:
+        # Check that the last channel is of size 3 for RGB
+        if image.shape[2] != 3:
+            assert (image.shape[0] == 3)
+            image = np.transpose(image, (1, 2, 0))
+        assert (image.shape[2] == 3)  # Last channel is of size 3 for RGB
+    else:
+        image = tensor_to_image(image)
 
     # Write image to output folder
     cv2.imwrite(dest_filename, image)
@@ -420,51 +427,55 @@ def one_hot_to_np_rgb(matrix):
 
     Parameters
     -------
-    tensor of size [#C x H x W]
+    np array of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     Returns
     -------
     numpy array of size [C x H x W] (RGB)
     """
-    matrix = np.argmax(matrix.numpy(), axis=0)
+    B = np.argmax(matrix, axis=0)
     class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
 
-    for old, new in class_to_B.items():
-        mask = matrix == old
-        B = np.where(mask, new, matrix)
+    masks = [B == old for old in class_to_B.keys()]
 
-    RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
+    for mask, (old, new) in zip(masks, class_to_B.items()):
+        B = np.where(mask, new, B)
 
-    return RGB
+    BGR = np.dstack((B, np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8)))
+
+    return BGR
 
 
-def one_hot_to_full_output(crop, coor, combined_one_hot, output_dim):
+def one_hot_to_full_output(one_hots, coordinates, combined_one_hot, output_dim):
     """
     This function combines the one-hot matrix of all the patches in one image to one large output matrix. Overlapping
     values are averaged.
 
     Parameters
     ----------
-    output_dim: tuple [Channels x Htot x Wtot]
+    output_dims: tuples [Htot x Wtot]
         dimension of the large image
-    crop: numpy matrix of size [#C x H x W]
-        one patch of the larger image
-    coor: tuple
-        top left coordinates of the patch within the larger image
-    combined_one_hot: numpy matrix of size [#C x Htot x Wtot]
+    one_hots: list of numpy matrix of size [batch size x #C x W x H]
+        a batch of patches from the larger image
+    coordinates: list of tuples
+        list of top left coordinates of the patch within the larger image for all patches in a batch
+    combined_one_hot: numpy matrix of size [#C x Wtot x Htot]
         one hot encoding of the full image
     Returns
     -------
-    numpy matrix of size [#C x Htot x Wtot]
+    combined_one_hot: numpy matrix [#C x Wtot x Htot]
     """
+    one_hots = one_hots.data.cpu().numpy()
     if len(combined_one_hot) == 0:
-        combined_one_hot = np.zeros(output_dim)
+        combined_one_hot = np.zeros((one_hots[0].shape[0], *output_dim))
 
-    top, left = coor
-    bottom, right = (min(top + crop.shape[1], output_dim[1]), min(left + crop.shape[2], output_dim[1]))
-    zero_mask = combined_one_hot[:, top:bottom, left:right] == 0
-    # if still zero in combined_one_hot just insert value from crop, if there is a value average
-    combined_one_hot[:, top:bottom, left:right] = np.where(zero_mask, crop, (crop + combined_one_hot[:, top:bottom, left:right]) / 2)
+    for one_hot, x1, y1 in zip(one_hots, coordinates[0].numpy(), coordinates[1].numpy()):
+        x2, y2 = (min(x1 + one_hot.shape[1], output_dim[0]), min(y1 + one_hots.shape[2], output_dim[1]))
+        zero_mask = combined_one_hot[:, x1:x2, y1:y2] == 0
+        # if still zero in combined_one_hot just insert value from crop, if there is a value average
+        combined_one_hot[:, x1:x2, y1:y2] = np.where(zero_mask, one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
+                    (one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]] + combined_one_hot[:, x1:x2, y1:y2]) / 2)
+
     return combined_one_hot
 
 

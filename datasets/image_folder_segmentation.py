@@ -267,12 +267,12 @@ class ImageFolder(data.Dataset):
                             output = self.test_crop()
                             self.current_horiz_crop = 0
                             self.current_vert_crop += 1
-                            print("current_vert_crop: " + str(self.current_vert_crop) + " of " + str(self.num_vert_crops))
+                            #print("current_vert_crop: " + str(self.current_vert_crop) + " of " + str(self.num_vert_crops))
 
                             return output
                         output = self.test_crop()
                         self.current_horiz_crop += 1
-                        print("current_horiz_crop: " + str(self.current_horiz_crop) + " of " + str(self.num_horiz_crops))
+                        #print("current_horiz_crop: " + str(self.current_horiz_crop) + " of " + str(self.num_horiz_crops))
                         return output
 
                 self.load_new_test_data()
@@ -318,7 +318,7 @@ class ImageFolder(data.Dataset):
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
 
-        return (window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, one_hot_matrix)
+        return ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image), one_hot_matrix)
 
     def get_crop_coordinates(self):
         if self.current_horiz_crop == self.num_horiz_crops - 1:
