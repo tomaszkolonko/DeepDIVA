@@ -96,14 +96,16 @@ class Xception(nn.Module):
     https://arxiv.org/pdf/1610.02357.pdf
     """
 
-    def __init__(self, num_classes=1000):
+    def __init__(self, output_channels=1000):
         """ Constructor
         Args:
             num_classes: number of classes
         """
         super(Xception, self).__init__()
 
-        self.num_classes = num_classes
+        self.expected_input_size = (299, 299)
+
+        self.num_classes = output_channels
 
         self.conv1 = nn.Conv2d(3, 32, 3, 2, 0, bias=False)
         self.bn1 = nn.BatchNorm2d(32)
@@ -136,7 +138,7 @@ class Xception(nn.Module):
         self.conv4 = SeparableConv2d(1536, 2048, 3, 1, 1)
         self.bn4 = nn.BatchNorm2d(2048)
 
-        self.fc = nn.Linear(2048, num_classes)
+        self.fc = nn.Linear(2048, output_channels)
 
         # ------- init weights --------
         for m in self.modules():
