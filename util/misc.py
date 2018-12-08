@@ -292,12 +292,100 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
         if image.shape[2] != 3:
             assert (image.shape[0] == 3)
             image = np.transpose(image, (1, 2, 0))
-        assert (image.shape[2] == 3)  # Last channel is of size 3 for RGB
     else:
         image = tensor_to_image(image)
 
     # Write image to output folder
     cv2.imwrite(dest_filename, image)
+
+    return
+
+def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None):
+    """Utility function to save image in the output folder and also log it to Tensorboard.
+
+    Parameters
+    ----------
+    writer : tensorboardX.writer.SummaryWriter object
+        The writer object for Tensorboard
+    tag : str
+        Name of the image.
+    image : ndarray [W x H x C]
+        Image to be saved and logged to Tensorboard.
+    global_step : int
+        Epoch/Mini-batch counter.
+
+    Returns
+    -------
+    None
+
+    """
+    #TODO pass this as argument
+    int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 6: "comment_decoration",
+                             8: "maintext", 10: "maintext_comment", 12: "maintext_decoration",
+                             14: "maintext_comment_decoration"}
+
+    # Create true output
+    # Log image to Tensorboard
+    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+
+    # Get output folder using the FileHandler from the logger.
+    # (Assumes the file handler is the last one)
+    output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
+
+    if global_step is not None:
+        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+    else:
+        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+
+    if not os.path.exists(os.path.dirname(dest_filename)):
+        os.makedirs(os.path.dirname(dest_filename))
+
+    # Ensuring the data passed as parameter is healthy
+    # Check that the last channel is of size 3 for RGB
+    if image.shape[2] != 3:
+        assert (image.shape[0] == 3)
+        image = np.transpose(image, (1, 2, 0))
+
+    cv2.imwrite(dest_filename, image)
+
+    # Make a more human readable output
+    # Write image to output folder
+    tag += "_coloured"
+    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+
+    # Get output folder using the FileHandler from the logger.
+    # (Assumes the file handler is the last one)
+    output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
+
+    if global_step is not None:
+        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+    else:
+        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+
+    if not os.path.exists(os.path.dirname(dest_filename)):
+        os.makedirs(os.path.dirname(dest_filename))
+
+    # Ensuring the data passed as parameter is healthy
+    # Check that the last channel is of size 3 for RGB
+    if image.shape[2] != 3:
+        assert (image.shape[0] == 3)
+        image = np.transpose(image, (1, 2, 0))
+
+    blue = image[:, :, 2]  # Extract just blue channel
+    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
+    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
+                 "decoration": (255, 0, 255),
+                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
+                 "maintext_decoration": (200, 0, 200),
+                 "maintext_comment_decoration": (255, 255, 255)}
+
+    for c, mask in masks.items():
+        image[mask] = class_col[c]
+
+        # Write image to output folder
+    cv2.imwrite(dest_filename, image)
+
+
 
     return
 
@@ -351,7 +439,7 @@ def gt_tensor_to_one_hot(gt_tensor):
         torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
     Returns
     -------
-    numpy array of size [#C x H x W]
+    torch.LongTensor of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     """
     # TODO: ugly fix -> better to not normalize in the first place
@@ -441,9 +529,9 @@ def one_hot_to_np_rgb(matrix):
     for mask, (old, new) in zip(masks, class_to_B.items()):
         B = np.where(mask, new, B)
 
-    BGR = np.dstack((B, np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8)))
+    RGB = np.dstack((B, np.zeros(shape=(B.shape[0], B.shape[1], 2), dtype=np.int8)))
 
-    return BGR
+    return RGB
 
 
 def one_hot_to_full_output(one_hots, coordinates, combined_one_hot, output_dim):

@@ -7,16 +7,15 @@ import logging
 import os
 import sys
 import math
+import os.path
+import numpy as np
 
 from util.misc import gt_tensor_to_one_hot
-
 from template.runner.semantic_segmentation.transform_library import transforms, functional
 
+# Torch related stuff
 import torch.utils.data as data
 
-import os.path
-
-# Torch related stuff
 from PIL import Image
 
 IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
@@ -146,7 +145,7 @@ def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False, **kw
     train_dir = os.path.join(dataset_folder, 'train')
     val_dir = os.path.join(dataset_folder, 'val')
     test_dir = os.path.join(dataset_folder, 'test')
-    logging.info("*** TZ_DEBUG: you are in the segmentation class... so far so good.")
+    #logging.info("*** TZ_DEBUG: you are in the segmentation class... so far so good.")
 
     if in_memory:
         logging.error("With segmentation you don't have the option to put everything into memory")
@@ -232,6 +231,7 @@ class ImageFolder(data.Dataset):
         if(True):
             self.current_test_image = default_loader(self.imgs[0][0])
             self.current_test_gt = default_loader(self.imgs[0][1])
+            self.current_test_gt_name = os.path.basename(self.imgs[0][1])[:-4]
             self.current_test_image_counter = 0
             self.crops_per_test_image = 0
 
@@ -297,6 +297,7 @@ class ImageFolder(data.Dataset):
         self.current_test_image_counter = self.current_test_image_counter + 1
         self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
         self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
+        self.current_test_gt_name = os.path.basename(self.imgs[self.current_test_image_counter][1])[:-4]
 
     def reset_counter(self):
         self.current_horiz_crop = 0
@@ -318,7 +319,7 @@ class ImageFolder(data.Dataset):
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
 
-        return ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image), one_hot_matrix)
+        return ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, self.current_test_gt_name), one_hot_matrix)
 
     def get_crop_coordinates(self):
         if self.current_horiz_crop == self.num_horiz_crops - 1:
@@ -347,6 +348,8 @@ class ImageFolder(data.Dataset):
             if unittesting:
                 return img, gt_tensor_to_one_hot(gt), self.current_page, self.current_crop, self.memory_pass
             else:
+                #unique, counts = np.unique(gt.numpy()[2, :, :]*255, return_counts=True)
+                #print(dict(zip(unique, counts)))
                 return img, gt_tensor_to_one_hot(gt)
         else:
             self.current_crop = self.current_crop + 1

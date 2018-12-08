@@ -296,7 +296,7 @@ def _semantic_segmentation_options(parser):
 
     semantic_segmentation.add_argument('--input-patch-size',
                                 type=int,
-                                default=256, metavar='N',
+                                default=128, metavar='N',
                                 help='size of the square input patch e.g. with 32 the input will be re-sized to 32x32')
 
     # parameters for HisDB

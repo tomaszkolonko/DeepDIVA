@@ -10,23 +10,23 @@ from sklearn.metrics import classification_report, confusion_matrix
 from tqdm import tqdm
 
 # DeepDIVA
-from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, tensor_to_image,\
-    one_hot_to_np_rgb, one_hot_to_full_output
+from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, \
+    save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_rgb, one_hot_to_full_output
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
 
-def validate(val_loader, model, criterion, writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
+def validate(val_loader, model, criterion, weights, writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
     """Wrapper for _evaluate() with the intent to validate the model."""
-    return _evaluate(val_loader, model, criterion, writer, epoch, class_names, 'val', no_cuda, log_interval, **kwargs)
+    return _evaluate(val_loader, model, criterion, weights, writer, epoch, class_names, 'val', no_cuda, log_interval, **kwargs)
 
 
-def test(test_loader, model, criterion, writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
+def test(test_loader, model, criterion,weights,  writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
     """Wrapper for _evaluate() with the intent to test the model"""
-    return _evaluate(test_loader, model, criterion, writer, epoch, class_names, 'test', no_cuda, log_interval, **kwargs)
+    return _evaluate(test_loader, model, criterion, weights, writer, epoch, class_names, 'test', no_cuda, log_interval, **kwargs)
 
 
-def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging_label, no_cuda=False, log_interval=10, **kwargs):
+def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names, logging_label, no_cuda=False, log_interval=10, **kwargs):
     """
     The evaluation routine
 
@@ -80,9 +80,9 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
         # get_item returns more during "test", as the output of a whole image needs to be combined
-        # TODO recreate whole image during testing -> sliding window NOT IMPLEMENTED YET
         if logging_label == "test":
-            input, orig_img_shape, top_left_coordinates, is_new = input
+            input, orig_img_shape, top_left_coordinates, is_new, test_img_name = input
+            test_img_name = test_img_name[0]
             orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
             is_new = sum(is_new.numpy())
 
@@ -146,7 +146,7 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
         # if we are in testing, the output needs to be patched together to form the complete output of the full image
         # patches are returned as a sliding window over the full image, overlapping sections are averaged
         if logging_label == "test":
-            # TODO change this so that there is a flag, when a new image is started
+            # TODO: do it with file name, no flag needed
             if not is_new:
                 # on the same image / first iteration
                 combined_one_hot = one_hot_to_full_output(output, top_left_coordinates, combined_one_hot,
@@ -156,21 +156,16 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
                 # save the old one before starting the new one
                 np_rgb = one_hot_to_np_rgb(combined_one_hot)
                 # TODO: also save input and gt image
-
                 if multi_run is None:
                     writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
-                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output-scaled',
-                                                      image=np_rgb, global_step=epoch)
-                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output',
-                                                      image=np_rgb, global_step=epoch, segmentation=True)
+                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_'+test_img_name,
+                                                      image=np_rgb)
                 else:
                     writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output-scaled_{}'.format(multi_run),
-                                                      image=np_rgb, global_step=epoch)
-                    save_image_and_log_to_tensorboard(writer, tag=logging_label + '/output_{}'.format(multi_run),
-                                                      image=np_rgb/255, global_step=epoch, segmentation=True)
+                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, test_img_name),
+                                                      image=np_rgb)
                 # start the combination of the new image
-                print("starting new image")
+                logging.info("Finished segmentation of image {}".format(test_img_name))
                 combined_one_hot = one_hot_to_full_output(output, top_left_coordinates, [], orig_img_shape)
 
     # Make a confusion matrix TODO: ajust for class frequency
@@ -179,8 +174,11 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
         preds_flat = np.array(preds).flatten()
         # targets_flat = np.array([[np.argmax(a, axis=0) for a in target.numpy()] for target in targets]).flatten()
         # preds_flat = np.array([[np.argmax(a, axis=0) for a in pred.numpy()] for pred in preds]).flatten()
+        sample_weight = [weights[i] for i in targets_flat]
         cm = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)])
+        cm_w = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)], sample_weight=sample_weight)
         confusion_matrix_heatmap = make_heatmap(cm, class_names)
+        confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
     except ValueError:
         logging.warning('Confusion Matrix did not work as expected')
 
@@ -191,9 +189,15 @@ def _evaluate(data_loader, model, criterion, writer, epoch, class_names, logging
         writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix',
                                           image=confusion_matrix_heatmap, global_step=epoch)
+        save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted',
+                                          image=confusion_matrix_heatmap_w, global_step=epoch)
     else:
         writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-        save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run))
+        save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
+                                          image = confusion_matrix_heatmap, global_step = epoch)
+        save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted{}'.format(multi_run),
+                                          image=confusion_matrix_heatmap_w, global_step=epoch)
+
 
     logging.info(_prettyprint_logging_label(logging_label) +
                  ' epoch[{}]: '

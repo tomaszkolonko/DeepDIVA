@@ -41,8 +41,6 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda=Fals
     top1.avg : float
         Accuracy of the model of the evaluated split
     """
-    # TODO All parts computing the accuracy are commented out. See the TODO in evaluate.py
-
     multi_run = kwargs['run'] if 'run' in kwargs else None
 
     # Instantiate the counters
