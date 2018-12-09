@@ -296,7 +296,7 @@ def _semantic_segmentation_options(parser):
 
     semantic_segmentation.add_argument('--input-patch-size',
                                 type=int,
-                                default=256, metavar='N',
+                                default=128, metavar='N',
                                 help='size of the square input patch e.g. with 32 the input will be re-sized to 32x32')
 
     # parameters for HisDB
@@ -306,7 +306,7 @@ def _semantic_segmentation_options(parser):
                                        help='number of pages that are loaded into RAM and learned on')
     semantic_segmentation.add_argument('--crop-size',
                                        type=int,
-                                       default=32, metavar='N',
+                                       default=128, metavar='N',
                                        help='size of each crop taken (default 32x32)')
     semantic_segmentation.add_argument('--crops-per-page',
                                        type=int,

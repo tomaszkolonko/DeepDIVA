@@ -402,7 +402,7 @@ def historical_wi(args):
     _make_folder_if_not_exists(test_binarized_folder)
     _make_folder_if_not_exists(test_colored_folder)
     """
-    dataset_root = os.path.join(args.output_folder)
+    dataset_root = os.path.join(os.path.join(args.output_folder, 'historical_wi'))
     binarized_dataset = os.path.join(dataset_root, "BinarizedDataset")
     train_binarized_folder = os.path.join(binarized_dataset, 'train')
     test_binarized_folder = os.path.join(binarized_dataset, 'test')

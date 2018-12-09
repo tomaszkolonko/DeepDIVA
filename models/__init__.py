@@ -13,7 +13,8 @@ from .CAE_basic import CAE_basic
 from .CAE_medium import CAE_medium
 from .FusionNet import FusionNet
 from .UNet import Unet
-from .UNet_Hisdb import Unet_HisDB
+from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
+from .Xception import xception
 
 
 """

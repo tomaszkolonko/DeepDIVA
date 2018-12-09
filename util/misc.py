@@ -252,7 +252,7 @@ def tensor_to_image(image):
 
     return image
 
-def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_step=None):
+def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_step=None, segmentation=False):
     """Utility function to save image in the output folder and also log it to Tensorboard.
 
     Parameters
@@ -287,10 +287,105 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
         os.makedirs(os.path.dirname(dest_filename))
 
     # Ensuring the data passed as parameter is healthy
-    image = tensor_to_image(image)
+    if segmentation:
+        # Check that the last channel is of size 3 for RGB
+        if image.shape[2] != 3:
+            assert (image.shape[0] == 3)
+            image = np.transpose(image, (1, 2, 0))
+    else:
+        image = tensor_to_image(image)
 
     # Write image to output folder
     cv2.imwrite(dest_filename, image)
+
+    return
+
+def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None):
+    """Utility function to save image in the output folder and also log it to Tensorboard.
+
+    Parameters
+    ----------
+    writer : tensorboardX.writer.SummaryWriter object
+        The writer object for Tensorboard
+    tag : str
+        Name of the image.
+    image : ndarray [W x H x C]
+        Image to be saved and logged to Tensorboard.
+    global_step : int
+        Epoch/Mini-batch counter.
+
+    Returns
+    -------
+    None
+
+    """
+    #TODO pass this as argument
+    int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 6: "comment_decoration",
+                             8: "maintext", 10: "maintext_comment", 12: "maintext_decoration",
+                             14: "maintext_comment_decoration"}
+
+    # Create true output
+    # Log image to Tensorboard
+    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+
+    # Get output folder using the FileHandler from the logger.
+    # (Assumes the file handler is the last one)
+    output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
+
+    if global_step is not None:
+        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+    else:
+        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+
+    if not os.path.exists(os.path.dirname(dest_filename)):
+        os.makedirs(os.path.dirname(dest_filename))
+
+    # Ensuring the data passed as parameter is healthy
+    # Check that the last channel is of size 3 for RGB
+    if image.shape[2] != 3:
+        assert (image.shape[0] == 3)
+        image = np.transpose(image, (1, 2, 0))
+
+    cv2.imwrite(dest_filename, image)
+
+    # Make a more human readable output
+    # Write image to output folder
+    tag += "_coloured"
+    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+
+    # Get output folder using the FileHandler from the logger.
+    # (Assumes the file handler is the last one)
+    output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
+
+    if global_step is not None:
+        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+    else:
+        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+
+    if not os.path.exists(os.path.dirname(dest_filename)):
+        os.makedirs(os.path.dirname(dest_filename))
+
+    # Ensuring the data passed as parameter is healthy
+    # Check that the last channel is of size 3 for RGB
+    if image.shape[2] != 3:
+        assert (image.shape[0] == 3)
+        image = np.transpose(image, (1, 2, 0))
+
+    blue = image[:, :, 2]  # Extract just blue channel
+    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
+    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
+                 "decoration": (255, 0, 255),
+                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
+                 "maintext_decoration": (200, 0, 200),
+                 "maintext_comment_decoration": (255, 255, 255)}
+
+    for c, mask in masks.items():
+        image[mask] = class_col[c]
+
+        # Write image to output folder
+    cv2.imwrite(dest_filename, image)
+
+
 
     return
 
@@ -344,7 +439,7 @@ def gt_tensor_to_one_hot(gt_tensor):
         torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
     Returns
     -------
-    numpy array of size [#C x H x W]
+    torch.LongTensor of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     """
     # TODO: ugly fix -> better to not normalize in the first place
@@ -420,51 +515,55 @@ def one_hot_to_np_rgb(matrix):
 
     Parameters
     -------
-    tensor of size [#C x H x W]
+    np array of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     Returns
     -------
     numpy array of size [C x H x W] (RGB)
     """
-    matrix = np.argmax(matrix.numpy(), axis=0)
+    B = np.argmax(matrix, axis=0)
     class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
 
-    for old, new in class_to_B.items():
-        mask = matrix == old
-        B = np.where(mask, new, matrix)
+    masks = [B == old for old in class_to_B.keys()]
 
-    RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
+    for mask, (old, new) in zip(masks, class_to_B.items()):
+        B = np.where(mask, new, B)
+
+    RGB = np.dstack((B, np.zeros(shape=(B.shape[0], B.shape[1], 2), dtype=np.int8)))
 
     return RGB
 
 
-def one_hot_to_full_output(crop, coor, combined_one_hot, output_dim):
+def one_hot_to_full_output(one_hots, coordinates, combined_one_hot, output_dim):
     """
     This function combines the one-hot matrix of all the patches in one image to one large output matrix. Overlapping
     values are averaged.
 
     Parameters
     ----------
-    output_dim: tuple [Channels x Htot x Wtot]
+    output_dims: tuples [Htot x Wtot]
         dimension of the large image
-    crop: numpy matrix of size [#C x H x W]
-        one patch of the larger image
-    coor: tuple
-        top left coordinates of the patch within the larger image
-    combined_one_hot: numpy matrix of size [#C x Htot x Wtot]
+    one_hots: list of numpy matrix of size [batch size x #C x W x H]
+        a batch of patches from the larger image
+    coordinates: list of tuples
+        list of top left coordinates of the patch within the larger image for all patches in a batch
+    combined_one_hot: numpy matrix of size [#C x Wtot x Htot]
         one hot encoding of the full image
     Returns
     -------
-    numpy matrix of size [#C x Htot x Wtot]
+    combined_one_hot: numpy matrix [#C x Wtot x Htot]
     """
+    one_hots = one_hots.data.cpu().numpy()
     if len(combined_one_hot) == 0:
-        combined_one_hot = np.zeros(output_dim)
+        combined_one_hot = np.zeros((one_hots[0].shape[0], *output_dim))
 
-    top, left = coor
-    bottom, right = (min(top + crop.shape[1], output_dim[1]), min(left + crop.shape[2], output_dim[1]))
-    zero_mask = combined_one_hot[:, top:bottom, left:right] == 0
-    # if still zero in combined_one_hot just insert value from crop, if there is a value average
-    combined_one_hot[:, top:bottom, left:right] = np.where(zero_mask, crop, (crop + combined_one_hot[:, top:bottom, left:right]) / 2)
+    for one_hot, x1, y1 in zip(one_hots, coordinates[0].numpy(), coordinates[1].numpy()):
+        x2, y2 = (min(x1 + one_hot.shape[1], output_dim[0]), min(y1 + one_hots.shape[2], output_dim[1]))
+        zero_mask = combined_one_hot[:, x1:x2, y1:y2] == 0
+        # if still zero in combined_one_hot just insert value from crop, if there is a value average
+        combined_one_hot[:, x1:x2, y1:y2] = np.where(zero_mask, one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
+                    (one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]] + combined_one_hot[:, x1:x2, y1:y2]) / 2)
+
     return combined_one_hot
 
 
