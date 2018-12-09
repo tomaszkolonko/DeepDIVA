@@ -42,9 +42,9 @@ python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/h
 
 python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/historical_wi/BinarizedDataset/ --model-name densenet201 --epochs 5 --experiment-name similarity --output-folder ../output/Binarized/ --lr 0.01 --momentum 0.9 --decay-lr 20 --n-triplets 100000 --output-channels 128 --map auto --pretrained --ignoregit
 
-# Resnet153 ---------------------------------------
-python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/historical_wi/BinarizedDataset/ --model-name resnet153 --epochs 5 --experiment-name similarity --output-folder ../output/Binarized/ --lr 0.01 --momentum 0.9 --decay-lr 20 --n-triplets 100000 --output-channels 128 --map auto --ignoregit
+# Resnet152 ---------------------------------------
+python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/historical_wi/BinarizedDataset/ --model-name resnet152 --epochs 5 --experiment-name similarity --output-folder ../output/Binarized/ --lr 0.01 --momentum 0.9 --decay-lr 20 --n-triplets 100000 --output-channels 128 --map auto --ignoregit
 
-python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/historical_wi/BinarizedDataset/ --model-name resnet153 --epochs 5 --experiment-name similarity --output-folder ../output/Binarized/ --lr 0.01 --momentum 0.9 --decay-lr 20 --n-triplets 100000 --output-channels 128 --map auto --pretrained --ignoregit
+python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/historical_wi/BinarizedDataset/ --model-name resnet152 --epochs 5 --experiment-name similarity --output-folder ../output/Binarized/ --lr 0.01 --momentum 0.9 --decay-lr 20 --n-triplets 100000 --output-channels 128 --map auto --pretrained --ignoregit
 
 
