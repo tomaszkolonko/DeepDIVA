@@ -375,78 +375,59 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     # Write image to output folder
     cv2.imwrite(dest_filename, img)
 
-    # Make an
-    img = np.copy(image)
-    blue = img[:, :, 2]  # Extract just blue channel
-    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
-    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
-                 "decoration": (255, 0, 255),
-                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
-                 "maintext_decoration": (200, 0, 200),
-                 "maintext_comment_decoration": (255, 255, 255)}
-
-    for c, mask in masks.items():
-        img[mask] = class_col[c]
-
-    # Write image to output folder
-    cv2.imwrite(dest_filename, img)
-
-
     # 3. Output image as described in https://github.com/DIVA-DIA/DIVA_Layout_Analysis_Evaluator
     # GREEN: Foreground predicted correctly rgb(80, 140, 30)
     # YELLOW: Foreground predicted - but the wrong class (e.g. Text instead of Comment) rgb(250, 230, 60)
     # BLACK: Background predicted correctly rgb(0, 0, 0)
     # RED: Background mis-predicted as Foreground rgb(240, 30, 20)
     # BLUE: Foreground mis-predicted as Background rgb(0, 240, 255)
+    if ground_truth:
+        img_la = np.copy(image)
 
-    # Write image to output folder
-    tag += "_coloured"
-    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+        # Write image to output folder
+        tag += "_layout_analysis"
+        # TODO this does not work
+        writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
 
-    # Get output folder using the FileHandler from the logger.
-    # (Assumes the file handler is the last one)
-    output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
+        # Get output folder using the FileHandler from the logger.
+        # (Assumes the file handler is the last one)
+        output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
-    if global_step is not None:
-        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
-    else:
-        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+        if global_step is not None:
+            dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+        else:
+            dest_filename = os.path.join(output_folder, 'images', tag + '.png')
 
-    if not os.path.exists(os.path.dirname(dest_filename)):
-        os.makedirs(os.path.dirname(dest_filename))
+        if not os.path.exists(os.path.dirname(dest_filename)):
+            os.makedirs(os.path.dirname(dest_filename))
 
-    img = np.copy(image)
-    blue = img[:, :, 2]  # Extract just blue channel
-    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
-    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
-                 "decoration": (255, 0, 255),
-                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
-                 "maintext_decoration": (200, 0, 200),
-                 "maintext_comment_decoration": (255, 255, 255)}
+        out_blue = img_la[:, :, 2]  # Extract just blue channel
+        gt_blue = ground_truth[:, :, 2]
 
-    for c, mask in masks.items():
-        img[mask] = class_col[c]
+        img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
+                           for x in range(out_blue.shape[0])])
 
-    # Write image to output folder
-    cv2.imwrite(dest_filename, img)
-
-    # Make an
-    img = np.copy(image)
-    blue = img[:, :, 2]  # Extract just blue channel
-    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
-    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
-                 "decoration": (255, 0, 255),
-                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
-                 "maintext_decoration": (200, 0, 200),
-                 "maintext_comment_decoration": (255, 255, 255)}
-
-    for c, mask in masks.items():
-        img[mask] = class_col[c]
-
-    # Write image to output folder
-    cv2.imwrite(dest_filename, img)
+        cv2.imwrite(dest_filename, img_la)
 
     return
+
+def _get_colour(output, gt):
+    class_col = {"fg_correct": (80, 140, 30), "fg_wrong_class": (255, 255, 60), "bg_correct": (0, 0, 0),
+                 "bg_as_fg": (240, 30, 20), "fg_as_bg": (0, 240, 255)}
+
+    if output == gt and gt in [2, 4, 6, 8, 10, 12, 14]:
+        return class_col["fg_correct"]
+    elif output == gt and gt == 1:
+        return class_col["bg_correct"]
+    elif output != gt and output in [2, 4, 6, 8, 10, 12, 14] and gt in [2, 4, 6, 8, 10, 12, 14]:
+        return class_col["fg_wrong_class"]
+    elif output != gt and output == 1:
+        return class_col["fg_as_bg"]
+    elif output != gt and output in [2, 4, 6, 8, 10, 12, 14]:
+        return class_col["bg_as_fg"]
+    else:
+        return (255, 255, 255)
+
 
 def has_extension(filename, extensions):
     """Checks if a file is an allowed extension.
@@ -593,7 +574,7 @@ def one_hot_to_np_rgb(matrix):
     return RGB
 
 
-def one_hot_to_full_output(one_hots, coordinates, combined_one_hot, output_dim):
+def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
     """
     This function combines the one-hot matrix of all the patches in one image to one large output matrix. Overlapping
     values are averaged.
@@ -602,26 +583,26 @@ def one_hot_to_full_output(one_hots, coordinates, combined_one_hot, output_dim):
     ----------
     output_dims: tuples [Htot x Wtot]
         dimension of the large image
-    one_hots: list of numpy matrix of size [batch size x #C x W x H]
-        a batch of patches from the larger image
-    coordinates: list of tuples
-        list of top left coordinates of the patch within the larger image for all patches in a batch
+    one_hot: numpy matrix of size [batch size x #C x W x H]
+        a patch from the larger image
+    coordinates: tuple
+        top left coordinates of the patch within the larger image for all patches in a batch
     combined_one_hot: numpy matrix of size [#C x Wtot x Htot]
         one hot encoding of the full image
     Returns
     -------
     combined_one_hot: numpy matrix [#C x Wtot x Htot]
     """
-    one_hots = one_hots.data.cpu().numpy()
     if len(combined_one_hot) == 0:
-        combined_one_hot = np.zeros((one_hots[0].shape[0], *output_dim))
+        combined_one_hot = np.zeros((one_hot[0].shape[0], *output_dim))
 
-    for one_hot, x1, y1 in zip(one_hots, coordinates[0].numpy(), coordinates[1].numpy()):
-        x2, y2 = (min(x1 + one_hot.shape[1], output_dim[0]), min(y1 + one_hots.shape[2], output_dim[1]))
-        zero_mask = combined_one_hot[:, x1:x2, y1:y2] == 0
-        # if still zero in combined_one_hot just insert value from crop, if there is a value average
-        combined_one_hot[:, x1:x2, y1:y2] = np.where(zero_mask, one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
-                    (one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]] + combined_one_hot[:, x1:x2, y1:y2]) / 2)
+    x1, y1 = coordinates
+    x2, y2 = (min(x1 + one_hot.shape[1], output_dim[0]), min(y1 + one_hot.shape[2], output_dim[1]))
+    zero_mask = combined_one_hot[:, x1:x2, y1:y2] == 0
+    # if still zero in combined_one_hot just insert value from crop, if there is a value average
+    combined_one_hot[:, x1:x2, y1:y2] = np.where(zero_mask, one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
+                                                 (one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]] +
+                                                  combined_one_hot[:, x1:x2, y1:y2]) / 2)
 
     return combined_one_hot
 

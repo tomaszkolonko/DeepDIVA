@@ -3,6 +3,10 @@ import torch.nn as nn
 
 #from .Layers import *
 
+"""
+From https://github.com/bfortuner/pytorch_tiramisu
+"""
+
 
 class FCDenseNet(nn.Module):
     def __init__(self, in_channels=3, down_blocks=(5, 5, 5, 5, 5),
