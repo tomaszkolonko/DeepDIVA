@@ -300,7 +300,7 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
 
     return
 
-def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None):
+def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, ground_truth=None):
     """Utility function to save image in the output folder and also log it to Tensorboard.
 
     Parameters
@@ -324,7 +324,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
                              8: "maintext", 10: "maintext_comment", 12: "maintext_decoration",
                              14: "maintext_comment_decoration"}
 
-    # Create true output
+    # 1. Create true output
     # Log image to Tensorboard
     writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
 
@@ -340,15 +340,10 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
 
-    # Ensuring the data passed as parameter is healthy
-    # Check that the last channel is of size 3 for RGB
-    if image.shape[2] != 3:
-        assert (image.shape[0] == 3)
-        image = np.transpose(image, (1, 2, 0))
 
     cv2.imwrite(dest_filename, image)
 
-    # Make a more human readable output
+    # 2. Make a more human readable output -> one colour per class
     # Write image to output folder
     tag += "_coloured"
     writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
@@ -365,13 +360,8 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
 
-    # Ensuring the data passed as parameter is healthy
-    # Check that the last channel is of size 3 for RGB
-    if image.shape[2] != 3:
-        assert (image.shape[0] == 3)
-        image = np.transpose(image, (1, 2, 0))
-
-    blue = image[:, :, 2]  # Extract just blue channel
+    img = np.copy(image)
+    blue = img[:, :, 2]  # Extract just blue channel
     masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
     class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
                  "decoration": (255, 0, 255),
@@ -380,12 +370,81 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
                  "maintext_comment_decoration": (255, 255, 255)}
 
     for c, mask in masks.items():
-        image[mask] = class_col[c]
+        img[mask] = class_col[c]
 
-        # Write image to output folder
-    cv2.imwrite(dest_filename, image)
+    # Write image to output folder
+    cv2.imwrite(dest_filename, img)
+
+    # Make an
+    img = np.copy(image)
+    blue = img[:, :, 2]  # Extract just blue channel
+    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
+    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
+                 "decoration": (255, 0, 255),
+                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
+                 "maintext_decoration": (200, 0, 200),
+                 "maintext_comment_decoration": (255, 255, 255)}
+
+    for c, mask in masks.items():
+        img[mask] = class_col[c]
+
+    # Write image to output folder
+    cv2.imwrite(dest_filename, img)
 
 
+    # 3. Output image as described in https://github.com/DIVA-DIA/DIVA_Layout_Analysis_Evaluator
+    # GREEN: Foreground predicted correctly rgb(80, 140, 30)
+    # YELLOW: Foreground predicted - but the wrong class (e.g. Text instead of Comment) rgb(250, 230, 60)
+    # BLACK: Background predicted correctly rgb(0, 0, 0)
+    # RED: Background mis-predicted as Foreground rgb(240, 30, 20)
+    # BLUE: Foreground mis-predicted as Background rgb(0, 240, 255)
+
+    # Write image to output folder
+    tag += "_coloured"
+    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+
+    # Get output folder using the FileHandler from the logger.
+    # (Assumes the file handler is the last one)
+    output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
+
+    if global_step is not None:
+        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+    else:
+        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+
+    if not os.path.exists(os.path.dirname(dest_filename)):
+        os.makedirs(os.path.dirname(dest_filename))
+
+    img = np.copy(image)
+    blue = img[:, :, 2]  # Extract just blue channel
+    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
+    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
+                 "decoration": (255, 0, 255),
+                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
+                 "maintext_decoration": (200, 0, 200),
+                 "maintext_comment_decoration": (255, 255, 255)}
+
+    for c, mask in masks.items():
+        img[mask] = class_col[c]
+
+    # Write image to output folder
+    cv2.imwrite(dest_filename, img)
+
+    # Make an
+    img = np.copy(image)
+    blue = img[:, :, 2]  # Extract just blue channel
+    masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
+    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
+                 "decoration": (255, 0, 255),
+                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
+                 "maintext_decoration": (200, 0, 200),
+                 "maintext_comment_decoration": (255, 255, 255)}
+
+    for c, mask in masks.items():
+        img[mask] = class_col[c]
+
+    # Write image to output folder
+    cv2.imwrite(dest_filename, img)
 
     return
 
@@ -529,7 +588,7 @@ def one_hot_to_np_rgb(matrix):
     for mask, (old, new) in zip(masks, class_to_B.items()):
         B = np.where(mask, new, B)
 
-    RGB = np.dstack((B, np.zeros(shape=(B.shape[0], B.shape[1], 2), dtype=np.int8)))
+    RGB = np.dstack((np.zeros(shape=(B.shape[0], B.shape[1], 2), dtype=np.int8), B))
 
     return RGB
 

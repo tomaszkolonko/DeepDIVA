@@ -77,6 +77,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
     targets = []
 
     combined_one_hot = []  # only needed for test phase
+    counter = 0
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
         # get_item returns more during "test", as the output of a whole image needs to be combined
@@ -129,6 +130,13 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
             writer.add_scalar(logging_label + '/mb_accuracy_{}'.format(multi_run), mean_iu,
                                epoch * len(data_loader) + batch_idx)
 
+        # saving some output
+        if epoch+1 % 10 == 0 and epoch > 0:
+            np_rgb = one_hot_to_np_rgb(output.data.cpu().numpy()[1])
+            save_image_and_log_to_tensorboard_segmentation(writer,
+                                                           tag=logging_label + '/output_'+str(batch_idx),
+                                                           image=np_rgb)
+
         # Measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
@@ -158,14 +166,15 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                 # TODO: also save input and gt image
                 if multi_run is None:
                     writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
-                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_'+test_img_name,
+                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(test_img_name, counter),
                                                       image=np_rgb)
                 else:
                     writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, test_img_name),
+                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}_{}'.format(multi_run, test_img_name, counter),
                                                       image=np_rgb)
                 # start the combination of the new image
-                logging.info("Finished segmentation of image {}".format(test_img_name))
+                logging.info("Finished segmentation of image {}{}".format(test_img_name, counter))
+                counter += 1
                 combined_one_hot = one_hot_to_full_output(output, top_left_coordinates, [], orig_img_shape)
 
     # Make a confusion matrix TODO: ajust for class frequency
