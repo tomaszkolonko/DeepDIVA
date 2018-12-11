@@ -4,16 +4,21 @@ Load a dataset of images by specifying the folder where its located.
 
 # Utils
 import logging
-import os
 import sys
 from multiprocessing import Pool
 import cv2
 import numpy as np
 
 # Torch related stuff
-import torch.utils.data as data
 import torchvision
 from PIL import Image
+
+import torch.utils.data as data
+
+import os
+import os.path
+
+IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
 
 from util.misc import get_all_files_in_folders_and_subfolders, has_extension
 
@@ -91,175 +96,145 @@ def load_dataset(dataset_folder, in_memory=False, workers=1):
     # If its requested online, delegate to torchvision.datasets.ImageFolder()
     if not in_memory:
         # Get an online dataset for each split
-        train_ds = torchvision.datasets.ImageFolder(train_dir)
-        val_ds = torchvision.datasets.ImageFolder(val_dir)
-        test_ds = torchvision.datasets.ImageFolder(test_dir)
+        train_ds = ImageFolder(train_dir)
+        val_ds = ImageFolder(val_dir)
+        test_ds = ImageFolder(test_dir)
         return train_ds, val_ds, test_ds
+
+
+def is_image_file(filename):
+    """Checks if a file is an image.
+
+    Args:
+        filename (string): path to a file
+
+    Returns:
+        bool: True if the filename ends with a known image extension
+    """
+    filename_lower = filename.lower()
+    return any(filename_lower.endswith(ext) for ext in IMG_EXTENSIONS)
+
+
+def find_classes(dir):
+    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+    classes.sort()
+    class_to_idx = {classes[i]: i for i in range(len(classes))}
+    return classes, class_to_idx
+
+
+def make_dataset(dir, class_to_idx):
+    images = []
+    dir = os.path.expanduser(dir)
+    for target in sorted(os.listdir(dir)):
+        d = os.path.join(dir, target)
+        if not os.path.isdir(d):
+            continue
+
+        for root, _, fnames in sorted(os.walk(d)):
+            for fname in sorted(fnames):
+                if is_image_file(fname):
+                    path = os.path.join(root, fname)
+                    item = (path, class_to_idx[target])
+                    images.append(item)
+
+    return images
+
+
+def pil_loader(path):
+    # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
+    with open(path, 'rb') as f:
+        with Image.open(f) as img:
+            return img.convert('RGB')
+
+
+def accimage_loader(path):
+    import accimage
+    try:
+        return accimage.Image(path)
+    except IOError:
+        # Potentially a decoding problem, fall back to PIL.Image
+        return pil_loader(path)
+
+
+def default_loader(path):
+    from torchvision import get_image_backend
+    if get_image_backend() == 'accimage':
+        return accimage_loader(path)
     else:
-        # Get an offline (in-memory) dataset for each split
-        train_ds = ImageFolderInMemory(train_dir, workers)
-        val_ds = ImageFolderInMemory(val_dir, workers)
-        test_ds = ImageFolderInMemory(test_dir, workers)
-        return train_ds, val_ds, test_ds
+        return pil_loader(path)
 
 
-class ImageFolderInMemory(data.Dataset):
+class ImageFolder(data.Dataset):
+    """A generic data loader where the images are arranged in this way: ::
+
+        root/dog/xxx.png
+        root/dog/xxy.png
+        root/dog/xxz.png
+
+        root/cat/123.png
+        root/cat/nsdf3.png
+        root/cat/asd932_.png
+
+    Args:
+        root (string): Root directory path.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+        loader (callable, optional): A function to load an image given its path.
+
+     Attributes:
+        classes (list): List of the class names.
+        class_to_idx (dict): Dict with items (class_name, class_index).
+        imgs (list): List of (image path, class_index) tuples
     """
-    This class loads the data provided and stores it entirely in memory as a dataset.
 
-    It makes use of torchvision.datasets.ImageFolder() to create a dataset. Afterward all images are
-    sequentially stored in memory for faster use when paired with dataloders. It is responsibility of
-    the user ensuring that the dataset actually fits in memory.
-    """
+    def __init__(self, root, transform=None, target_transform=None,
+                 loader=default_loader):
+        classes, class_to_idx = find_classes(root)
+        imgs = make_dataset(root, class_to_idx)
+        if len(imgs) == 0:
+            raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
+                               "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
 
-    def __init__(self, path, transform=None, target_transform=None, workers=1):
-        """
-        Load the data in memory and prepares it as a dataset.
-
-        Parameters
-        ----------
-        path : string
-            Path to the dataset on the file System
-        transform : torchvision.transforms
-            Transformation to apply on the data
-        target_transform : torchvision.transforms
-            Transformation to apply on the labels
-        workers: int
-            Number of workers to use for the dataloaders
-        """
-        self.dataset_folder = os.path.expanduser(path)
+        self.root = root
+        self.imgs = imgs
+        self.classes = classes
+        self.class_to_idx = class_to_idx
         self.transform = transform
         self.target_transform = target_transform
+        self.loader = loader
 
-        # Get an online dataset
-        dataset = torchvision.datasets.ImageFolder(path)
+        self.current_batch = 0
 
-        # Shuffle the data once (otherwise you get clusters of samples of same class in each minibatch for val and test)
-        np.random.shuffle(dataset.imgs)
-
-        # Extract the actual file names and labels as entries
-        file_names = np.asarray([item[0] for item in dataset.imgs])
-        self.labels = np.asarray([item[1] for item in dataset.imgs])
-
-        # Load all samples
-        pool = Pool(workers)
-        self.data = pool.map(cv2.imread, file_names)
-        pool.close()
-
-        # Set expected class attributes
-        self.classes = np.unique(self.labels)
 
     def __getitem__(self, index):
         """
-        Retrieve a sample by index
+        Args:
+            index (int): Index
 
-        Parameters
-        ----------
-        index : int
-
-        Returns
-        -------
-        img : FloatTensor
-        target : int
-            label of the image
+        Returns:
+            tuple: (image, target) where target is class_index of the target class.
         """
+        path, target = self.imgs[index]
 
-        img, target = self.data[index], self.labels[index]
+        # MANUAL DEBUGGING
+        current_crop_folder = os.path.join(path[0:45], 'batch_' + str(self.current_batch))
+        if not os.path.isdir(current_crop_folder):
+            os.makedirs(current_crop_folder)
 
-        # Doing this so that it is consistent with all other datasets to return a PIL Image
-        img = Image.fromarray(img)
+        if(index == 0):
+            self.current_batch += 1
 
+        img = self.loader(path)
         if self.transform is not None:
             img = self.transform(img)
+            img.save(path[:-4] + "_yolo.png", "png")
+
         if self.target_transform is not None:
             target = self.target_transform(target)
 
         return img, target
 
     def __len__(self):
-        # 4 rotations and 2 flips
-        return len(self.data)*6
-
-
-class ImageFolderApply(data.Dataset):
-    """
-    TODO fill me
-    """
-
-    def __init__(self, path, transform=None, target_transform=None, classify=False):
-        """
-        TODO fill me
-
-        Parameters
-        ----------
-        path : string
-            Path to the dataset on the file System
-        transform : torchvision.transforms
-            Transformation to apply on the data
-        target_transform : torchvision.transforms
-            Transformation to apply on the labels
-        """
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE")
-        self.dataset_folder = os.path.expanduser(path)
-        self.transform = transform
-        self.target_transform = target_transform
-
-        if classify is True:
-            # Get an online dataset
-            dataset = torchvision.datasets.ImageFolder(path)
-
-            # Extract the actual file names and labels as entries
-            self.file_names = np.asarray([item[0] for item in dataset.imgs])
-            self.labels = np.asarray([item[1] for item in dataset.imgs])
-        else:
-            # Get all files in the folder that are images
-            self.file_names = self._get_filenames(self.dataset_folder)
-
-            # Extract the label for each file (assuming standard format of root_folder/class_folder/img.jpg)
-            self.labels = [item.split('/')[-2] for item in self.file_names]
-
-        # Set expected class attributes
-        self.classes = np.unique(self.labels)
-
-    def _get_filenames(self, path):
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> get_filenames()")
-        file_names = []
-        for item in get_all_files_in_folders_and_subfolders(path):
-            if has_extension(item, ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif']):
-                file_names.append(item)
-        return file_names
-
-    def __getitem__(self, index):
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> getitem()")
-        """
-        Retrieve a sample by index and provides its filename as well
-
-        Parameters
-        ----------
-        index : int
-
-        Returns
-        -------
-        img : FloatTensor
-        target : int
-            label of the image
-        filename : string
-        """
-
-        # Weird way to open things due to issue https://github.com/python-pillow/Pillow/issues/835
-        with open(self.file_names[index], 'rb') as f:
-            img = Image.open(f)
-            img = img.convert('RGB')
-
-        target, filename = self.labels[index], self.file_names[index]
-
-        if self.transform is not None:
-            img = self.transform(img)
-
-        if self.target_transform is not None:
-            target = self.target_transform(target)
-
-        return img, target, filename
-
-    def __len__(self):
-        return len(self.file_names)
+        return len(self.imgs)

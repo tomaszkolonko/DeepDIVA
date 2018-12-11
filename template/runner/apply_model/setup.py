@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 
 # DeepDIVA
 import models
-from datasets.image_folder_dataset import ImageFolderApply
+
 from template.runner.triplet.transforms import MultiCrop
 from template.setup import _load_mean_std_from_file, _get_optimizer, \
     _load_class_frequencies_weights_from_file
