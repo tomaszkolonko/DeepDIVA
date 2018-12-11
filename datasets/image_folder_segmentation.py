@@ -277,7 +277,7 @@ class ImageFolder(data.Dataset):
 
                 self.load_new_test_data()
                 self.reset_counter()
-                output = self.test_crop(is_new_image=True)
+                output = self.test_crop(new_image=os.path.basename(self.imgs[self.current_test_image_counter][0])[:-4])
                 self.current_horiz_crop += 1
                 return output
 
@@ -304,7 +304,7 @@ class ImageFolder(data.Dataset):
         self.current_vert_crop = 0
 
 
-    def test_crop(self, is_new_image = False):
+    def test_crop(self, new_image = ""):
         """
 
         :return: (window_input,(original_img_shape), (top_left_coordinates_of_crop),
@@ -319,7 +319,7 @@ class ImageFolder(data.Dataset):
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
 
-        return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position), is_new_image, self.current_test_gt_name), one_hot_matrix)
+        return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position), new_image), one_hot_matrix)
 
     def get_crop_coordinates(self):
         if self.current_horiz_crop == self.num_horiz_crops - 1:
