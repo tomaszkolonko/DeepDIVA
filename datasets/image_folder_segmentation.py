@@ -257,7 +257,7 @@ class ImageFolder(data.Dataset):
             tuple: for test ((window_input, orig_img_shape, top_left_coordinates_of_crop,
                 is_new_img), target)
         """
-
+        # TODO: if you fix the width and height issue, just change the tuple in parameters (for linda)
         if self.test_set:
             # load first image
             if self.current_test_image_counter < len(self.imgs):
