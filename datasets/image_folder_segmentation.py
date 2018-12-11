@@ -281,7 +281,7 @@ class ImageFolder(data.Dataset):
 
                 self.load_new_test_data()
                 self.reset_counter()
-                output = self.test_crop(new_image_name=os.path.basename(self.imgs[self.current_test_image_counter][1])[:-4])
+                output = self.test_crop()
                 self.current_horiz_crop += 1
                 return output
 

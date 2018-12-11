@@ -21,7 +21,7 @@ class Test_get_item(TestCase):
         # vertical crops: 25
         # horizontal crops: 33
         # number of test images: 5
-        self.assertEqual(self.test_ds.__len__(), 25*33*2)
+        self.assertEqual(self.test_ds.__len__(), 25*33*5)
 
     def test_get_item(self):
         image_gt_transform = transforms.Compose([
