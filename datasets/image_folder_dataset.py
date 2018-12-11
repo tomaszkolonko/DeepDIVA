@@ -219,17 +219,17 @@ class ImageFolder(data.Dataset):
         path, target = self.imgs[index]
 
         # MANUAL DEBUGGING
-        current_crop_folder = os.path.join(path[0:45], 'batch_' + str(self.current_batch))
-        if not os.path.isdir(current_crop_folder):
-            os.makedirs(current_crop_folder)
+        #current_crop_folder = os.path.join(path[0:45], 'batch_' + str(self.current_batch))
+        #if not os.path.isdir(current_crop_folder):
+        #    os.makedirs(current_crop_folder)
 
-        if(index == 0):
-            self.current_batch += 1
+        #if(index == 0):
+        #    self.current_batch += 1
 
         img = self.loader(path)
         if self.transform is not None:
             img = self.transform(img)
-            img.save(path[:-4] + "_yolo.png", "png")
+            #img.save(path[:-4] + "_yolo.png", "png")
 
         if self.target_transform is not None:
             target = self.target_transform(target)
