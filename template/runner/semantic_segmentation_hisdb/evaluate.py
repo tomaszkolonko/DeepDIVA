@@ -77,12 +77,13 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
     targets = []
 
     combined_one_hot = []  # only needed for test phase
+    current_img_name = ""
     counter = 0
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
         # get_item returns more during "test", as the output of a whole image needs to be combined
         if logging_label == "test":
-            input, orig_img_shape, top_left_coordinates, is_new, test_img_name = input
+            input, orig_img_shape, top_left_coordinates, is_new, test_img_names = input
             #test_img_name = test_img_name[0]
             orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
             #is_new = sum(is_new.numpy())
@@ -155,8 +156,12 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
         if logging_label == "test":
             one_hots = output.data.cpu().numpy()
             # TODO: do it with file name, no flag needed
-            for one_hot, x, y, img_name, new in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_name, is_new):
-                if not img_name or not new:
+            for one_hot, x, y, img_name, new in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names, is_new):
+                # first image name we get
+                if len(current_img_name == 0):
+                    current_img_name = img_name
+
+                if len(combined_one_hot) == 0 or not img_name or not new:
                     # on the same image / first iteration
                     combined_one_hot = one_hot_to_full_output(one_hot, (x, y), combined_one_hot,
                                                               orig_img_shape)
@@ -168,15 +173,16 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                     # TODO: pass gt image to save_img_...
                     if multi_run is None:
                         writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
-                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(img_name, counter),
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(current_img_name, counter),
                                                           image=np_rgb)
                     else:
                         writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}_{}'.format(multi_run, img_name, counter),
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}_{}'.format(multi_run, current_img_name, counter),
                                                           image=np_rgb)
                     # start the combination of the new image
-                    logging.info("Finished segmentation of image {}{}".format(test_img_name, counter))
+                    logging.info("Finished segmentation of image {}{}".format(current_img_name, counter))
                     counter += 1
+                    current_img_name = img_name
                     combined_one_hot = one_hot_to_full_output(one_hot, (x, y), [], orig_img_shape)
 
     # Make a confusion matrix

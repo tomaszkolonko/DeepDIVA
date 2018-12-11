@@ -583,18 +583,18 @@ def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
     ----------
     output_dims: tuples [Htot x Wtot]
         dimension of the large image
-    one_hot: numpy matrix of size [batch size x #C x W x H]
+    one_hot: numpy matrix of size [batch size x #C x H x W]
         a patch from the larger image
     coordinates: tuple
         top left coordinates of the patch within the larger image for all patches in a batch
-    combined_one_hot: numpy matrix of size [#C x Wtot x Htot]
+    combined_one_hot: numpy matrix of size [#C x Htot x Wtot]
         one hot encoding of the full image
     Returns
     -------
-    combined_one_hot: numpy matrix [#C x Wtot x Htot]
+    combined_one_hot: numpy matrix [#C x Htot x Wtot]
     """
     if len(combined_one_hot) == 0:
-        combined_one_hot = np.zeros((one_hot[0].shape[0], *output_dim))
+        combined_one_hot = np.zeros((one_hot.shape[0], *output_dim))
 
     x1, y1 = coordinates
     x2, y2 = (min(x1 + one_hot.shape[1], output_dim[0]), min(y1 + one_hot.shape[2], output_dim[1]))
