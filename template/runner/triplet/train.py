@@ -78,34 +78,11 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda, log
             out_n = out_n.view(bs, ncrops, -1).mean(1)
 
         # Compute and record the loss
-        if len(out_a) > 1 or len(out_p) > 1 or len(out_n) > 1:
-            lengths = {len(out_a), len(out_p), len(out_n)}
-            max_len = max(lengths)
-            indices = [i for i, x in enumerate(lengths) if x == max_len]
-            if 0 in indices:
-                out_a_0 = out_a[0]
-                out_a_1 = out_a[1]
-            else:
-                out_a_0 = out_a
-                out_a_1 = out_a_0
-
-            if 1 in indices:
-                out_p_0 = out_p[0]
-                out_p_1 = out_p[1]
-            else:
-                out_p_0 = out_p
-                out_p_1 = out_p_0
-
-            if 2 in indices:
-                out_n_0 = out_n[0]
-                out_n_1 = out_n[1]
-            else:
-                out_n_0 = out_n
-                out_n_1 = out_n_0
-            loss1 = criterion(out_a_0, out_p_0, out_n_0)
-            loss2 = criterion(out_a_1, out_p_1, out_n_1)
+        if len(out_a) > 1 and len(out_p) > 1 and len(out_n) > 1:
+            loss1 = criterion(out_p[0], out_a[0], out_n[0])
+            loss2 = criterion(out_p[1], out_a[1], out_n[1])
             loss = loss1 + 0.4 * loss2
-            out_a, out_p, out_n = out_a_0, out_p_0, out_n_0
+            out_a, out_p, out_n = out_a[0], out_p[0], out_n[0]
 
         else:
             loss = criterion(out_p, out_a, out_n)
