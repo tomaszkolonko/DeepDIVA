@@ -228,7 +228,7 @@ class ImageFolder(data.Dataset):
         # Variables for test set
         self.current_page = 0
 
-        if(True):
+        if self.test_set:
             self.current_test_image = default_loader(self.imgs[0][0])
             self.current_test_gt = default_loader(self.imgs[0][1])
             self.current_test_gt_name = os.path.basename(self.imgs[0][1])[:-4]
@@ -298,7 +298,7 @@ class ImageFolder(data.Dataset):
 
 
     def load_new_test_data(self):
-        self.current_test_image_counter = self.current_test_image_counter + 1
+        self.current_test_image_counter += 1
         self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
         self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
         self.current_test_gt_name = os.path.basename(self.imgs[self.current_test_image_counter][1])[:-4]
