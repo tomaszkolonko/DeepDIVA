@@ -2,6 +2,7 @@
 import logging
 import time
 import warnings
+import os
 import numpy as np
 
 # Torch related stuff
@@ -11,7 +12,7 @@ from tqdm import tqdm
 
 # DeepDIVA
 from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, \
-    save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_rgb, one_hot_to_full_output
+    save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_bgr, one_hot_to_full_output
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
@@ -21,7 +22,7 @@ def validate(val_loader, model, criterion, weights, writer, epoch, class_names, 
     return _evaluate(val_loader, model, criterion, weights, writer, epoch, class_names, 'val', no_cuda, log_interval, **kwargs)
 
 
-def test(test_loader, model, criterion,weights,  writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
+def test(test_loader, model, criterion, weights,  writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
     """Wrapper for _evaluate() with the intent to test the model"""
     return _evaluate(test_loader, model, criterion, weights, writer, epoch, class_names, 'test', no_cuda, log_interval, **kwargs)
 
@@ -56,7 +57,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
     meanIU.avg : float
         Accuracy of the model of the evaluated split
     """
-
+    dataset_folder = kwargs["dataset_folder"]
     num_classes = len(class_names)
     multi_run = kwargs['run'] if 'run' in kwargs else None
 
@@ -76,17 +77,16 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
     preds = []
     targets = []
 
-    combined_one_hot = []  # only needed for test phase
+    # needed for test phase output generation
+    combined_one_hot = []
     current_img_name = ""
-    counter = 0
+
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
         # get_item returns more during "test", as the output of a whole image needs to be combined
         if logging_label == "test":
             input, orig_img_shape, top_left_coordinates, test_img_names = input
-            #test_img_name = test_img_name[0]
             orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
-            #is_new = sum(is_new.numpy())
 
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
         target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target.numpy()]))
@@ -131,13 +131,6 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
             writer.add_scalar(logging_label + '/mb_accuracy_{}'.format(multi_run), mean_iu,
                                epoch * len(data_loader) + batch_idx)
 
-        # saving some output
-        if epoch+1 % 10 == 0 and epoch > 0:
-            np_rgb = one_hot_to_np_rgb(output.data.cpu().numpy()[1])
-            save_image_and_log_to_tensorboard_segmentation(writer,
-                                                           tag=logging_label + '/output_'+str(batch_idx),
-                                                           image=np_rgb)
-
         # Measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
@@ -155,36 +148,33 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
         # patches are returned as a sliding window over the full image, overlapping sections are averaged
         if logging_label == "test":
             one_hots = output.data.cpu().numpy()
-            # TODO: do it with file name, no flag needed
             for one_hot, x, y, img_name in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names):
-                # first image name we get
-                if img_name:
-                    print("\n"+img_name)
-
                 if len(current_img_name) == 0:
                     current_img_name = img_name
 
-                if len(combined_one_hot) == 0 or not img_name:
+                if len(combined_one_hot) == 0 or not img_name or img_name == current_img_name:
                     # on the same image / first iteration
                     combined_one_hot = one_hot_to_full_output(one_hot, (x, y), combined_one_hot,
                                                               orig_img_shape)
                 else:
                     # finished image, moving to next image
                     # save the old one before starting the new one
-                    np_rgb = one_hot_to_np_rgb(combined_one_hot)
+                    np_bgr = one_hot_to_np_bgr(combined_one_hot)
                     # TODO: also save input and gt image
                     # TODO: pass gt image to save_img_...
                     if multi_run is None:
                         writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
-                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(current_img_name, counter),
-                                                          image=np_rgb)
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(current_img_name),
+                                                                       image=np_bgr,
+                                                                       gt_img_path=os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png")
                     else:
                         writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}_{}'.format(multi_run, current_img_name, counter),
-                                                          image=np_rgb)
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, current_img_name),
+                                                                       image=np_bgr,
+                                                                       gt_img_path=os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png")
                     # start the combination of the new image
-                    logging.info("Finished segmentation of image {}{}".format(current_img_name, counter))
-                    counter += 1
+                    logging.info("Finished segmentation of image {}".format(current_img_name))
+
                     current_img_name = img_name
                     combined_one_hot = one_hot_to_full_output(one_hot, (x, y), [], orig_img_shape)
 
@@ -202,7 +192,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
 
         confusion_matrix_heatmap = np.zeros((10, 10, 3))
 
-    # Logging the epoch-wise accuracy and saving the confusion matrix TODO: check accuracy measure
+    # Logging the epoch-wise accuracy and saving the confusion matrix
     if multi_run is None:
         writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix',
@@ -224,7 +214,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                  'Batch time={batch_time.avg:.3f} ({data_time.avg:.3f} to load data)'
                  .format(epoch, batch_time=batch_time, data_time=data_time, loss=losses, meanIU=meanIU))
     #
-    # # Generate a classification report for each epoch TODO
+    # # Generate a classification report for each epoch
     # _log_classification_report(data_loader, epoch, preds, targets, writer)
 
     return meanIU.avg
