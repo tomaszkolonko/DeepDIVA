@@ -21,7 +21,7 @@ class Test_get_item(TestCase):
         # vertical crops: 25
         # horizontal crops: 33
         # number of test images: 5
-        self.assertEqual(self.test_ds.__len__(), 25*33*2)
+        self.assertEqual(self.test_ds.__len__(), 25*33*5)
 
     def test_get_item(self):
         image_gt_transform = transforms.Compose([
@@ -35,10 +35,11 @@ class Test_get_item(TestCase):
         length_of_dataset = self.test_ds.__len__()
 
         for i in range(length_of_dataset):
-            (window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, one_hot_matrix) = self.test_ds.__getitem__(index, unittesting=True)
-            if(is_new_image):
+            ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), new_image), one_hot_matrix) = self.test_ds.__getitem__(index, unittesting=True)
+            if(new_image != ""):
                 print("************************************************")
                 print("***************  NEW  IMAGE  *******************")
+                print(new_image)
                 print("************************************************")
             print("img_heigth: " + str(self.img_heigth) + " img_width: " + str(self.img_width) + " x: " + str(x_position) + " y: " + str(y_position))
 

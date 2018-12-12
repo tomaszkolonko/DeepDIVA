@@ -77,14 +77,16 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
     targets = []
 
     combined_one_hot = []  # only needed for test phase
+    current_img_name = ""
+    counter = 0
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
         # get_item returns more during "test", as the output of a whole image needs to be combined
         if logging_label == "test":
-            input, orig_img_shape, top_left_coordinates, is_new, test_img_name = input
-            test_img_name = test_img_name[0]
+            input, orig_img_shape, top_left_coordinates, test_img_names = input
+            #test_img_name = test_img_name[0]
             orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
-            is_new = sum(is_new.numpy())
+            #is_new = sum(is_new.numpy())
 
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
         target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target.numpy()]))
@@ -129,6 +131,13 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
             writer.add_scalar(logging_label + '/mb_accuracy_{}'.format(multi_run), mean_iu,
                                epoch * len(data_loader) + batch_idx)
 
+        # saving some output
+        if epoch+1 % 10 == 0 and epoch > 0:
+            np_rgb = one_hot_to_np_rgb(output.data.cpu().numpy()[1])
+            save_image_and_log_to_tensorboard_segmentation(writer,
+                                                           tag=logging_label + '/output_'+str(batch_idx),
+                                                           image=np_rgb)
+
         # Measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
@@ -142,43 +151,52 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                              meanIU='{meanIU.avg:.3f}\t'.format(meanIU=meanIU),
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
 
-        # TODO saving the output images
         # if we are in testing, the output needs to be patched together to form the complete output of the full image
         # patches are returned as a sliding window over the full image, overlapping sections are averaged
         if logging_label == "test":
+            one_hots = output.data.cpu().numpy()
             # TODO: do it with file name, no flag needed
-            if not is_new:
-                # on the same image / first iteration
-                combined_one_hot = one_hot_to_full_output(output, top_left_coordinates, combined_one_hot,
-                                                          orig_img_shape)
-            else:
-                # finished image, moving to next image
-                # save the old one before starting the new one
-                np_rgb = one_hot_to_np_rgb(combined_one_hot)
-                # TODO: also save input and gt image
-                if multi_run is None:
-                    writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
-                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_'+test_img_name,
-                                                      image=np_rgb)
-                else:
-                    writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-                    save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, test_img_name),
-                                                      image=np_rgb)
-                # start the combination of the new image
-                logging.info("Finished segmentation of image {}".format(test_img_name))
-                combined_one_hot = one_hot_to_full_output(output, top_left_coordinates, [], orig_img_shape)
+            for one_hot, x, y, img_name in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names):
+                # first image name we get
+                if img_name:
+                    print("\n"+img_name)
 
-    # Make a confusion matrix TODO: ajust for class frequency
+                if len(current_img_name) == 0:
+                    current_img_name = img_name
+
+                if len(combined_one_hot) == 0 or not img_name:
+                    # on the same image / first iteration
+                    combined_one_hot = one_hot_to_full_output(one_hot, (x, y), combined_one_hot,
+                                                              orig_img_shape)
+                else:
+                    # finished image, moving to next image
+                    # save the old one before starting the new one
+                    np_rgb = one_hot_to_np_rgb(combined_one_hot)
+                    # TODO: also save input and gt image
+                    # TODO: pass gt image to save_img_...
+                    if multi_run is None:
+                        writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(current_img_name, counter),
+                                                          image=np_rgb)
+                    else:
+                        writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}_{}'.format(multi_run, current_img_name, counter),
+                                                          image=np_rgb)
+                    # start the combination of the new image
+                    logging.info("Finished segmentation of image {}{}".format(current_img_name, counter))
+                    counter += 1
+                    current_img_name = img_name
+                    combined_one_hot = one_hot_to_full_output(one_hot, (x, y), [], orig_img_shape)
+
+    # Make a confusion matrix
     try:
         targets_flat = np.array(targets).flatten()
         preds_flat = np.array(preds).flatten()
-        # targets_flat = np.array([[np.argmax(a, axis=0) for a in target.numpy()] for target in targets]).flatten()
-        # preds_flat = np.array([[np.argmax(a, axis=0) for a in pred.numpy()] for pred in preds]).flatten()
         sample_weight = [weights[i] for i in targets_flat]
         cm = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)])
         cm_w = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)], sample_weight=sample_weight)
         confusion_matrix_heatmap = make_heatmap(cm, class_names)
-        confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
+        confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w).astype(np.int), class_names)
     except ValueError:
         logging.warning('Confusion Matrix did not work as expected')
 

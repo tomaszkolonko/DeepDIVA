@@ -257,7 +257,7 @@ class ImageFolder(data.Dataset):
             tuple: for test ((window_input, orig_img_shape, top_left_coordinates_of_crop,
                 is_new_img), target)
         """
-
+        # TODO: if you fix the width and height issue, just change the tuple in parameters (for linda)
         if self.test_set:
             # load first image
             if self.current_test_image_counter < len(self.imgs):
@@ -270,14 +270,18 @@ class ImageFolder(data.Dataset):
                             #print("current_vert_crop: " + str(self.current_vert_crop) + " of " + str(self.num_vert_crops))
 
                             return output
-                        output = self.test_crop()
+                        if self.current_test_gt_name != "":
+                            output = self.test_crop(new_image_name=self.current_test_gt_name)
+                            self.current_test_gt_name = ""
+                        else:
+                            output = self.test_crop()
                         self.current_horiz_crop += 1
                         #print("current_horiz_crop: " + str(self.current_horiz_crop) + " of " + str(self.num_horiz_crops))
                         return output
 
                 self.load_new_test_data()
                 self.reset_counter()
-                output = self.test_crop(is_new_image=True)
+                output = self.test_crop()
                 self.current_horiz_crop += 1
                 return output
 
@@ -303,8 +307,7 @@ class ImageFolder(data.Dataset):
         self.current_horiz_crop = 0
         self.current_vert_crop = 0
 
-
-    def test_crop(self, is_new_image = False):
+    def test_crop(self, new_image_name=""):
         """
 
         :return: (window_input,(original_img_shape), (top_left_coordinates_of_crop),
@@ -314,12 +317,11 @@ class ImageFolder(data.Dataset):
         window_input_image = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
         window_target_image = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
 
-
         window_input_torch = functional.to_tensor(window_input_image)
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
 
-        return ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), is_new_image, self.current_test_gt_name), one_hot_matrix)
+        return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position), new_image_name), one_hot_matrix)
 
     def get_crop_coordinates(self):
         if self.current_horiz_crop == self.num_horiz_crops - 1:
