@@ -78,7 +78,14 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda, log
             out_n = out_n.view(bs, ncrops, -1).mean(1)
 
         # Compute and record the loss
-        loss = criterion(out_p, out_a, out_n)
+        if len(out_a) > 1 and len(out_p) > 1 and len(out_n) > 1:
+            loss1 = criterion(out_p[0], out_a[0], out_n[0])
+            loss2 = criterion(out_p[1], out_a[1], out_n[1])
+            loss = loss1 + 0.4 * loss2
+            out_a, out_p, out_n = out_a[0], out_p[0], out_n[0]
+
+        else:
+            loss = criterion(out_p, out_a, out_n)
 
         losses.update(loss.data[0], data_a.size(0))
 
