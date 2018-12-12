@@ -83,7 +83,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
     for batch_idx, (input, target) in pbar:
         # get_item returns more during "test", as the output of a whole image needs to be combined
         if logging_label == "test":
-            input, orig_img_shape, top_left_coordinates, is_new, test_img_names = input
+            input, orig_img_shape, top_left_coordinates, test_img_names = input
             #test_img_name = test_img_name[0]
             orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
             #is_new = sum(is_new.numpy())
@@ -156,12 +156,15 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
         if logging_label == "test":
             one_hots = output.data.cpu().numpy()
             # TODO: do it with file name, no flag needed
-            for one_hot, x, y, img_name, new in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names, is_new):
+            for one_hot, x, y, img_name in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names):
                 # first image name we get
-                if len(current_img_name == 0):
+                if img_name:
+                    print("\n"+img_name)
+
+                if len(current_img_name) == 0:
                     current_img_name = img_name
 
-                if len(combined_one_hot) == 0 or not img_name or not new:
+                if len(combined_one_hot) == 0 or not img_name:
                     # on the same image / first iteration
                     combined_one_hot = one_hot_to_full_output(one_hot, (x, y), combined_one_hot,
                                                               orig_img_shape)
