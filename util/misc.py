@@ -300,7 +300,7 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
 
     return
 
-def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, ground_truth=None):
+def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_img_path=None):
     """Utility function to save image in the output folder and also log it to Tensorboard.
 
     Parameters
@@ -326,7 +326,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
 
     # 1. Create true output
     # Log image to Tensorboard
-    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+    #writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
 
     # Get output folder using the FileHandler from the logger.
     # (Assumes the file handler is the last one)
@@ -340,22 +340,20 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
 
-
     cv2.imwrite(dest_filename, image)
 
     # 2. Make a more human readable output -> one colour per class
     # Write image to output folder
-    tag += "_coloured"
-    writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
+    tag_col = "coloured_" + tag
 
     # Get output folder using the FileHandler from the logger.
     # (Assumes the file handler is the last one)
     output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
     if global_step is not None:
-        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+        dest_filename = os.path.join(output_folder, 'images', tag_col + '_{}.png'.format(global_step))
     else:
-        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+        dest_filename = os.path.join(output_folder, 'images', tag_col + '.png')
 
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
@@ -363,15 +361,17 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     img = np.copy(image)
     blue = img[:, :, 2]  # Extract just blue channel
     masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
-    class_col = {"background": (0, 0, 0), "maintext": (0, 255, 255), "comment": (255, 255, 0),
+    # Colours are in BGR
+    class_col = {"background": (0, 0, 0), "maintext": (255, 255, 0), "comment": (0, 255, 255),
                  "decoration": (255, 0, 255),
-                 "comment_decoration": (255, 125, 0), "maintext_comment": (0, 200, 0),
+                 "comment_decoration": (0, 125, 255), "maintext_comment": (0, 200, 0),
                  "maintext_decoration": (200, 0, 200),
                  "maintext_comment_decoration": (255, 255, 255)}
 
     for c, mask in masks.items():
         img[mask] = class_col[c]
 
+    #writer.add_image(tag=tag_col, img_tensor=np.moveaxis(img, -1, 0), global_step=global_step)
     # Write image to output folder
     cv2.imwrite(dest_filename, img)
 
@@ -381,39 +381,42 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     # BLACK: Background predicted correctly rgb(0, 0, 0)
     # RED: Background mis-predicted as Foreground rgb(240, 30, 20)
     # BLUE: Foreground mis-predicted as Background rgb(0, 240, 255)
-    if ground_truth:
+    if gt_img_path:
+        with open(gt_img_path, 'rb') as f:
+            with Image.open(f) as img:
+                ground_truth = np.array(img.convert('BGR'))
+
         img_la = np.copy(image)
-
-        # Write image to output folder
-        tag += "_layout_analysis"
-        # TODO this does not work
-        writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
-
+        tag_la = "layout_analysis_" + tag
         # Get output folder using the FileHandler from the logger.
         # (Assumes the file handler is the last one)
         output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
         if global_step is not None:
-            dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+            dest_filename = os.path.join(output_folder, 'images', tag_la + '_{}.png'.format(global_step))
         else:
-            dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+            dest_filename = os.path.join(output_folder, 'images', tag_la + '.png')
 
         if not os.path.exists(os.path.dirname(dest_filename)):
             os.makedirs(os.path.dirname(dest_filename))
 
-        out_blue = img_la[:, :, 2]  # Extract just blue channel
-        gt_blue = ground_truth[:, :, 2]
+        out_blue = img_la[:, :, 0]  # Extract just blue channel
+        gt_blue = ground_truth[:, :, 0]
 
         img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
                            for x in range(out_blue.shape[0])])
 
+        # Write image to output folder
+        # TODO this does not work
+        #writer.add_image(tag=tag_la, img_tensor=np.moveaxis(img_la, -1, 0), global_step=global_step)
         cv2.imwrite(dest_filename, img_la)
 
     return
 
 def _get_colour(output, gt):
-    class_col = {"fg_correct": (80, 140, 30), "fg_wrong_class": (255, 255, 60), "bg_correct": (0, 0, 0),
-                 "bg_as_fg": (240, 30, 20), "fg_as_bg": (0, 240, 255)}
+    # Colours are in BGR
+    class_col = {"fg_correct": (30, 160, 70), "fg_wrong_class": (60, 255, 255), "bg_correct": (0, 0, 0),
+                 "bg_as_fg": (20, 30, 240), "fg_as_bg": (255, 240, 0)}
 
     if output == gt and gt in [2, 4, 6, 8, 10, 12, 14]:
         return class_col["fg_correct"]
@@ -549,7 +552,7 @@ def multi_one_hot_to_output(matrix):
     return RGB
 
 
-def one_hot_to_np_rgb(matrix):
+def one_hot_to_np_bgr(matrix):
     """
     This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
 
@@ -559,7 +562,7 @@ def one_hot_to_np_rgb(matrix):
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     Returns
     -------
-    numpy array of size [C x H x W] (RGB)
+    numpy array of size [C x H x W] (BGR)
     """
     B = np.argmax(matrix, axis=0)
     class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
@@ -569,9 +572,9 @@ def one_hot_to_np_rgb(matrix):
     for mask, (old, new) in zip(masks, class_to_B.items()):
         B = np.where(mask, new, B)
 
-    RGB = np.dstack((np.zeros(shape=(B.shape[0], B.shape[1], 2), dtype=np.int8), B))
+    bgr = np.dstack((B, np.zeros(shape=(B.shape[0], B.shape[1], 2), dtype=np.int8)))
 
-    return RGB
+    return bgr
 
 
 def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
