@@ -49,23 +49,22 @@ class Test_get_item(TestCase):
     def test_get_item(self):
 
         index = 0 # value that is not used at all
+        epochs = 2
 
         length_of_dataset = self.train_ds.__len__()
 
-        for i in range(length_of_dataset):
-            img, target = self.train_ds.__getitem__(index)
+        for i in range(epochs):
+            current_epoch_path_name = self.create_folder(i)
+            for j in range(length_of_dataset):
+                img, target, path = self.train_ds.__getitem__(j)
+                image_base_name = os.path.basename(path)
 
-            # Getting the train dir
-            current_memory_pass = os.path.join(self.train_dir, 'memory_pass_' + str(memory_pass))
-            current_page_folder = os.path.join(current_memory_pass, 'page_' + str(current_page))
-            current_crop_folder = os.path.join(current_page_folder, 'crop_' + str(current_crop))
 
-            if not os.path.isdir(current_memory_pass):
-                os.makedirs(current_memory_pass)
-            if not os.path.isdir(current_page_folder):
-                os.makedirs(current_page_folder)
-            if not os.path.isdir(current_crop_folder):
-                os.makedirs(current_crop_folder)
+                img.save(current_epoch_path_name + "/" + image_base_name, "png")
 
-            img.save(current_crop_folder + "/img_" + str(i), "png")
-            gt_one_hot.save(current_crop_folder + "/gt_" + str(i), "png")
+
+    def create_folder(self, i):
+        current_epoch_pass = os.path.join(self.train_dir, 'epoch_' + str(i))
+        if not os.path.isdir(current_epoch_pass):
+            os.makedirs(current_epoch_pass)
+        return current_epoch_pass

@@ -5,13 +5,14 @@ Load a dataset of images by specifying the folder where its located.
 # Utils
 import logging
 import sys
+import math
 from multiprocessing import Pool
 import cv2
 import numpy as np
 
 # Torch related stuff
 import torchvision
-from PIL import Image
+from PIL import Image, ImageFile
 
 import torch.utils.data as data
 
@@ -207,6 +208,26 @@ class ImageFolder(data.Dataset):
 
         self.current_batch = 0
 
+        self.test_set = "/test" in self.root
+        if self.test_set:
+            self.current_image = 0
+            self.number_of_test_images = len(self.imgs)
+            self.current_horizontal_crop = 0
+            self.current_vertical_crop = 0
+            self.exhaustive_crops_per_test_set = self.get_exhaustive_crops_per_test_set()
+
+    def get_exhaustive_crops_per_test_set(self):
+        total_exhaustive_crops_per_test_epoch = 0
+        for i in range(len(self.imgs)):
+            image_file = Image.open(self.imgs[i][0])
+
+            total_horizontal_crops_per_image = math.ceil(image_file.height / 224)
+            total_vertical_crops_per_image = math.ceil(image_file.width / 224)
+
+            total_exhaustive_crops_per_test_epoch += total_horizontal_crops_per_image * total_vertical_crops_per_image
+        return total_exhaustive_crops_per_test_epoch
+
+
 
     def __getitem__(self, index):
         """
@@ -217,24 +238,21 @@ class ImageFolder(data.Dataset):
             tuple: (image, target) where target is class_index of the target class.
         """
         path, target = self.imgs[index]
-
-        # MANUAL DEBUGGING
-        #current_crop_folder = os.path.join(path[0:45], 'batch_' + str(self.current_batch))
-        #if not os.path.isdir(current_crop_folder):
-        #    os.makedirs(current_crop_folder)
-
-        #if(index == 0):
-        #    self.current_batch += 1
-
         img = self.loader(path)
+
         if self.transform is not None:
             img = self.transform(img)
-            #img.save(path[:-4] + "_yolo.png", "png")
 
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        return img, target
+        if "unit_tests" in path:
+            return img, target, path
+        else:
+            return img, target
 
     def __len__(self):
+        if self.test_set:
+            return self.exhaustive_crops_per_test_set
+
         return len(self.imgs)
