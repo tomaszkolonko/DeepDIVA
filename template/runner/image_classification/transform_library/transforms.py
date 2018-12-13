@@ -18,7 +18,7 @@ from . import functional as F
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomCrop", "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop",
            "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter", "RandomRotation",
-           "Grayscale", "RandomGrayscale", "ToTensorTwinImage", "RandomTwinCrop"]
+           "Grayscale", "RandomGrayscale"]
 
 
 class Compose(object):
@@ -37,10 +37,10 @@ class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, img, gt, crop_size):
+    def __call__(self, img):
         for t in self.transforms:
-            img, gt = t(img, gt, crop_size)
-        return img, gt
+            img = t(img)
+        return img
 
 
 class ToTensor(object):
@@ -59,24 +59,6 @@ class ToTensor(object):
             Tensor: Converted image.
         """
         return F.to_tensor(pic)
-
-
-class ToTensorTwinImage(object):
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
-
-    Converts a PIL Image or numpy.ndarray (H x W x C) in the range
-    [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
-    """
-
-    def __call__(self, img, gt, crop_size):
-        """
-        Args:
-            pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
-
-        Returns:
-            Tensor: Converted image.
-        """
-        return F.to_tensor(img), F.to_tensor(gt)
 
 
 class ToPILImage(object):
@@ -304,61 +286,6 @@ class RandomCrop(object):
         i, j, h, w = self.get_params(img, self.size)
 
         return F.crop(img, i, j, h, w)
-
-
-class RandomTwinCrop(object):
-    """Crop the given PIL Image at a random location.
-
-    Args:
-        size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (h, w), a square crop (size, size) is
-            made.
-        padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is 0, i.e no padding. If a sequence of length
-            4 is provided, it is used to pad left, top, right, bottom borders
-            respectively.
-    """
-
-#    def __init__(self, size, padding=0):
-#        if isinstance(size, numbers.Number):
-#            self.size = (int(size), int(size))
-#        else:
-#            self.size = size
-#        self.padding = padding
-
-    @staticmethod
-    def get_params(img, crop_size):
-        """Get parameters for ``crop`` for a random crop.
-
-        Args:
-            img (PIL Image): Image to be cropped.
-            output_size (tuple): Expected output size of the crop.
-
-        Returns:
-            tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
-        """
-        w, h = img.size
-        th = crop_size
-        tw = crop_size
-        if w == tw and h == th:
-            return 0, 0, h, w
-
-        i = random.randint(0, h - th)
-        j = random.randint(0, w - tw)
-        return i, j, th, tw
-
-    def __call__(self, img, gt, crop_size):
-        """
-        Args:
-            img (PIL Image): Image to be cropped.
-
-        Returns:
-            PIL Image: Cropped image.
-        """
-
-        i, j, h, w = self.get_params(img, crop_size)
-
-        return F.crop(img, i, j, h, w), F.crop(gt, i, j, h, w)
 
 
 class RandomHorizontalFlip(object):
