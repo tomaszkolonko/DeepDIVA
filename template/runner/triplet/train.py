@@ -77,12 +77,9 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda, log
             out_p = out_p.view(bs, ncrops, -1).mean(1)
             out_n = out_n.view(bs, ncrops, -1).mean(1)
 
-        print("ncols of out_a: ", len(out_a))
-        print("nrows of out_a: ", len(out_a[0]))
-        print("ncols of out_p: ", len(out_p))
-        print("nrows of out_p: ", len(out_p[0]))
-        print("ncols of out_n: ", len(out_n))
-        print("nrows of out_n: ", len(out_n[0]))
+
+        pbar.set_description('ncols of out_a: {}, nrows of out_a: {}, ncols of out_p: {}, nrows of out_p: {}, ncols of out_n: {}, nrows of out_n: {},'.format(
+            len(out_a), len(out_a[0]), len(out_a), len(out_a[0]), len(out_n), len(out_n[0])))
 
         # Compute and record the loss
         if len(out_a) > 2 and len(out_p) > 2 and len(out_n) > 2:
