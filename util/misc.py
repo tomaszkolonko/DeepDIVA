@@ -301,7 +301,7 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
     return
 
 def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_img_path=None):
-    """Utility function to save image in the output folder and also log it to Tensorboard.
+    """Utility function to save image in the output folder and also log it to Tensorboard. ALL IMAGES ARE IN BGR!!
 
     Parameters
     ----------
@@ -359,7 +359,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
         os.makedirs(os.path.dirname(dest_filename))
 
     img = np.copy(image)
-    blue = img[:, :, 2]  # Extract just blue channel
+    blue = img[:, :, 0]  # Extract just blue channel
     masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
     # Colours are in BGR
     class_col = {"background": (0, 0, 0), "maintext": (255, 255, 0), "comment": (0, 255, 255),
@@ -384,7 +384,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     if gt_img_path:
         with open(gt_img_path, 'rb') as f:
             with Image.open(f) as img:
-                ground_truth = np.array(img.convert('BGR'))
+                ground_truth = np.array(img.convert('RGB'))[:,:,::-1] # convert to BGR
 
         img_la = np.copy(image)
         tag_la = "layout_analysis_" + tag
