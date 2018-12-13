@@ -88,6 +88,9 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
             input, orig_img_shape, top_left_coordinates, test_img_names = input
             orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
 
+            if not all('' == s or s.isspace() for s in test_img_names):
+                print(test_img_names)
+
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
         target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target.numpy()]))
 
@@ -118,6 +121,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
         meanIU.update(mean_iu, input.size(0))
 
         # Get the predictions
+        #if logging_label != "test":
         _ = [preds.append(item) for item in output_argmax]
         _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
 
@@ -151,6 +155,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
             for one_hot, x, y, img_name in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names):
                 if len(current_img_name) == 0:
                     current_img_name = img_name
+                    logging.info("Starting new image {}".format(current_img_name))
 
                 if len(combined_one_hot) == 0 or not img_name or img_name == current_img_name:
                     # on the same image / first iteration
@@ -161,7 +166,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                     # save the old one before starting the new one
                     np_bgr = one_hot_to_np_bgr(combined_one_hot)
                     # TODO: also save input and gt image
-                    # TODO: pass gt image to save_img_...
+                    # TODO: get gt image from dataloader
                     if multi_run is None:
                         writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
                         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(current_img_name),
@@ -172,10 +177,15 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, current_img_name),
                                                                        image=np_bgr,
                                                                        gt_img_path=os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png")
+
+                    #_ = [preds.append(item) for item in np.array([np.argmax(o, axis=0) for o in combined_one_hot])]
+                    #_ = [targets.append(item) for item in target_argmax.cpu().numpy()]
+
                     # start the combination of the new image
                     logging.info("Finished segmentation of image {}".format(current_img_name))
 
                     current_img_name = img_name
+                    logging.info("Starting new image {}".format(current_img_name))
                     combined_one_hot = one_hot_to_full_output(one_hot, (x, y), [], orig_img_shape)
 
     # Make a confusion matrix
@@ -186,11 +196,12 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
         cm = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)])
         cm_w = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)], sample_weight=sample_weight)
         confusion_matrix_heatmap = make_heatmap(cm, class_names)
-        confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w).astype(np.int), class_names)
+        confusion_matrix_heatmap_w = confusion_matrix_heatmap
+        #confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w).astype(np.int), class_names)
     except ValueError:
         logging.warning('Confusion Matrix did not work as expected')
-
         confusion_matrix_heatmap = np.zeros((10, 10, 3))
+        confusion_matrix_heatmap_w = confusion_matrix_heatmap
 
     # Logging the epoch-wise accuracy and saving the confusion matrix
     if multi_run is None:
