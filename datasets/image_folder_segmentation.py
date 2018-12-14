@@ -267,16 +267,9 @@ class ImageFolder(data.Dataset):
                             output = self.test_crop()
                             self.current_horiz_crop = 0
                             self.current_vert_crop += 1
-                            #print("current_vert_crop: " + str(self.current_vert_crop) + " of " + str(self.num_vert_crops))
-
-                            return output
-                        if self.current_test_gt_name != "":
-                            output = self.test_crop(new_image_name=self.current_test_gt_name)
-                            self.current_test_gt_name = ""
                         else:
                             output = self.test_crop()
-                        self.current_horiz_crop += 1
-                        #print("current_horiz_crop: " + str(self.current_horiz_crop) + " of " + str(self.num_horiz_crops))
+                            self.current_horiz_crop += 1
                         return output
 
                 self.load_new_test_data()
@@ -301,13 +294,12 @@ class ImageFolder(data.Dataset):
         self.current_test_image_counter += 1
         self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
         self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
-        self.current_test_gt_name = os.path.basename(self.imgs[self.current_test_image_counter][1])[:-4]
 
     def reset_counter(self):
         self.current_horiz_crop = 0
         self.current_vert_crop = 0
 
-    def test_crop(self, new_image_name=""):
+    def test_crop(self):
         """
 
         :return: (window_input,(original_img_shape), (top_left_coordinates_of_crop),
@@ -321,7 +313,8 @@ class ImageFolder(data.Dataset):
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
 
-        return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position), new_image_name), one_hot_matrix)
+        return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
+                 os.path.basename(self.imgs[self.current_test_image_counter][1])[:]), one_hot_matrix)
 
     def get_crop_coordinates(self):
         if self.current_horiz_crop == self.num_horiz_crops - 1:

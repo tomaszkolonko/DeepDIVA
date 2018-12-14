@@ -35,13 +35,11 @@ class Test_get_item(TestCase):
         length_of_dataset = self.test_ds.__len__()
 
         for i in range(length_of_dataset):
-            ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), new_image), one_hot_matrix) = self.test_ds.__getitem__(index, unittesting=True)
-            if(new_image != ""):
-                print("************************************************")
-                print("***************  NEW  IMAGE  *******************")
-                print(new_image)
-                print("************************************************")
-            print("img_heigth: " + str(self.img_heigth) + " img_width: " + str(self.img_width) + " x: " + str(x_position) + " y: " + str(y_position))
+            ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), image_name),
+             one_hot_matrix) = self.test_ds.__getitem__(index, unittesting=True)
+
+            print(str(image_name[:]) + " -> img_heigth: " + str(self.img_heigth) + " img_width: " + str(self.img_width)
+                  + " /// x: " + str(x_position) + " y: " + str(y_position))
 
             # because of time constraints only manual testing performed
             # If you want to run this part that saves all the crops to disk for further analysis
