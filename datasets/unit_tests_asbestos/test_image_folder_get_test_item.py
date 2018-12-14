@@ -45,3 +45,7 @@ class Test_get_item(TestCase):
         model_name = "resnet18"
         model_expected_input_size = models.__dict__[model_name]().expected_input_size
         self.assertEqual(model_expected_input_size, (224, 224))
+
+    def create_full_images_from_exhaustive_crops(self):
+        for i in range(self.test_ds.__len__()):
+            crop = self.test_ds.__getitem__()

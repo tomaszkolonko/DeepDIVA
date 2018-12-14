@@ -240,6 +240,16 @@ class ImageFolder(data.Dataset):
         path, target = self.imgs[index]
         img = self.loader(path)
 
+        # TODO: for later -> think how to change the minibatches to match only one image at a time
+        # but only at test time.
+
+        if self.test_set:
+            # return crop by crop of an image until one image is through
+            # keep track of the positions per image with the self.current_horizontal_crop...
+
+            print("yolo")
+
+
         if self.transform is not None:
             img = self.transform(img)
 
@@ -250,6 +260,9 @@ class ImageFolder(data.Dataset):
             return img, target, path
         else:
             return img, target
+
+
+
 
     def __len__(self):
         if self.test_set:
