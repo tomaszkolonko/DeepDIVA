@@ -300,8 +300,9 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
 
     return
 
-def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_img_path=None):
-    """Utility function to save image in the output folder and also log it to Tensorboard. ALL IMAGES ARE IN BGR!!
+def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_image=[]):
+    """Utility function to save image in the output folder and also log it to Tensorboard.
+    ALL IMAGES ARE IN BGR BECAUSE OF CV3.IMWRITE()!!
 
     Parameters
     ----------
@@ -381,11 +382,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     # BLACK: Background predicted correctly rgb(0, 0, 0)
     # RED: Background mis-predicted as Foreground rgb(240, 30, 20)
     # BLUE: Foreground mis-predicted as Background rgb(0, 240, 255)
-    if gt_img_path:
-        with open(gt_img_path, 'rb') as f:
-            with Image.open(f) as img:
-                ground_truth = np.array(img.convert('RGB'))[:,:,::-1] # convert to BGR
-
+    if len(gt_image) != 0:
         img_la = np.copy(image)
         tag_la = "layout_analysis_" + tag
         # Get output folder using the FileHandler from the logger.
@@ -401,7 +398,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
             os.makedirs(os.path.dirname(dest_filename))
 
         out_blue = img_la[:, :, 0]  # Extract just blue channel
-        gt_blue = ground_truth[:, :, 0]
+        gt_blue = gt_image[:, :, 0]
 
         img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
                            for x in range(out_blue.shape[0])])

@@ -4,6 +4,7 @@ import time
 import warnings
 import os
 import numpy as np
+from PIL import Image
 
 # Torch related stuff
 import torch
@@ -15,6 +16,8 @@ from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_l
     save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_bgr, one_hot_to_full_output
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 from util.evaluation.metrics.accuracy import accuracy_segmentation
+from util.misc import gt_tensor_to_one_hot
+from template.runner.semantic_segmentation.transform_library import functional
 
 
 def validate(val_loader, model, criterion, weights, writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
@@ -155,7 +158,6 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
             for one_hot, x, y, img_name in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names):
                 if len(current_img_name) == 0:
                     current_img_name = img_name
-                    logging.info("Starting new image {}".format(current_img_name))
 
                 if len(combined_one_hot) == 0 or not img_name or img_name == current_img_name:
                     # on the same image / first iteration
@@ -165,21 +167,25 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                     # finished image, moving to next image
                     # save the old one before starting the new one
                     np_bgr = one_hot_to_np_bgr(combined_one_hot)
+                    #_ = [preds.append(item) for item in np.array([np.argmax(o, axis=0) for o in combined_one_hot])]
+                    gt_img_path = os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png"
+                    with open(gt_img_path, 'rb') as f:
+                        with Image.open(f) as img:
+                            ground_truth = np.array(img.convert('RGB'))
+                            #ground_truth_argmax = functional.to_tensor(ground_truth)
+                    # _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
+
+
                     # TODO: also save input and gt image
                     # TODO: get gt image from dataloader
                     if multi_run is None:
                         writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
                         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(current_img_name),
-                                                                       image=np_bgr,
-                                                                       gt_img_path=os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png")
+                                                                       image=np_bgr, gt_image=[]) # ground_truth[:, :, ::-1] convert image to BGR
                     else:
                         writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
                         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, current_img_name),
-                                                                       image=np_bgr,
-                                                                       gt_img_path=os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png")
-
-                    #_ = [preds.append(item) for item in np.array([np.argmax(o, axis=0) for o in combined_one_hot])]
-                    #_ = [targets.append(item) for item in target_argmax.cpu().numpy()]
+                                                                       image=np_bgr, gt_image=[]) # ground_truth[:, :, ::-1] convert image to BGR
 
                     # start the combination of the new image
                     logging.info("Finished segmentation of image {}".format(current_img_name))
