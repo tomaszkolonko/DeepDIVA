@@ -11,17 +11,20 @@ from datasets.image_folder_segmentation import find_classes, is_image_file, Imag
 class Test_get_item(TestCase):
     def setUp(self):
         self.test_dir = "/Users/tomasz/DeepDIVA/datasets/unit_tsts/test"
-        self.pages_in_memory = 3
-        self.crops_per_image = 10
-        self.crop_size = 200
+        self.pages_in_memory = 0
+        self.crops_per_image = 0
+        self.crop_size = 256
         self.test_ds = ImageFolder(self.test_dir, self.pages_in_memory, self.crops_per_image, self.crop_size)
 
     def test_length_of_epoch(self):
         # check init to see the formula how it was calculated
-        # vertical crops: 25
-        # horizontal crops: 33
-        # number of test images: 5
-        self.assertEqual(self.test_ds.__len__(), 25*33*5)
+        # vertical crops: 20
+        # horizontal crops: 26
+        # number of test images: 10
+        self.assertEqual(self.test_ds.__len__(), 26*26*10)
+
+    def test_crops_per_image(self):
+        self.assertEqual(self.test_ds.crops_per_image, 1989)
 
     def test_get_item(self):
         image_gt_transform = transforms.Compose([
