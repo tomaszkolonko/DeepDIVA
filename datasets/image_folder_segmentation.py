@@ -306,7 +306,7 @@ class ImageFolder(data.Dataset):
                     is_new_image, target)
         """
         x_position, y_position = self.get_crop_coordinates()
-        print(x_position, y_position)
+        #print(x_position, y_position)
         window_input_image = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
         window_target_image = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
 

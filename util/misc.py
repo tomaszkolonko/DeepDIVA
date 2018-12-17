@@ -334,9 +334,9 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
     if global_step is not None:
-        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+        dest_filename = os.path.join(output_folder, 'images', tag + '_{}'.format(global_step))
     else:
-        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+        dest_filename = os.path.join(output_folder, 'images', tag)
 
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
@@ -352,9 +352,9 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
     if global_step is not None:
-        dest_filename = os.path.join(output_folder, 'images', tag_col + '_{}.png'.format(global_step))
+        dest_filename = os.path.join(output_folder, 'images', tag_col + '_{}'.format(global_step))
     else:
-        dest_filename = os.path.join(output_folder, 'images', tag_col + '.png')
+        dest_filename = os.path.join(output_folder, 'images', tag_col)
 
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
@@ -390,9 +390,9 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
         output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
         if global_step is not None:
-            dest_filename = os.path.join(output_folder, 'images', tag_la + '_{}.png'.format(global_step))
+            dest_filename = os.path.join(output_folder, 'images', tag_la + '_{}'.format(global_step))
         else:
-            dest_filename = os.path.join(output_folder, 'images', tag_la + '.png')
+            dest_filename = os.path.join(output_folder, 'images', tag_la)
 
         if not os.path.exists(os.path.dirname(dest_filename)):
             os.makedirs(os.path.dirname(dest_filename))
@@ -601,8 +601,8 @@ def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
     zero_mask = combined_one_hot[:, x1:x2, y1:y2] == 0
     # if still zero in combined_one_hot just insert value from crop, if there is a value average
     combined_one_hot[:, x1:x2, y1:y2] = np.where(zero_mask, one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
-                                                 (one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]] +
-                                                  combined_one_hot[:, x1:x2, y1:y2]) / 2)
+                                                 np.maximum(one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
+                                                  combined_one_hot[:, x1:x2, y1:y2]))
 
     return combined_one_hot
 
