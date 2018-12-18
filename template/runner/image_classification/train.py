@@ -140,7 +140,8 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var, los
     output = model(input_var)
 
     # Compute and record the loss
-    if len(output) > 1:
+    # for inception combine the two losses
+    if isinstance(output, tuple):
         loss1 = criterion(output[0], target_var)
         loss2 = criterion(output[1], target_var)
         loss = loss1 + 0.4*loss2

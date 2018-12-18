@@ -199,6 +199,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                     combined_one_hots[img_name] = one_hot_to_full_output(one_hot, (x, y), combined_one_hots[img_name],
                                                               orig_img_shape)
 
+
     # Make a confusion matrix
     try:
         targets_flat = np.array(targets).flatten()

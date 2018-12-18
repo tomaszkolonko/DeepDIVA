@@ -82,7 +82,8 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda, log
             len(out_a), len(out_a[0]), len(out_p), len(out_p[0]), len(out_n), len(out_n[0])))
 
         # Compute and record the loss
-        if len(out_a) == 2 and len(out_p) == 2 and len(out_n) == 2:
+        # Combine output of the two heads for the inception model
+        if isinstance(out_a, tuple) and isinstance(out_p, tuple) and isinstance(out_n, tuple):
             loss1 = criterion(out_p[0][:], out_a[0][:], out_n[0][:])
             loss2 = criterion(out_p[1][:], out_a[1][:], out_n[1][:])
             loss = loss1 + 0.4 * loss2
