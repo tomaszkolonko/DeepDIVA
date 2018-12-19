@@ -469,22 +469,25 @@ def int_to_one_hot(x, n_classes):
     return list(map(int, list(s.format(x))))
 
 
-def gt_tensor_to_one_hot(gt_tensor):
+def gt_tensor_to_one_hot(matrix):
     """
     Convert ground truth tensor to one-hot encoded matrix
 
     Parameters
     -------
-    gt_tensor: float tensor from to_tensor()
-        torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
+    matrix: float tensor from to_tensor() or numpy array
+        shape (C x H x W) in the range [0.0, 1.0]
     Returns
     -------
     torch.LongTensor of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     """
     # TODO: ugly fix -> better to not normalize in the first place
-    np_array =(gt_tensor*255).numpy().astype(np.uint8)
-    im_np = np_array[2, :, :].astype(np.uint8)
+    if type(matrix).__module__ == np.__name__:
+        im_np = matrix[:, :, 2].astype(np.uint8)
+    else:
+        np_array = (matrix * 255).numpy().astype(np.uint8)
+        im_np = np_array[2, :, :].astype(np.uint8)
 
     integer_encoded = np.array([i for i in range(8)])
     onehot_encoder = OneHotEncoder(sparse=False)
