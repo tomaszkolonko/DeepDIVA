@@ -26,4 +26,4 @@ python util/visualization/embedding.py --results-file ./output/classify/Manuscri
 #DenseNet201 pretrain=true
 python template/RunMe.py --runner-class apply_model --dataset-folder ../../dataset/ICDAR2017-CLAMM/ManuscriptDating/ --load-model ../../results-classification-pc30/classification/ManuscriptDating/model_name\=densenet201/epochs\=50/pretrained\=True/lr\=0.01/decay_lr\=20/momentum\=0.9/EXCUTION-DATE/checkpoint.pth.tar --output-channels 15 --ignoregit
 
-python util/visualization/embedding.py --results-file ./output/classify/Manuscriptdating/classify\=True/EXCUTION-DATE/results.pkl --output-file ../../results-classification-pc30/classification/ManuscriptDating/vgg11_bn_md.png --tensorboard
+python util/visualization/embedding.py --results-file ./output/classify/Manuscriptdating/classify\=True/EXCUTION-DATE/results.pkl --output-file ../../results-classification-pc30/classification/ManuscriptDating/vgg11_bn_pretrained_md.png --tensorboard
