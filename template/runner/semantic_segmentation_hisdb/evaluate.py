@@ -4,6 +4,7 @@ import time
 import warnings
 import os
 import numpy as np
+from PIL import Image
 
 # Torch related stuff
 import torch
@@ -15,6 +16,8 @@ from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_l
     save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_bgr, one_hot_to_full_output
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 from util.evaluation.metrics.accuracy import accuracy_segmentation
+from util.misc import gt_tensor_to_one_hot
+from template.runner.semantic_segmentation_hisdb.transform_library import functional
 
 
 def validate(val_loader, model, criterion, weights, writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
@@ -78,8 +81,8 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
     targets = []
 
     # needed for test phase output generation
-    combined_one_hot = []
-    current_img_name = ""
+    combined_one_hots = {}
+    current_img_names = []
 
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
@@ -121,9 +124,9 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
         meanIU.update(mean_iu, input.size(0))
 
         # Get the predictions
-        #if logging_label != "test":
-        _ = [preds.append(item) for item in output_argmax]
-        _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
+        if logging_label != "test":
+            _ = [preds.append(item) for item in output_argmax]
+            _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
 
         # Add loss and accuracy to Tensorboard
         if multi_run is None:
@@ -153,40 +156,49 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
         if logging_label == "test":
             one_hots = output.data.cpu().numpy()
             for one_hot, x, y, img_name in zip(one_hots, top_left_coordinates[0].numpy(), top_left_coordinates[1].numpy(), test_img_names):
-                if len(current_img_name) == 0:
-                    current_img_name = img_name
-                    logging.info("Starting new image {}".format(current_img_name))
+                # check if we are already working on the image passed in img_name
+                if img_name not in current_img_names:
+                    current_img_names.append(img_name)
+                    combined_one_hots[img_name] = []
 
-                if len(combined_one_hot) == 0 or not img_name or img_name == current_img_name:
+                # we are only working on two images
+                if len(current_img_names) < 3:
                     # on the same image / first iteration
-                    combined_one_hot = one_hot_to_full_output(one_hot, (x, y), combined_one_hot,
+                    combined_one_hots[img_name] = one_hot_to_full_output(one_hot, (x, y), combined_one_hots[img_name],
                                                               orig_img_shape)
-                else:
-                    # finished image, moving to next image
-                    # save the old one before starting the new one
-                    np_bgr = one_hot_to_np_bgr(combined_one_hot)
-                    # TODO: also save input and gt image
-                    # TODO: get gt image from dataloader
-                    if multi_run is None:
-                        writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
-                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(current_img_name),
-                                                                       image=np_bgr,
-                                                                       gt_img_path=os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png")
-                    else:
-                        writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
-                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, current_img_name),
-                                                                       image=np_bgr,
-                                                                       gt_img_path=os.path.join(dataset_folder, logging_label, "gt", current_img_name)+".png")
 
-                    #_ = [preds.append(item) for item in np.array([np.argmax(o, axis=0) for o in combined_one_hot])]
-                    #_ = [targets.append(item) for item in target_argmax.cpu().numpy()]
+                # a third image was started -> we can save the first one
+                else:
+                    # save the old one before starting the new one
+                    img_to_save = current_img_names.pop(0)
+                    logging.info("Finished segmentation of image {}".format(img_to_save))
+                    one_hot_finished = combined_one_hots[img_to_save]
+                    np_bgr = one_hot_to_np_bgr(one_hot_finished)
+                    # add full image to predictions
+                    preds.append(np.argmax(one_hot_finished, axis=0))
+                    # open full ground truth image
+                    gt_img_path = os.path.join(dataset_folder, logging_label, "gt", img_to_save)
+                    with open(gt_img_path, 'rb') as f:
+                        with Image.open(f) as img:
+                            ground_truth = np.array(img.convert('RGB'))
+                            #ground_truth_argmax = functional.to_tensor(ground_truth)
+                    targets.append(gt_tensor_to_one_hot(ground_truth).numpy().numpy())
+
+                    # TODO: also save input and gt image?
+                    if multi_run is None:
+                        writer.add_scalar(logging_label + '/meanIU', meanIU.avg, epoch)
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(img_to_save),
+                                                                       image=np_bgr, gt_image=[]) # ground_truth[:, :, ::-1] convert image to BGR
+                    else:
+                        writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
+                        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run, img_to_save),
+                                                                       image=np_bgr, gt_image=[]) # ground_truth[:, :, ::-1] convert image to BGR
 
                     # start the combination of the new image
-                    logging.info("Finished segmentation of image {}".format(current_img_name))
+                    logging.info("Starting segmentation of image {}".format(img_name))
+                    combined_one_hots[img_name] = one_hot_to_full_output(one_hot, (x, y), combined_one_hots[img_name],
+                                                              orig_img_shape)
 
-                    current_img_name = img_name
-                    logging.info("Starting new image {}".format(current_img_name))
-                    combined_one_hot = one_hot_to_full_output(one_hot, (x, y), [], orig_img_shape)
 
     # Make a confusion matrix
     try:
@@ -205,13 +217,13 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
 
     # Logging the epoch-wise accuracy and saving the confusion matrix
     if multi_run is None:
-        writer.add_scalar(logging_label + '/accuracy', meanIU.avg, epoch)
+        writer.add_scalar(logging_label + '/meanIU', meanIU.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix',
                                           image=confusion_matrix_heatmap, global_step=epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted',
                                           image=confusion_matrix_heatmap_w, global_step=epoch)
     else:
-        writer.add_scalar(logging_label + '/accuracy_{}'.format(multi_run), meanIU.avg, epoch)
+        writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
                                           image = confusion_matrix_heatmap, global_step = epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted{}'.format(multi_run),

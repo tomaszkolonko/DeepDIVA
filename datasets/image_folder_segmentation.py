@@ -240,9 +240,9 @@ class ImageFolder(data.Dataset):
             img = Image.open(open(self.imgs[0][0], 'rb'))
             self.img_heigth = img.size[0]
             self.img_width = img.size[1]
-            self.num_vert_crops = math.ceil(img.size[0] / crop_size)
+            self.num_vert_crops = math.ceil(img.size[0] / (crop_size/2))
             self.current_vert_crop = 0
-            self.num_horiz_crops = math.ceil(img.size[1] / crop_size)
+            self.num_horiz_crops = math.ceil(img.size[1] / (crop_size/2))
             self.current_horiz_crop = 0
             self.crops_per_image = self.num_vert_crops * self.num_horiz_crops
 
@@ -261,22 +261,15 @@ class ImageFolder(data.Dataset):
         if self.test_set:
             # load first image
             if self.current_test_image_counter < len(self.imgs):
-                if self.current_vert_crop < self.num_vert_crops:
+                if self.current_vert_crop < self.num_vert_crops - 1:
                     if self.current_horiz_crop < self.num_horiz_crops:
-                        if self.current_horiz_crop == self.num_horiz_crops - 1:
+                        if self.current_horiz_crop == self.num_horiz_crops - 2:
                             output = self.test_crop()
                             self.current_horiz_crop = 0
                             self.current_vert_crop += 1
-                            #print("current_vert_crop: " + str(self.current_vert_crop) + " of " + str(self.num_vert_crops))
-
-                            return output
-                        if self.current_test_gt_name != "":
-                            output = self.test_crop(new_image_name=self.current_test_gt_name)
-                            self.current_test_gt_name = ""
                         else:
                             output = self.test_crop()
-                        self.current_horiz_crop += 1
-                        #print("current_horiz_crop: " + str(self.current_horiz_crop) + " of " + str(self.num_horiz_crops))
+                            self.current_horiz_crop += 1
                         return output
 
                 self.load_new_test_data()
@@ -301,19 +294,19 @@ class ImageFolder(data.Dataset):
         self.current_test_image_counter += 1
         self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
         self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
-        self.current_test_gt_name = os.path.basename(self.imgs[self.current_test_image_counter][1])[:-4]
 
     def reset_counter(self):
         self.current_horiz_crop = 0
         self.current_vert_crop = 0
 
-    def test_crop(self, new_image_name=""):
+    def test_crop(self):
         """
 
         :return: (window_input,(original_img_shape), (top_left_coordinates_of_crop),
                     is_new_image, target)
         """
         x_position, y_position = self.get_crop_coordinates()
+        #print(x_position, y_position)
         window_input_image = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
         window_target_image = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
 
@@ -321,18 +314,19 @@ class ImageFolder(data.Dataset):
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
 
-        return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position), new_image_name), one_hot_matrix)
+        return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
+                 os.path.basename(self.imgs[self.current_test_image_counter][1])[:]), one_hot_matrix)
 
     def get_crop_coordinates(self):
-        if self.current_horiz_crop == self.num_horiz_crops - 1:
+        if self.current_horiz_crop == self.num_horiz_crops - 2:
             x_position = self.img_width - self.crop_size
         else:
-            x_position = self.crop_size * self.current_horiz_crop
+            x_position = int(self.crop_size/2) * self.current_horiz_crop
 
-        if self.current_vert_crop == self.num_vert_crops - 1:
+        if self.current_vert_crop == self.num_vert_crops - 2:
             y_position = self.img_heigth - self.crop_size
         else:
-            y_position = self.crop_size * self.current_vert_crop
+            y_position = int(self.crop_size/2) * self.current_vert_crop
         return x_position, y_position
 
 

@@ -126,6 +126,7 @@ class SemanticSegmentationHisdb:
         # Test
         test_value = SemanticSegmentationHisdb._test(test_loader, model, criterion, weights, writer, epochs - 1, class_names, **kwargs)
         logging.info('Training completed')
+        # test_value = 0
 
         return train_value, val_value, test_value
 

@@ -300,8 +300,9 @@ def save_image_and_log_to_tensorboard(writer=None, tag=None, image=None, global_
 
     return
 
-def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_img_path=None):
-    """Utility function to save image in the output folder and also log it to Tensorboard. ALL IMAGES ARE IN BGR!!
+def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_image=[]):
+    """Utility function to save image in the output folder and also log it to Tensorboard.
+    ALL IMAGES ARE IN BGR BECAUSE OF CV3.IMWRITE()!!
 
     Parameters
     ----------
@@ -333,9 +334,9 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
     if global_step is not None:
-        dest_filename = os.path.join(output_folder, 'images', tag + '_{}.png'.format(global_step))
+        dest_filename = os.path.join(output_folder, 'images', tag + '_{}'.format(global_step))
     else:
-        dest_filename = os.path.join(output_folder, 'images', tag + '.png')
+        dest_filename = os.path.join(output_folder, 'images', tag)
 
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
@@ -351,9 +352,9 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
     if global_step is not None:
-        dest_filename = os.path.join(output_folder, 'images', tag_col + '_{}.png'.format(global_step))
+        dest_filename = os.path.join(output_folder, 'images', tag_col + '_{}'.format(global_step))
     else:
-        dest_filename = os.path.join(output_folder, 'images', tag_col + '.png')
+        dest_filename = os.path.join(output_folder, 'images', tag_col)
 
     if not os.path.exists(os.path.dirname(dest_filename)):
         os.makedirs(os.path.dirname(dest_filename))
@@ -381,11 +382,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     # BLACK: Background predicted correctly rgb(0, 0, 0)
     # RED: Background mis-predicted as Foreground rgb(240, 30, 20)
     # BLUE: Foreground mis-predicted as Background rgb(0, 240, 255)
-    if gt_img_path:
-        with open(gt_img_path, 'rb') as f:
-            with Image.open(f) as img:
-                ground_truth = np.array(img.convert('RGB'))[:,:,::-1] # convert to BGR
-
+    if len(gt_image) != 0:
         img_la = np.copy(image)
         tag_la = "layout_analysis_" + tag
         # Get output folder using the FileHandler from the logger.
@@ -393,15 +390,15 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
         output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
 
         if global_step is not None:
-            dest_filename = os.path.join(output_folder, 'images', tag_la + '_{}.png'.format(global_step))
+            dest_filename = os.path.join(output_folder, 'images', tag_la + '_{}'.format(global_step))
         else:
-            dest_filename = os.path.join(output_folder, 'images', tag_la + '.png')
+            dest_filename = os.path.join(output_folder, 'images', tag_la)
 
         if not os.path.exists(os.path.dirname(dest_filename)):
             os.makedirs(os.path.dirname(dest_filename))
 
         out_blue = img_la[:, :, 0]  # Extract just blue channel
-        gt_blue = ground_truth[:, :, 0]
+        gt_blue = gt_image[:, :, 0]
 
         img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
                            for x in range(out_blue.shape[0])])
@@ -472,22 +469,25 @@ def int_to_one_hot(x, n_classes):
     return list(map(int, list(s.format(x))))
 
 
-def gt_tensor_to_one_hot(gt_tensor):
+def gt_tensor_to_one_hot(matrix):
     """
     Convert ground truth tensor to one-hot encoded matrix
 
     Parameters
     -------
-    gt_tensor: float tensor from to_tensor()
-        torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
+    matrix: float tensor from to_tensor() or numpy array
+        shape (C x H x W) in the range [0.0, 1.0]
     Returns
     -------
     torch.LongTensor of size [#C x H x W]
         sparse one-hot encoded multi-class matrix, where #C is the number of classes
     """
     # TODO: ugly fix -> better to not normalize in the first place
-    np_array =(gt_tensor*255).numpy().astype(np.uint8)
-    im_np = np_array[2, :, :].astype(np.uint8)
+    if type(matrix).__module__ == np.__name__:
+        im_np = matrix[:, :, 2].astype(np.uint8)
+    else:
+        np_array = (matrix * 255).numpy().astype(np.uint8)
+        im_np = np_array[2, :, :].astype(np.uint8)
 
     integer_encoded = np.array([i for i in range(8)])
     onehot_encoder = OneHotEncoder(sparse=False)
@@ -604,8 +604,8 @@ def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
     zero_mask = combined_one_hot[:, x1:x2, y1:y2] == 0
     # if still zero in combined_one_hot just insert value from crop, if there is a value average
     combined_one_hot[:, x1:x2, y1:y2] = np.where(zero_mask, one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
-                                                 (one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]] +
-                                                  combined_one_hot[:, x1:x2, y1:y2]) / 2)
+                                                 np.maximum(one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
+                                                  combined_one_hot[:, x1:x2, y1:y2]))
 
     return combined_one_hot
 

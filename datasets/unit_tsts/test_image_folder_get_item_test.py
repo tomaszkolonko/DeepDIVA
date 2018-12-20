@@ -11,17 +11,20 @@ from datasets.image_folder_segmentation import find_classes, is_image_file, Imag
 class Test_get_item(TestCase):
     def setUp(self):
         self.test_dir = "/Users/tomasz/DeepDIVA/datasets/unit_tsts/test"
-        self.pages_in_memory = 3
-        self.crops_per_image = 10
-        self.crop_size = 200
+        self.pages_in_memory = 0
+        self.crops_per_image = 0
+        self.crop_size = 256
         self.test_ds = ImageFolder(self.test_dir, self.pages_in_memory, self.crops_per_image, self.crop_size)
 
     def test_length_of_epoch(self):
         # check init to see the formula how it was calculated
-        # vertical crops: 25
-        # horizontal crops: 33
-        # number of test images: 5
-        self.assertEqual(self.test_ds.__len__(), 25*33*5)
+        # vertical crops: 20
+        # horizontal crops: 26
+        # number of test images: 10
+        self.assertEqual(self.test_ds.__len__(), 26*26*10)
+
+    def test_crops_per_image(self):
+        self.assertEqual(self.test_ds.crops_per_image, 1989)
 
     def test_get_item(self):
         image_gt_transform = transforms.Compose([
@@ -35,13 +38,11 @@ class Test_get_item(TestCase):
         length_of_dataset = self.test_ds.__len__()
 
         for i in range(length_of_dataset):
-            ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), new_image), one_hot_matrix) = self.test_ds.__getitem__(index, unittesting=True)
-            if(new_image != ""):
-                print("************************************************")
-                print("***************  NEW  IMAGE  *******************")
-                print(new_image)
-                print("************************************************")
-            print("img_heigth: " + str(self.img_heigth) + " img_width: " + str(self.img_width) + " x: " + str(x_position) + " y: " + str(y_position))
+            ((window_input_torch, (self.img_heigth, self.img_width), (x_position, y_position), image_name),
+             one_hot_matrix) = self.test_ds.__getitem__(index, unittesting=True)
+
+            print(str(image_name[:]) + " -> img_heigth: " + str(self.img_heigth) + " img_width: " + str(self.img_width)
+                  + " /// x: " + str(x_position) + " y: " + str(y_position))
 
             # because of time constraints only manual testing performed
             # If you want to run this part that saves all the crops to disk for further analysis
