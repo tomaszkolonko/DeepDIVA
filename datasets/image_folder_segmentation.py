@@ -245,6 +245,9 @@ class ImageFolder(data.Dataset):
             self.num_horiz_crops = math.ceil(img.size[1] / (crop_size/2))
             self.current_horiz_crop = 0
             self.crops_per_image = self.num_vert_crops * self.num_horiz_crops
+            logging.info("*** *** number horizontal_crops: " + str(self.num_horiz_crops))
+            logging.info("*** *** number of vertical_crops: " + str(self.num_vert_crops))
+            logging.info("*** *** length of the dataset: " + str(self.__len__()))
 
 
     def __getitem__(self, index, unittesting=False):
@@ -259,6 +262,10 @@ class ImageFolder(data.Dataset):
         """
         # TODO: if you fix the width and height issue, just change the tuple in parameters (for linda)
         if self.test_set:
+            logging.info("*** v_crop: " + str(self.current_vert_crop) + "; h_crop: " + str(self.current_horiz_crop) +
+                         "; of image: " + str(self.current_test_image_counter) +
+                         " of " + str(len(self.imgs)) + " self.current_crop: " + str(self.current_crop))
+            self.current_crop += 1
             # load first image
             if self.current_test_image_counter < len(self.imgs):
                 if self.current_vert_crop < self.num_vert_crops - 1:
@@ -291,11 +298,13 @@ class ImageFolder(data.Dataset):
 
 
     def load_new_test_data(self):
+        logging.info("*** loading next image ***")
         self.current_test_image_counter += 1
         self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
         self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
 
     def reset_counter(self):
+        logging.info("*** resetting all counters ***")
         self.current_horiz_crop = 0
         self.current_vert_crop = 0
 
@@ -313,7 +322,7 @@ class ImageFolder(data.Dataset):
         window_input_torch = functional.to_tensor(window_input_image)
         window_target_torch = functional.to_tensor(window_target_image)
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
-
+        # self.current_crop += 1
         return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
                  os.path.basename(self.imgs[self.current_test_image_counter][1])[:]), one_hot_matrix)
 
@@ -396,7 +405,7 @@ class ImageFolder(data.Dataset):
 
         :return:
         """
-        new_image, new_gt = self.imgs[self.next_image]
+        new_image, new_gt = self.imgs[self.next_image % len(self.imgs)]
         self.next_image = (self.next_image + 1) % len(self.imgs)
 
         self.images[self.memory_position_to_change] = self.loader(new_image)
