@@ -182,7 +182,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                         with Image.open(f) as img:
                             ground_truth = np.array(img.convert('RGB'))
                             #ground_truth_argmax = functional.to_tensor(ground_truth)
-                    targets.append(gt_tensor_to_one_hot(ground_truth).numpy().numpy())
+                    targets.append(gt_tensor_to_one_hot(ground_truth).numpy())
 
                     # TODO: also save input and gt image?
                     if multi_run is None:

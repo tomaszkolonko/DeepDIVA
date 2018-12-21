@@ -229,7 +229,7 @@ class ImageFolderApply(data.Dataset):
         return file_names
 
     def __getitem__(self, index):
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> getitem()")
+        #logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> getitem()")
         """
         Retrieve a sample by index and provides its filename as well
 
