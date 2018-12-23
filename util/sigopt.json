@@ -1,0 +1,7 @@
+[
+{"name": "model-name","type": "categorical","categorical_values": ["resnet152", "vgg19_bn", "densenet121", "inception_v3"]},
+{"name": "lr", "type": "double", "bounds": { "min" : 0.0001, "max": 0.1 }},
+{"name": "decay-lr", "type": "int", "categorical_values": [24]},
+{"name": "momentum", "type": "double", "bounds": { "min" : 0, "max": 1 }},
+{"name": "weight-decay", "type": "double", "bounds": { "min" : 0.00001, "max": 0.01 }}
+]
