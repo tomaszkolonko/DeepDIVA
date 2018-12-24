@@ -258,7 +258,8 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
             ])
         else:
             transform = transforms.Compose([
-                transforms.Resize(model_expected_input_size),
+                transforms.RandomCrop(model_expected_input_size),
+                #transforms.Resize(model_expected_input_size),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std)
             ])
