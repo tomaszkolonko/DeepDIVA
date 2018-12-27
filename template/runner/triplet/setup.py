@@ -59,10 +59,13 @@ def setup_dataloaders(model_expected_input_size, dataset_folder, n_triplets, bat
     logging.debug('Setting up dataset transforms')
 
     standard_transform = transforms.Compose([
-        transforms.Resize(size=model_expected_input_size),
+        #transforms.Resize(size=model_expected_input_size)
+        transforms.RandomCrop(size=model_expected_input_size),
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)
     ])
+
+    logging.info("Transform is set to RandomCrop")
 
     train_ds.transform = standard_transform
     val_ds.transform = standard_transform
