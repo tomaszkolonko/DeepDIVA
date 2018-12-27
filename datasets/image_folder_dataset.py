@@ -210,11 +210,16 @@ class ImageFolder(data.Dataset):
 
         self.test_set = "/test" in self.root
         if self.test_set:
-            self.current_image = 0
+            self.current_image_index = 0
+            self.current_PIL_image = 0
+            self.current_crop = 0
             self.number_of_test_images = len(self.imgs)
+            self.number_of_horizontal_crops_current_image = 0
+            self.number_of_vertical_crops_current_image = 0
             self.current_horizontal_crop = 0
             self.current_vertical_crop = 0
             self.exhaustive_crops_per_test_set = self.get_exhaustive_crops_per_test_set()
+            self.init_first_image_with_parameters()
 
     def get_exhaustive_crops_per_test_set(self):
         total_exhaustive_crops_per_test_epoch = 0
@@ -226,6 +231,11 @@ class ImageFolder(data.Dataset):
 
             total_exhaustive_crops_per_test_epoch += total_horizontal_crops_per_image * total_vertical_crops_per_image
         return total_exhaustive_crops_per_test_epoch
+
+    def init_first_image_with_parameters(self):
+        self.current_PIL_image = self.pil_loader(self.img[0][0])
+        self.number_of_vertical_crops_current_image = self.current_PIL_image.width
+        self.number_of_horizontal_crops_current_image = self.current_PIL_image.height
 
 
 
@@ -241,13 +251,30 @@ class ImageFolder(data.Dataset):
         img = self.loader(path)
 
         # TODO: for later -> think how to change the minibatches to match only one image at a time
-        # but only at test time.
+        # TODO: but only at test time.
 
         if self.test_set:
-            # return crop by crop of an image until one image is through
-            # keep track of the positions per image with the self.current_horizontal_crop...
+            logging.info("***")
+            self.current_crop += 1
+            # load first image
+            if self.current_image < len(self.imgs):
+                if self.current_vertical_crop < self.number_of_vertical_crops_current_image - 1:
+                    if self.current_horizontal_crop < self.number_of_horizontal_crops_current_image:
+                        if self.current_hocurrent_horizontal_cropriz_crop == self.number_of_horizontal_crops_current_image - 2:
 
-            print("yolo")
+                            output = self.test_crop()
+                            self.current_horizontal_crop = 0
+                            self.current_vertical_crop += 1
+                        else:
+                            output = self.test_crop()
+                            self.current_horizontal_crop += 1
+                        return output
+
+                self.load_new_test_data()
+                self.reset_counter()
+                output = self.test_crop()
+                self.current_horiz_crop += 1
+                return output
 
 
         if self.transform is not None:
@@ -261,9 +288,17 @@ class ImageFolder(data.Dataset):
         else:
             return img, target
 
+    def load_new_test_data(self):
+        logging.info("*** loading next image ***")
+        self.current_test_image_counter += 1
+        self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
+        self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
 
-
-
+    def load_current_image_into_memory(self):
+        logging.info("*** loading next image ***")
+        self.current_test_image_counter += 1
+        self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
+        self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
     def __len__(self):
         if self.test_set:
             return self.exhaustive_crops_per_test_set
