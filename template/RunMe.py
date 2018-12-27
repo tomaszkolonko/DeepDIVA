@@ -137,7 +137,8 @@ class RunMe:
                     args.__dict__[key] = params[key]
                 _, _, score = self._execute(args)
                 # In case of multi-run the return type will be a list (otherwise is a single float)
-                if type(score) != float:
+                if not isinstance(score, (np.floating, float)):
+                #if type(score) != float:
                     [conn.experiments(experiment.id).observations().create(suggestion=suggestion.id, value=item)
                      for item in score]
                 else:
