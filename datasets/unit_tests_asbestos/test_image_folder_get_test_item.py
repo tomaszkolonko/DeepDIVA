@@ -18,9 +18,10 @@ from datasets.image_folder_dataset import find_classes, is_image_file, ImageFold
 
 # Crops will be done and saved for visual checking. Every epoch gets its own folder
 
+
 class Test_get_item(TestCase):
     def setUp(self):
-        self.test_dir = "/Users/tomasz/DeepDIVA/datasets/unit_tests_asbestos/ASB_T/test/"
+        self.test_dir = "/Users/tomasz/DeepDIVA_datasets/ASB_T/test/"
         model_name = "resnet18"
 
         model_expected_input_size = models.__dict__[model_name]().expected_input_size
@@ -30,7 +31,7 @@ class Test_get_item(TestCase):
         self.test_ds = ImageFolder(self.test_dir)
 
     def test_length_of_epoch(self):
-        # length of epochs for the train set is 33
+        # see explanation starting around line 12 of this file
         length_of_epoch = 420
         self.assertEqual(self.test_ds.__len__(), length_of_epoch)
 
@@ -46,6 +47,6 @@ class Test_get_item(TestCase):
         model_expected_input_size = models.__dict__[model_name]().expected_input_size
         self.assertEqual(model_expected_input_size, (224, 224))
 
-    def create_full_images_from_exhaustive_crops(self):
+    def test_exhaustive_crops_per_variable_image(self):
         for i in range(self.test_ds.__len__()):
-            crop = self.test_ds.__getitem__()
+            print("placeholder")

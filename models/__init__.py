@@ -3,8 +3,7 @@ from .CNN_basic import CNN_basic
 from .FC_medium import FC_medium
 from .FC_simple import FC_simple
 from .TNet import TNet
-from ._AlexNet import alexnet
-from ._ResNet import resnet18, resnet34, resnet50, resnet101, resnet152
+from .ResNet import resnet18, resnet34, resnet50, resnet101, resnet152
 from .BabyResNet import babyresnet18, babyresnet34, babyresnet50, babyresnet101, babyresnet152
 from .HQ_ResNet import hqresnet18, hqresnet34, hqresnet50, hqresnet101, hqresnet152
 from ._VGG import vgg11, vgg11_bn, vgg13, vgg13_bn, vgg16, vgg16_bn, vgg19, vgg19_bn
