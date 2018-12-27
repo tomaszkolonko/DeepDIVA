@@ -264,6 +264,8 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
                 transforms.Normalize(mean=mean, std=std)
             ])
 
+        logging.info("Transform is set to RandomCrop")
+
         train_ds.transform = transform
         val_ds.transform = transform
         test_ds.transform = transform
