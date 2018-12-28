@@ -360,7 +360,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
         os.makedirs(os.path.dirname(dest_filename))
 
     img = np.copy(image)
-    blue = img[:, :, 0]  # Extract just blue channel
+    blue = image[:, :, 0]  # Extract just blue channel
     masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
     # Colours are in BGR
     class_col = {"background": (0, 0, 0), "maintext": (255, 255, 0), "comment": (0, 255, 255),
@@ -397,7 +397,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
         if not os.path.exists(os.path.dirname(dest_filename)):
             os.makedirs(os.path.dirname(dest_filename))
 
-        out_blue = img_la[:, :, 0]  # Extract just blue channel
+        out_blue = image[:, :, 0]  # Extract just blue channel
         gt_blue = gt_image[:, :, 0]
 
         img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
