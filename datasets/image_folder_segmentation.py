@@ -234,6 +234,7 @@ class ImageFolder(data.Dataset):
             self.current_test_gt_name = os.path.basename(self.imgs[0][1])[:-4]
             self.current_test_image_counter = 0
             self.crops_per_test_image = 0
+            self.get_item_number = 0
 
             # TODO: super disgusting... but __len__() needs to know and for that we need
             # TODO: the dimensions of the image
@@ -263,21 +264,22 @@ class ImageFolder(data.Dataset):
         # TODO: if you fix the width and height issue, just change the tuple in parameters (for linda)
         if self.test_set:
             logging.info("*** v_crop: " + str(self.current_vert_crop) + "; h_crop: " + str(self.current_horiz_crop) +
-                         "; of image: " + str(self.current_test_image_counter) +
+                         "; of image: " + str(self.current_test_image_counter + 1) +
                          " of " + str(len(self.imgs)) + " self.current_crop: " + str(self.current_crop))
-            self.current_crop += 1
+
             # load first image
             if self.current_test_image_counter < len(self.imgs):
-                if self.current_vert_crop < self.num_vert_crops - 1:
-                    if self.current_horiz_crop < self.num_horiz_crops:
-                        if self.current_horiz_crop == self.num_horiz_crops - 2:
+                if self.current_vert_crop < self.num_vert_crops:
+                    if self.current_horiz_crop < self.num_horiz_crops: # current_horiz_crop < 15
+                        if self.current_horiz_crop == (self.num_horiz_crops - 1): # current_horiz_crop == 14
                             output = self.test_crop()
                             self.current_horiz_crop = 0
                             self.current_vert_crop += 1
+                            return output
                         else:
                             output = self.test_crop()
                             self.current_horiz_crop += 1
-                        return output
+                            return output
 
                 self.load_new_test_data()
                 self.reset_counter()
@@ -287,14 +289,15 @@ class ImageFolder(data.Dataset):
 
 
         # Think about moving this initialization to the constructor !!!
-        if self.images[0] is None:
-            self.initialize_memory()
+        if not self.test_set:
+            if self.images[0] is None:
+                self.initialize_memory()
 
-        while self.current_page < self.pages_in_memory:
-            while self.current_crop < self.crops_per_page:
-                return self.apply_transformation(unittesting)
+            while self.current_page < self.pages_in_memory:
+                while self.current_crop < self.crops_per_page:
+                    return self.apply_transformation(unittesting)
 
-            self.update_state_variables()
+                self.update_state_variables()
 
 
     def load_new_test_data(self):
@@ -315,24 +318,24 @@ class ImageFolder(data.Dataset):
                     is_new_image, target)
         """
         x_position, y_position = self.get_crop_coordinates()
-        #print(x_position, y_position)
+        logging.info("x_position: " + str(x_position) + "  //  y_position: " + str(y_position) + "\n")
         window_input_image = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
         window_target_image = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
 
         window_input_torch = functional.to_tensor(window_input_image)
         window_target_torch = functional.to_tensor(window_target_image)
-        one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
-        # self.current_crop += 1
+        one_hot_matrix = (window_target_torch)
+        self.current_crop += 1
         return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
                  os.path.basename(self.imgs[self.current_test_image_counter][1])[:]), one_hot_matrix)
 
     def get_crop_coordinates(self):
-        if self.current_horiz_crop == self.num_horiz_crops - 2:
+        if self.current_horiz_crop == (self.num_horiz_crops - 1):
             x_position = self.img_width - self.crop_size
         else:
             x_position = int(self.crop_size/2) * self.current_horiz_crop
 
-        if self.current_vert_crop == self.num_vert_crops - 2:
+        if self.current_vert_crop == (self.num_vert_crops - 1):
             y_position = self.img_heigth - self.crop_size
         else:
             y_position = int(self.crop_size/2) * self.current_vert_crop
