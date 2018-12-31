@@ -324,7 +324,7 @@ class ImageFolder(data.Dataset):
 
         window_input_torch = functional.to_tensor(window_input_image)
         window_target_torch = functional.to_tensor(window_target_image)
-        one_hot_matrix = (window_target_torch)
+        one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
         self.current_crop += 1
         return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
                  os.path.basename(self.imgs[self.current_test_image_counter][1])[:]), one_hot_matrix)
