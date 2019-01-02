@@ -202,33 +202,34 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                                                               orig_img_shape)
 
     # save all the remaining images
-    while len(current_img_names) > 0:
-        img_to_save = current_img_names.pop(0)
-        logging.info("Finished segmentation of image {}".format(img_to_save))
-        one_hot_finished = combined_one_hots[img_to_save]
-        np_bgr = one_hot_to_np_bgr(one_hot_finished)
-        # add full image to predictions
-        preds.append(np.argmax(one_hot_finished, axis=0))
-        # open full ground truth image
-        gt_img_path = os.path.join(dataset_folder, logging_label, "gt", img_to_save)
-        with open(gt_img_path, 'rb') as f:
-            with Image.open(f) as img:
-                ground_truth = np.array(img.convert('RGB'))
-                # ground_truth_argmax = functional.to_tensor(ground_truth)
-        targets.append([np.argmax(a, axis=0) for a in gt_tensor_to_one_hot(ground_truth).numpy()])
+    if logging_label == "test":
+        while len(current_img_names) > 0:
+            img_to_save = current_img_names.pop(0)
+            logging.info("Finished segmentation of image {}".format(img_to_save))
+            one_hot_finished = combined_one_hots[img_to_save]
+            np_bgr = one_hot_to_np_bgr(one_hot_finished)
+            # add full image to predictions
+            preds.append(np.argmax(one_hot_finished, axis=0))
+            # open full ground truth image
+            gt_img_path = os.path.join(dataset_folder, logging_label, "gt", img_to_save)
+            with open(gt_img_path, 'rb') as f:
+                with Image.open(f) as img:
+                    ground_truth = np.array(img.convert('RGB'))
+                    # ground_truth_argmax = functional.to_tensor(ground_truth)
+            targets.append([np.argmax(a, axis=0) for a in gt_tensor_to_one_hot(ground_truth).numpy()])
 
-        # TODO: also save input and gt image?
-        if multi_run is None:
-            writer.add_scalar(logging_label + '/meanIU', meanIU.avg, epoch)
-            save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(img_to_save),
-                                                           image=np_bgr,
-                                                           gt_image=[])  # ground_truth[:, :, ::-1] convert image to BGR
-        else:
-            writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
-            save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run,
-                                                                                                              img_to_save),
-                                                           image=np_bgr,
-                                                           gt_image=[])  # ground_truth[:, :, ::-1] convert image to BGR
+            # TODO: also save input and gt image?
+            if multi_run is None:
+                writer.add_scalar(logging_label + '/meanIU', meanIU.avg, epoch)
+                save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(img_to_save),
+                                                               image=np_bgr,
+                                                               gt_image=[])  # ground_truth[:, :, ::-1] convert image to BGR
+            else:
+                writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
+                save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run,
+                                                                                                                  img_to_save),
+                                                               image=np_bgr,
+                                                               gt_image=[])  # ground_truth[:, :, ::-1] convert image to BGR
 
     # Make a confusion matrix
     try:
