@@ -494,7 +494,9 @@ def gt_tensor_to_one_hot(matrix):
     integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
     onehot_encoded = onehot_encoder.fit_transform(integer_encoded).astype(np.int8)
 
+    np.place(im_np, im_np == 0, 1) # needed to deal with 0 fillers at the borders during testing (replace with background)
     replace_dict = {k: v for k, v in zip([1, 2, 4, 6, 8, 10, 12, 14], onehot_encoded)}
+
     # create the one hot matrix
     one_hot_matrix = np.asanyarray(
         [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])]).astype(np.uint8)

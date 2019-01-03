@@ -93,8 +93,8 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
             input, orig_img_shape, top_left_coordinates, test_img_names = input
             orig_img_shape = (orig_img_shape[0][0], orig_img_shape[1][0])
 
-            # if not all('' == s or s.isspace() for s in test_img_names):
-            #     print(test_img_names)
+            if not all('' == s or s.isspace() for s in test_img_names):
+                print(test_img_names)
 
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
         target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target.numpy()]))
@@ -184,7 +184,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                         with Image.open(f) as img:
                             ground_truth = np.array(img.convert('RGB'))
                             #ground_truth_argmax = functional.to_tensor(ground_truth)
-                    targets.append([np.argmax(a, axis=0) for a in gt_tensor_to_one_hot(ground_truth).numpy()])
+                    targets.append(np.argmax(gt_tensor_to_one_hot(ground_truth).numpy(), axis=0))
 
                     # TODO: also save input and gt image?
                     if multi_run is None:
@@ -216,7 +216,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                 with Image.open(f) as img:
                     ground_truth = np.array(img.convert('RGB'))
                     # ground_truth_argmax = functional.to_tensor(ground_truth)
-            targets.append([np.argmax(a, axis=0) for a in gt_tensor_to_one_hot(ground_truth).numpy()])
+            targets.append(np.argmax(gt_tensor_to_one_hot(ground_truth).numpy(), axis=0))
 
             # TODO: also save input and gt image?
             if multi_run is None:
@@ -267,7 +267,7 @@ def _evaluate(data_loader, model, criterion, weights, writer, epoch, class_names
                  'Loss={loss.avg:.4f}\t'
                  'Batch time={batch_time.avg:.3f} ({data_time.avg:.3f} to load data)'
                  .format(epoch, batch_time=batch_time, data_time=data_time, loss=losses, meanIU=meanIU))
-    #
+
     # # Generate a classification report for each epoch
     # _log_classification_report(data_loader, epoch, preds, targets, writer)
 

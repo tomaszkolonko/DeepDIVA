@@ -246,9 +246,9 @@ class ImageFolder(data.Dataset):
             self.num_horiz_crops = math.ceil(img.size[1] / (crop_size/2))
             self.current_horiz_crop = 0
             self.crops_per_image = self.num_vert_crops * self.num_horiz_crops
-            logging.info("*** *** number horizontal_crops: " + str(self.num_horiz_crops))
-            logging.info("*** *** number of vertical_crops: " + str(self.num_vert_crops))
-            logging.info("*** *** length of the dataset: " + str(self.__len__()))
+            # logging.info("*** *** number horizontal_crops: " + str(self.num_horiz_crops))
+            # logging.info("*** *** number of vertical_crops: " + str(self.num_vert_crops))
+            # logging.info("*** *** length of the dataset: " + str(self.__len__()))
 
 
     def __getitem__(self, index, unittesting=False):
@@ -263,9 +263,9 @@ class ImageFolder(data.Dataset):
         """
         # TODO: if you fix the width and height issue, just change the tuple in parameters (for linda)
         if self.test_set:
-            logging.info("*** v_crop: " + str(self.current_vert_crop) + "; h_crop: " + str(self.current_horiz_crop) +
-                         "; of image: " + str(self.current_test_image_counter + 1) +
-                         " of " + str(len(self.imgs)) + " self.current_crop: " + str(self.current_crop))
+            # logging.info("*** v_crop: " + str(self.current_vert_crop) + "; h_crop: " + str(self.current_horiz_crop) +
+            #              "; of image: " + str(self.current_test_image_counter + 1) +
+            #              " of " + str(len(self.imgs)) + " self.current_crop: " + str(self.current_crop))
 
             # load first image
             if self.current_test_image_counter < len(self.imgs):
@@ -318,12 +318,19 @@ class ImageFolder(data.Dataset):
                     is_new_image, target)
         """
         x_position, y_position = self.get_crop_coordinates()
-        logging.info("x_position: " + str(x_position) + "  //  y_position: " + str(y_position) + "\n")
+        # logging.info("x_position: " + str(x_position) + "  //  y_position: " + str(y_position) + "\n")
         window_input_image = functional.crop(self.current_test_image, x_position, y_position, self.crop_size, self.crop_size)
         window_target_image = functional.crop(self.current_test_gt, x_position, y_position, self.crop_size, self.crop_size)
 
         window_input_torch = functional.to_tensor(window_input_image)
         window_target_torch = functional.to_tensor(window_target_image)
+
+        np_array = (window_target_torch * 255).numpy().astype(np.uint8)
+        im_np = np_array[2, :, :].astype(np.uint8)
+        #
+        # input_np = window_input_torch.numpy()[2,:,:]
+        # print(np.unique(im_np))
+
         one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
         self.current_crop += 1
         return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
