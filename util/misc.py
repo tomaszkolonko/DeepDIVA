@@ -383,6 +383,9 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     # RED: Background mis-predicted as Foreground rgb(240, 30, 20)
     # BLUE: Foreground mis-predicted as Background rgb(0, 240, 255)
     if len(gt_image) != 0:
+        class_col = {"fg_correct": (30, 160, 70), "fg_wrong_class": (60, 255, 255), "bg_correct": (0, 0, 0),
+                     "bg_as_fg": (20, 30, 240), "fg_as_bg": (255, 240, 0)}
+
         img_la = np.copy(image)
         tag_la = "layout_analysis_" + tag
         # Get output folder using the FileHandler from the logger.
@@ -400,15 +403,33 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
         out_blue = image[:, :, 0]  # Extract just blue channel
         gt_blue = gt_image[:, :, 0]
 
-        img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
-                           for x in range(out_blue.shape[0])])
+        masks = {c: _get_mask(c, out_blue, gt_blue) for c in class_col.keys()}
 
+        for c, mask in masks.items():
+            img_la[mask] = class_col[c]
+
+        # img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
+        #                    for x in range(out_blue.shape[0])])
         # Write image to output folder
         # TODO this does not work
         #writer.add_image(tag=tag_la, img_tensor=np.moveaxis(img_la, -1, 0), global_step=global_step)
         cv2.imwrite(dest_filename, img_la)
 
     return
+
+
+def _get_mask(tag, output, gt):
+    if tag == "fg_correct":
+        return np.logical_and(output == gt, gt != 1)
+    elif tag == "bg_correct":
+        return np.logical_and(output == gt, gt == 1)
+    elif tag == "fg_wrong_class":
+        return np.logical_and(output != gt, np.logical_and(gt != 1, output != 1))
+    elif tag == "fg_as_bg":
+        return np.logical_and(output != gt, output == 1)
+    elif tag == "bg_as_fg":
+        return np.logical_and(output != gt, np.logical_and(output != 1, gt == 1))
+
 
 def _get_colour(output, gt):
     # Colours are in BGR

@@ -301,13 +301,13 @@ class ImageFolder(data.Dataset):
 
 
     def load_new_test_data(self):
-        logging.info("*** loading next image ***")
+        # logging.info("*** loading next image ***")
         self.current_test_image_counter += 1
         self.current_test_image = default_loader(self.imgs[self.current_test_image_counter][0])
         self.current_test_gt = default_loader(self.imgs[self.current_test_image_counter][1])
 
     def reset_counter(self):
-        logging.info("*** resetting all counters ***")
+        # logging.info("*** resetting all counters ***")
         self.current_horiz_crop = 0
         self.current_vert_crop = 0
 
