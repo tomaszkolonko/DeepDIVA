@@ -186,8 +186,10 @@ def cifar10(args):
 
 def hisDB(args):
     """
-    Fetches and prepares (in a DeepDIVA friendly format) the HisDB-all dataset for semantic segmentation to the location specified
+    Fetches and prepares (in a DeepDIVA friendly format) the DIVA HisDB-all dataset for semantic segmentation to the location specified
     on the file system
+
+    See also: https://diuf.unifr.ch/main/hisdoc/diva-hisdb
 
     Output folder structure: ../HisDB/CB55/train
                              ../HisDB/CB55/val
