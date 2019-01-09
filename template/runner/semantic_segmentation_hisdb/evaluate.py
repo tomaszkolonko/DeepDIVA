@@ -16,7 +16,7 @@ from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_l
     save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_bgr, one_hot_to_full_output
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 from util.evaluation.metrics.accuracy import accuracy_segmentation
-from util.misc import gt_tensor_to_one_hot
+from util.misc import gt_to_one_hot
 from template.runner.semantic_segmentation_hisdb.transform_library import functional
 
 
@@ -413,8 +413,12 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
     with open(gt_img_path, 'rb') as f:
         with Image.open(f) as img:
             ground_truth = np.array(img.convert('RGB'))
+            # ajust blue channel according to border pixel in red channel
+            border_mask = ground_truth[:, :, 0].astype(np.uint8) != 0
+            ground_truth[:, :, 2][border_mask] = 1
+
             # ground_truth_argmax = functional.to_tensor(ground_truth)
-    target = np.argmax(gt_tensor_to_one_hot(ground_truth).numpy(), axis=0)
+    target = np.argmax(gt_to_one_hot(ground_truth).numpy(), axis=0)
 
     # TODO: also save input and gt image?
     if multi_run is None:

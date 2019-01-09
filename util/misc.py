@@ -490,14 +490,15 @@ def int_to_one_hot(x, n_classes):
     return list(map(int, list(s.format(x))))
 
 
-def gt_tensor_to_one_hot(matrix):
+def gt_to_one_hot(matrix):
     """
     Convert ground truth tensor to one-hot encoded matrix
 
     Parameters
     -------
     matrix: float tensor from to_tensor() or numpy array
-        shape (C x H x W) in the range [0.0, 1.0]
+        shape (C x H x W) in the range [0.0, 1.0] or shape (H x W x C) BGR
+
     Returns
     -------
     torch.LongTensor of size [#C x H x W]
@@ -506,9 +507,14 @@ def gt_tensor_to_one_hot(matrix):
     # TODO: ugly fix -> better to not normalize in the first place
     if type(matrix).__module__ == np.__name__:
         im_np = matrix[:, :, 2].astype(np.uint8)
+        border_mask = matrix[:, :, 0].astype(np.uint8) != 0
     else:
         np_array = (matrix * 255).numpy().astype(np.uint8)
         im_np = np_array[2, :, :].astype(np.uint8)
+        border_mask = np_array[0, :, :].astype(np.uint8) != 0
+
+    # ajust blue channel according to border pixel in red channel
+    im_np[border_mask] = 1
 
     integer_encoded = np.array([i for i in range(8)])
     onehot_encoder = OneHotEncoder(sparse=False)

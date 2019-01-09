@@ -10,7 +10,7 @@ import math
 import os.path
 import numpy as np
 
-from util.misc import gt_tensor_to_one_hot
+from util.misc import gt_to_one_hot
 from template.runner.semantic_segmentation.transform_library import transforms, functional
 
 # Torch related stuff
@@ -331,7 +331,7 @@ class ImageFolder(data.Dataset):
         # input_np = window_input_torch.numpy()[2,:,:]
         # print(np.unique(im_np))
 
-        one_hot_matrix = gt_tensor_to_one_hot(window_target_torch)
+        one_hot_matrix = gt_to_one_hot(window_target_torch)
         self.current_crop += 1
         return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
                  os.path.basename(self.imgs[self.current_test_image_counter][1])[:]), one_hot_matrix)
@@ -361,16 +361,16 @@ class ImageFolder(data.Dataset):
             img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
             self.current_crop = self.current_crop + 1
             if unittesting:
-                return img, gt_tensor_to_one_hot(gt), self.current_page, self.current_crop, self.memory_pass
+                return img, gt_to_one_hot(gt), self.current_page, self.current_crop, self.memory_pass
             else:
                 #unique, counts = np.unique(gt.numpy()[2, :, :]*255, return_counts=True)
                 #print(dict(zip(unique, counts)))
-                return img, gt_tensor_to_one_hot(gt)
+                return img, gt_to_one_hot(gt)
         else:
             self.current_crop = self.current_crop + 1
             img = self.images[self.current_page]
             gt = self.gt[self.current_page]
-            return img, gt_tensor_to_one_hot(gt)
+            return img, gt_to_one_hot(gt)
 
     def update_state_variables(self):
         """
