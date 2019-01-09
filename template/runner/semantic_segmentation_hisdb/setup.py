@@ -77,7 +77,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     test_ds.transform = image_gt_transform
 
     # Setup dataloaders
-    logging.debug('Setting up dataloaders')
+    logging.debug('Setting up dataloaders (#workers for test set to 1)')
     train_loader = torch.utils.data.DataLoader(train_ds,
                                                shuffle=True,
                                                batch_size=batch_size,

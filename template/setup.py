@@ -440,7 +440,7 @@ def _dataloaders_from_datasets(batch_size, train_ds, val_ds, test_ds, workers):
         The dataloaders for each split passed
     """
     # Setup dataloaders
-    logging.debug('Setting up dataloaders (#workers for test set to 1)')
+    logging.debug('Setting up dataloaders')
     train_loader = torch.utils.data.DataLoader(train_ds,
                                                shuffle=True,
                                                batch_size=batch_size,
