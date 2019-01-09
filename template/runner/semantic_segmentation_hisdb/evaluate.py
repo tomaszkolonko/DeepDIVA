@@ -256,8 +256,6 @@ def validate(data_loader, model, criterion, weights, writer, epoch, class_names,
     logging_label = "val"
 
     dataset_folder = kwargs["dataset_folder"]
-    # if workers > 1 it creates a problem for the output generation
-    kwargs["workers"] = 1
     num_classes = len(class_names)
     multi_run = kwargs['run'] if 'run' in kwargs else None
 
