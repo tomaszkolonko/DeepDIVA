@@ -1,12 +1,12 @@
 # Impact of Architectural Features and Pre-training on the Performance of Deep Neural Networks used in the Analysis of Historical Document
 
-This document provides all the used hyperparameters for the different architectures used in the above mentioned paper. All runs have been done with the DeepDIVA framework [DeepDIVA framework](https://github.com/DIVA-DIA/DeepDIVA) We optimized the parameters with [SIGOPT](https://sigopt.com)
+This document provides all the hyperparameters for the different architectures used in the above mentioned paper. All runs have been done with the [DeepDIVA framework](https://github.com/DIVA-DIA/DeepDIVA) We optimized the parameters with [SIGOPT](https://sigopt.com)
 
 
 
 ## Hyperparameters for Classification (Style Classification)
 
-For the Style Classification on the [CLaMM dataset]() we optimized the parameters for the following architectures:
+For the Style Classification task on the [CLaMM dataset]() we optimized the parameters for the following architectures:
 
 |               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
 |-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
@@ -17,16 +17,32 @@ For the Style Classification on the [CLaMM dataset]() we optimized the parameter
 
 We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
 
-
-
-## Hyperparameters for Classification (Manuscript Dating)
-
 |               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
 |-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
 | VGG19_bn      | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Resnet152     | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       | 
+
+## Hyperparameters for Classification (Manuscript Dating)
+
+For the Manuscript Dating Classification task on the [CLaMM dataset]() we optimized the parameters for the following architectures:
+
+|               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
+|-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Resnet152     | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+
+We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
+
+|               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
+|-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Resnet152     | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 
 ## Hyperparameters for Similarity
 
