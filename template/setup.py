@@ -87,7 +87,8 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
 
     output_channels = output_channels if num_classes == None else num_classes
     model = models.__dict__[model_name](output_channels=output_channels, pretrained=pretrained)
-
+    numberOfParameters = sum([p.numel() for p in model.parameters() if p.requires_grad]) #number of trainable parameters in the model
+    logging.info("Number of parameters '{}'".format(numberOfParameters))
     # Get the optimizer created with the specified parameters in kwargs (such as lr, momentum, ... )
     optimizer = _get_optimizer(optimizer_name, model, **kwargs)
 
