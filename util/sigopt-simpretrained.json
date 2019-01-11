@@ -1,0 +1,5 @@
+[
+{"name": "lr", "type": "double", "bounds": { "min" : 0.005, "max": 0.1 }},
+{"name": "momentum", "type": "double", "bounds": { "min" : 0.1, "max": 0.5 }},
+{"name": "weight_decay", "type": "double", "bounds": { "min" : 0.001, "max": 0.01 }}
+]
