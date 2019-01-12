@@ -18,6 +18,7 @@ python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/h
 # Densenet121 ---------------------------------------
 python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/historical_wi_col_small/ --model-name densenet121 --epochs 5 --experiment-name ls-sigopt-similarity-randomcrop-pretrained-densenet121 --output-folder ../output/ --decay-lr 20 --n-triplets 50000 --output-channels 128 --map auto --pretrained --ignoregit --regenerate-every 1 --sig-opt-token LVVXZLFGZSCTCTAXCIXXTWFZUFLYSLRCIUGEZXAMXRXAXYGD --sig-opt-runs 5 --sig-opt util/sigopt-simpretrained.json --batch-size 32
 
+exit 1
 
 # VGG19_bn ---------------------------------------
 python ./template/RunMe.py --runner-class triplet --dataset-folder ../datasets/historical_wi_col_small/ --model-name vgg19_bn --epochs 5 --experiment-name ls-sigopt-similarity-randomcrop-vgg19_bn --output-folder ../output/ --decay-lr 25 --n-triplets 50000 --output-channels 128 --map auto --ignoregit --sig-opt-token LVVXZLFGZSCTCTAXCIXXTWFZUFLYSLRCIUGEZXAMXRXAXYGD --sig-opt-runs 5 --sig-opt util/sigopt.json --batch-size 32--regenerate-every 1
