@@ -9,3 +9,5 @@ Vgg19 bn	140105664
 Inception v3	24703968
 Densenet 121	7085056
 Densenet 201	18338816
+Unet            34531592
+FC-Densenet 57  1376216
