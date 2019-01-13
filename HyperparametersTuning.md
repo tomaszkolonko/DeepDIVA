@@ -6,9 +6,9 @@ This document provides all the hyperparameters for the different architectures u
 
 ## Hyperparameters for Classification (Style Classification)
 
-For the Style Classification task on the [CLaMM dataset]() we optimized the parameters for the following architectures:
+For the Style Classification task on the [CLaMM dataset](https://clamm.irht.cnrs.fr/icdar-2017/icdar2017-clamm/) we optimized the parameters for the following architectures:
 
-|               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
+|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
 | VGG19_bn      | 0.04509         | 0.11104       | 0.00680        | 36.97 %       |
 | Resnet152     | 0.06221         | 0.54338       | 0.00771        | 34.78 %       |
@@ -17,7 +17,7 @@ For the Style Classification task on the [CLaMM dataset]() we optimized the para
 
 We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
 
-|               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
+|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
 | VGG19_bn      | 0.09656         | 0.65385       | 0.00435        | 47.27 %       |
 | Resnet152     | 0.02609         | 0.74250       | 0.00895        | 44.42 %       |
@@ -26,9 +26,9 @@ We let SIGOPT optimize all the hyperparameters again for the runs with pre-train
 
 ## Hyperparameters for Classification (Manuscript Dating)
 
-For the Manuscript Dating Classification task on the [CLaMM dataset]() we optimized the parameters for the following architectures:
+For the Manuscript Dating Classification task on the [CLaMM dataset](https://clamm.irht.cnrs.fr/icdar-2017/icdar2017-clamm/) we optimized the parameters for the following architectures:
 
-|               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
+|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
 | VGG19_bn      | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Resnet152     | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
@@ -37,7 +37,7 @@ For the Manuscript Dating Classification task on the [CLaMM dataset]() we optimi
 
 We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
 
-|               | Learning Rate   | Momentum      | weight_decay   | test accuracy |
+|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
 | VGG19_bn      | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Resnet152     | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
@@ -46,7 +46,32 @@ We let SIGOPT optimize all the hyperparameters again for the runs with pre-train
 
 ## Hyperparameters for Similarity
 
+For the Historical Writer Identification task on the [Historical-WI dataset](https://scriptnet.iit.demokritos.gr/competitions/6/) we optimized the parameters for the following architectures:
+
+|               | Batch Size      | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
+|-------------: |:---------------:|:---------------:|:-------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
+| VGG19_bn      | 32              | 0.01998         | n/a                 | 0.15635       | 0.00785        | 128             | 2.645 %       | 
+| Resnet152     | 32              | 0.00817         | n/a                 | 0.40406       | 0.00565        | 128             | 6.570 %       |
+| Inception_v3  | 32              | 0.09931         | n/a                 | 0.31808       | 0.00976        | 128             | 17.49 %       |
+| Densenet121   | 32              | 0.03354         | n/a                 | 0.21808       | 0.00231        | 128             | 13.97 %       |
+
+We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
+
+|               | Batch Size      | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
+|-------------: |:---------------:|:---------------:|:-------------------:|:-------------:|:--------------:|:---------------:|:-------------:|
+| VGG19_bn      | 32              | 0.01554         | n/a                 | 0.48831       | 0.00959        | 128             | 7.648 %       | 
+| Resnet152     | 32              | XX              | n/a                 | 0.40406       | 0.00565        | 128             | XX %       |
+| Inception_v3  | 32              | XX              | n/a                 | 0.31808       | 0.00976        | 128             | XX %       |
+| Densenet121   | 32              | 0.00781         | n/a                 | 0.33007       | 0.00588        | 128             | 19.21 %       |
+
+
 ## Hyperparameters for Segmentation
 
+For the Competition on Layout Analysis for Challenging Medieval Manuscripts task on the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) we optimized the parameters for the following architectures:
+
+|               | Batch Size | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Test meanIU   |
+|-------------: |:----------:|:---------------:|:-------------------:|:--------------:|:-------------:|:---------:|:--------------:|:---------------:|:-------------:|
+| VGG19_bn      | 8          | XX              | 15                  | 0.15635       | 0.00785        | 256       | 200            | 3               | XX %       | 
+| Resnet152     | 8          | XX              | 15                  | 0.40406       | 0.00565        | 256       | 200            | 3               | XX %       |
 
 
