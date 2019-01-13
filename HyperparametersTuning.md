@@ -1,48 +1,48 @@
 # Impact of Architectural Features and Pre-training on the Performance of Deep Neural Networks used in the Analysis of Historical Document
 
-This document provides all the hyperparameters for the different architectures used in the above mentioned paper. All runs have been done with the [DeepDIVA framework](https://github.com/DIVA-DIA/DeepDIVA) We optimized the parameters with [SIGOPT](https://sigopt.com)
+This document provides all the hyperparameters for the different architectures used in the above mentioned paper. All runs have been done with the [DeepDIVA framework](https://github.com/DIVA-DIA/DeepDIVA) We optimized the parameters with [SIGOPT](https://sigopt.com). The learning rate decay divides the learning rate by 10 and happens every N epochs.
 
 
 
 ## Hyperparameters for Classification (Style Classification)
 
-For the Style Classification task on the [CLaMM dataset](https://clamm.irht.cnrs.fr/icdar-2017/icdar2017-clamm/) we optimized the parameters for the following architectures:
+For the Style Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip) we optimized the parameters for the following architectures:
 
-|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
-|-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | 0.04509         | 0.11104       | 0.00680        | 36.97 %       |
-| Resnet152     | 0.06221         | 0.54338       | 0.00771        | 34.78 %       |
-| Inception_v3  | 0.08231         | 0.67468       | 0.00689        | 42.72 %       |
-| Densenet121   | 0.08750         | 0.32541       | 0.00389        | 42.17 %       | 
+|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
+|-------------: |-------------: |:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | 64            | 0.04509         | 20            | 0.11104       | 0.00680        | 36.97 %       |
+| Resnet152     | 64            | 0.06221         | 20            | 0.54338       | 0.00771        | 34.78 %       |
+| Inception_v3  | 64            | 0.08231         | 20            | 0.67468       | 0.00689        | 42.72 %       |
+| Densenet121   | 64            | 0.08750         | 20            | 0.32541       | 0.00389        | 42.17 %       | 
 
 We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
 
-|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
-|-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | 0.09656         | 0.65385       | 0.00435        | 47.27 %       |
-| Resnet152     | 0.02609         | 0.74250       | 0.00895        | 44.42 %       |
-| Inception_v3  | 0.08782         | 0.25135       | 0.00956        | 48.82 %       |
-| Densenet121   | 0.05002         | 0.42603       | 0.00575        | 45.92 %       | 
+|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
+|-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | 64            | 0.09656         | 20            | 0.65385       | 0.00435        | 47.27 %       |
+| Resnet152     | 64            | 0.02609         | 20            | 0.74250       | 0.00895        | 44.42 %       |
+| Inception_v3  | 64            | 0.08782         | 20            | 0.25135       | 0.00956        | 48.82 %       |
+| Densenet121   | 64            | 0.05002         | 20            | 0.42603       | 0.00575        | 45.92 %       | 
 
 ## Hyperparameters for Classification (Manuscript Dating)
 
-For the Manuscript Dating Classification task on the [CLaMM dataset](https://clamm.irht.cnrs.fr/icdar-2017/icdar2017-clamm/) we optimized the parameters for the following architectures:
+For the Manuscript Dating Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip) we optimized the parameters for the following architectures:
 
-|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
-|-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Resnet152     | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Densenet121   | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
+|-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Resnet152     | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Inception_v3  | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Densenet121   | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 
 We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
 
-|               | Learning Rate   | Momentum      | Weight Decay   | Test Accuracy |
-|-------------: |:---------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Resnet152     | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Inception_v3  | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Densenet121   | xxxxxxx         | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
+|-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Resnet152     | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Inception_v3  | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Densenet121   | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 
 ## Hyperparameters for Similarity
 
