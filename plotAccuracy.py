@@ -36,6 +36,7 @@ colors_pretrained = ['#ff0000', '#009933', '#1a53ff', '#cc0099']
 architectureNames_segmentation = ["Unet", "FC-Densenet57"]
 figureNames = ['parameters_vs_accuracies_md.png', 'parameters_vs_accuracies_sc.png', 'similarity.png', 'segmentation.png']
 
-plotAccuracy(numberOfParameters, accuracies_md, accuracies_md_pretrained, colors, colors_pretrained, architectureNames, figureNames[0])
-plotAccuracy(numberOfParameters, accuracies_sc, accuracies_sc_pretrained, colors, colors_pretrained, architectureNames, figureNames[1])
-plotAccuracy(numberOfParameters_segmentation, accuracies_segmentation, accuracies_segmentation_pretrained, colors[0:2], colors_pretrained[0:2], architectureNames_segmentation, figureNames[2])
+plotAccuracy(numberOfParameters, accuracies_md, accuracies_md_pretrained, colors, colors_pretrained, architectureNames, figureNames[0]) #Manuscript Dating
+plotAccuracy(numberOfParameters, accuracies_sc, accuracies_sc_pretrained, colors, colors_pretrained, architectureNames, figureNames[1]) #Style Classification
+plotAccuracy(numberOfParameters, accuracies_similarity, accuracies_similarity_pretrained, colors, colors_pretrained, architectureNames, figureNames[2]) #Similarity
+plotAccuracy(numberOfParameters_segmentation, accuracies_segmentation, accuracies_segmentation_pretrained, colors[0:2], colors_pretrained[0:2], architectureNames_segmentation, figureNames[3]) #Segmentation
