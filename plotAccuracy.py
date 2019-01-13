@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 
+
+
 def plotAccuracy(numberOfParameters, accuracies, accuracies_pretrained, colors, colors_pretrained, architectureNames, figureName):
 
     fig = plt.figure()
