@@ -186,6 +186,8 @@ def _main(args):
         writer = SummaryWriter(log_dir=os.path.dirname(args.output_file))
         with Pool(16) as pool:
             images = pool.map(_load_thumbnail, filenames)
+        if isinstance(labels[0], str):
+            labels = labels.astype(np.float)
         writer.add_embedding(torch.from_numpy(features), metadata=torch.from_numpy(labels),
                              # label_img=torch.from_numpy(np.array(images)).unsqueeze(1))
                              label_img=None)
