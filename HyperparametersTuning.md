@@ -1,4 +1,4 @@
-# Impact of Architectural Features and Pre-training on the Performance of Deep Neural Networks used in the Analysis of Historical Document
+# Impact of Architectural Features and ImageNet pre-training on the Performance of Deep Neural Networks used in the Analysis of Historical Document
 
 This document provides all the hyperparameters for the different architectures used in the above mentioned paper. All runs have been done with the [DeepDIVA framework](https://github.com/DIVA-DIA/DeepDIVA) We optimized the parameters with [SIGOPT](https://sigopt.com). The learning rate decay divides the learning rate by 10 and happens every N epochs.
 
@@ -15,7 +15,7 @@ For the Style Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.
 | Inception_v3  | 64            | 0.08231         | 20            | 0.67468       | 0.00689        | 42.72 %       |
 | Densenet121   | 64            | 0.08750         | 20            | 0.32541       | 0.00389        | 42.17 %       | 
 
-We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
+We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
 |               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
 |-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
@@ -35,7 +35,7 @@ For the Manuscript Dating Classification task on the [CLaMM dataset](http://clam
 | Inception_v3  | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Densenet121   | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 
-We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
+We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
 |               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
 |-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
@@ -55,12 +55,12 @@ For the Historical Writer Identification task on the [Historical-WI dataset](htt
 | Inception_v3  | 32              | 0.09931         | n/a                 | 0.31808       | 0.00976        | 128             | 17.49 %       |
 | Densenet121   | 32              | 0.03354         | n/a                 | 0.21808       | 0.00231        | 128             | 13.97 %       |
 
-We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
+We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
 |               | Batch Size      | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:-------------------:|:-------------:|:--------------:|:---------------:|:-------------:|
 | VGG19_bn      | 32              | 0.01554         | n/a                 | 0.48831       | 0.00959        | 128             | 7.648 %       | 
-| Resnet152     | 32              | XX              | n/a                 | 0.40406       | 0.00565        | 128             | XX %       |
+| Resnet152     | 32              | 0.01366         | n/a                 | 0.36760       | 0.00900        | 128             | 13.71 %       |
 | Inception_v3  | 32              | XX              | n/a                 | 0.31808       | 0.00976        | 128             | XX %       |
 | Densenet121   | 32              | 0.00781         | n/a                 | 0.33007       | 0.00588        | 128             | 19.21 %       |
 
@@ -71,7 +71,7 @@ For the Competition on Layout Analysis for Challenging Medieval Manuscripts task
 
 |               | Batch Size | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Test meanIU   |
 |-------------: |:----------:|:---------------:|:-------------------:|:--------------:|:-------------:|:---------:|:--------------:|:---------------:|:-------------:|
-| VGG19_bn      | 8          | XX              | 15                  | 0.15635       | 0.00785        | 256       | 200            | 3               | XX %       | 
-| Resnet152     | 8          | XX              | 15                  | 0.40406       | 0.00565        | 256       | 200            | 3               | XX %       |
+| UNet          | 8          | XX              | 0.04206             | 0.11280       | 0.00594        | 256       | 200            | 3               | 58.56 %       | 
+| FC-Densenet57 | 8          | XX              | 15                  | 0.40406       | 0.00565        | 256       | 200            | 3               | XX %       |
 
 
