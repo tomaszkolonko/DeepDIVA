@@ -220,7 +220,6 @@ class ImageFolderApply(data.Dataset):
         self.classes = np.unique(self.labels)
 
     def _get_filenames(self, path):
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> get_filenames()")
         file_names = []
         for item in get_all_files_in_folders_and_subfolders(path):
             if has_extension(item, ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif']):
