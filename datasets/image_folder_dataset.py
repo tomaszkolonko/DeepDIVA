@@ -198,7 +198,6 @@ class ImageFolderApply(data.Dataset):
         target_transform : torchvision.transforms
             Transformation to apply on the labels
         """
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE")
         self.dataset_folder = os.path.expanduser(path)
         self.transform = transform
         self.target_transform = target_transform
@@ -229,7 +228,6 @@ class ImageFolderApply(data.Dataset):
         return file_names
 
     def __getitem__(self, index):
-        #logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> getitem()")
         """
         Retrieve a sample by index and provides its filename as well
 
