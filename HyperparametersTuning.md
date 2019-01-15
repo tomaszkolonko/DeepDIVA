@@ -30,48 +30,23 @@ For the Manuscript Dating Classification task on the [CLaMM dataset](http://clam
 
 |               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
 |-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Resnet152     | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Inception_v3  | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Densenet121   | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| VGG19_bn      | 64            | 0.02622         | 20            | 0.23803       | 0.00869        | 22.66 %       |
+| Resnet152     | 64            | 0.07116         | 20            | 0.49010       | 0.01000        | 20.61 %       |
+| Inception_v3  | 64            | 0.01523         | 20            | 0.95131       | 0.00674        | 22.36 %       |
+| Densenet121   | 64            | 0.04435         | 20            | 0.34480       | 0.00848        | 27.26 %       |
 
 We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
 
 |               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
 |-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| VGG19_bn      | 64            | 0.05288         | 20            | 0.49782       | 0.00001        | 32.12 %       |
 | Resnet152     | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
-| Inception_v3  | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
+| Inception_v3  | 64            | 0.01788         | 20            | 0.81922       | 0.00621        | 31.92 %       |
 | Densenet121   | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 
 ## Hyperparameters for Similarity
 
-For the Historical Writer Identification task on the [Historical-WI dataset](https://scriptnet.iit.demokritos.gr/competitions/6/) we optimized the parameters for the following architectures:
-
-|               | Batch Size      | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
-|-------------: |:---------------:|:---------------:|:-------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.01998         | n/a                 | 0.15635       | 0.00785        | 128             | 2.645 %       | 
-| Resnet152     | 32              | 0.00817         | n/a                 | 0.40406       | 0.00565        | 128             | 6.570 %       |
-| Inception_v3  | 32              | 0.09931         | n/a                 | 0.31808       | 0.00976        | 128             | 17.49 %       |
-| Densenet121   | 32              | 0.03354         | n/a                 | 0.21808       | 0.00231        | 128             | 13.97 %       |
-
-We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
-
-|               | Batch Size      | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
-|-------------: |:---------------:|:---------------:|:-------------------:|:-------------:|:--------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.01554         | n/a                 | 0.48831       | 0.00959        | 128             | 7.648 %       | 
-| Resnet152     | 32              | XX              | n/a                 | 0.40406       | 0.00565        | 128             | XX %       |
-| Inception_v3  | 32              | XX              | n/a                 | 0.31808       | 0.00976        | 128             | XX %       |
-| Densenet121   | 32              | 0.00781         | n/a                 | 0.33007       | 0.00588        | 128             | 19.21 %       |
-
-
 ## Hyperparameters for Segmentation
 
-For the Competition on Layout Analysis for Challenging Medieval Manuscripts task on the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) we optimized the parameters for the following architectures:
-
-|               | Batch Size | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Test meanIU   |
-|-------------: |:----------:|:---------------:|:-------------------:|:--------------:|:-------------:|:---------:|:--------------:|:---------------:|:-------------:|
-| VGG19_bn      | 8          | XX              | 15                  | 0.15635       | 0.00785        | 256       | 200            | 3               | XX %       | 
-| Resnet152     | 8          | XX              | 15                  | 0.40406       | 0.00565        | 256       | 200            | 3               | XX %       |
 
 
