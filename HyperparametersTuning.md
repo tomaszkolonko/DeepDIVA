@@ -48,12 +48,12 @@ We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet 
 
 For the Historical Writer Identification task on the [Historical-WI dataset](https://scriptnet.iit.demokritos.gr/competitions/6/) we optimized the parameters for the following architectures:
 
-|               | Batch Size      | Learning Rate   | Learning Rate Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
-|-------------: |:---------------:|:---------------:|:-------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.01998         | n/a                 | 0.15635       | 0.00785        | 128             | 2.645 %       | 
-| Resnet152     | 32              | 0.00817         | n/a                 | 0.40406       | 0.00565        | 128             | 6.570 %       |
-| Inception_v3  | 32              | 0.09931         | n/a                 | 0.31808       | 0.00976        | 128             | 17.49 %       |
-| Densenet121   | 32              | 0.03354         | n/a                 | 0.21808       | 0.00231        | 128             | 13.97 %       |
+|               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
+|-------------: |:---------------:|:---------------:|:---------------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
+| VGG19_bn      | 32              | 0.01998         | n/a                         | 0.15635       | 0.00785        | 128             | 2.645 %       | 
+| Resnet152     | 32              | 0.00817         | n/a                         | 0.40406       | 0.00565        | 128             | 6.570 %       |
+| Inception_v3  | 32              | 0.09931         | n/a                         | 0.31808       | 0.00976        | 128             | 17.49 %       |
+| Densenet121   | 32              | 0.03354         | n/a                         | 0.21808       | 0.00231        | 128             | 13.97 %       |
 
 We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
