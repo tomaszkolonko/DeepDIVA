@@ -8,27 +8,27 @@ This document provides all the hyperparameters for the different architectures u
 
 For the Style Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip) we optimized the parameters for the following architectures:
 
-|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
-|-------------: |-------------: |:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | 64            | 0.04509         | 20            | 0.11104       | 0.00680        | 36.97 %       |
-| Resnet152     | 64            | 0.06221         | 20            | 0.54338       | 0.00771        | 34.78 %       |
-| Inception_v3  | 64            | 0.08231         | 20            | 0.67468       | 0.00689        | 42.72 %       |
-| Densenet121   | 64            | 0.08750         | 20            | 0.32541       | 0.00389        | 42.17 %       | 
+|               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Test Accuracy |
+|-------------: |-------------: |:---------------:|:---------------------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | 64            | 0.04509         | 20                          | 0.11104       | 0.00680        | 36.97 %       |
+| Resnet152     | 64            | 0.06221         | 20                          | 0.54338       | 0.00771        | 34.78 %       |
+| Inception_v3  | 64            | 0.08231         | 20                          | 0.67468       | 0.00689        | 42.72 %       |
+| Densenet121   | 64            | 0.08750         | 20                          | 0.32541       | 0.00389        | 42.17 %       | 
 
 We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
-|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
-|-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | 64            | 0.09656         | 20            | 0.65385       | 0.00435        | 47.27 %       |
-| Resnet152     | 64            | 0.02609         | 20            | 0.74250       | 0.00895        | 44.42 %       |
-| Inception_v3  | 64            | 0.08782         | 20            | 0.25135       | 0.00956        | 48.82 %       |
-| Densenet121   | 64            | 0.05002         | 20            | 0.42603       | 0.00575        | 45.92 %       | 
+|               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Test Accuracy |
+|-------------: |:-------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:-------------:|
+| VGG19_bn      | 64            | 0.09656         | 20                          | 0.65385       | 0.00435        | 47.27 %       |
+| Resnet152     | 64            | 0.02609         | 20                          | 0.74250       | 0.00895        | 44.42 %       |
+| Inception_v3  | 64            | 0.08782         | 20                          | 0.25135       | 0.00956        | 48.82 %       |
+| Densenet121   | 64            | 0.05002         | 20                          | 0.42603       | 0.00575        | 45.92 %       | 
 
 ## Hyperparameters for Classification (Manuscript Dating)
 
 For the Manuscript Dating Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip) we optimized the parameters for the following architectures:
 
-|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
+|               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay      | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
 | VGG19_bn      | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Resnet152     | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
@@ -37,7 +37,7 @@ For the Manuscript Dating Classification task on the [CLaMM dataset](http://clam
 
 We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
-|               | Batch Size    | Learning Rate   | lr-decay      | Momentum      | weight_decay   | test accuracy |
+|               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay      | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:-------------:|:---------------:|:-------------:|:-------------:|:--------------:|:-------------:|
 | VGG19_bn      | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
 | Resnet152     | 64            | xxxxxxx         | 20            | xxxxxxx       | xxxxxxx        | xxxxxxx %       |
@@ -63,10 +63,9 @@ We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet 
 | Resnet152     | 32              | 0.01366         | n/a                         | 0.36760       | 0.00900        | 128             | 13.71 %       |
 | Inception_v3  | 32              | 0.03608         | n/a                         | 0.31797       | 0.00107        | 128             | 18.67 %       |
 | Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 26.40 %       | 
-
 ## Hyperparameters for Segmentation
 
-For the Competition on Layout Analysis for Challenging Medieval Manuscripts task on the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) we optimized the parameters for the following architectures:
+For the Competition on Layout Analysis for Challenging Medieval ManusKcripts task on the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) we optimized the parameters for the following architectures:
 
 |               | Batch Size | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Test meanIU   |
 |-------------: |:----------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:---------:|:--------------:|:---------------:|:-------------:|
