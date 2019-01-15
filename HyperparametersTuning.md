@@ -62,8 +62,7 @@ We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet 
 | VGG19_bn      | 32              | 0.01554         | n/a                         | 0.48831       | 0.00959        | 128             | 7.648 %       | 
 | Resnet152     | 32              | 0.01366         | n/a                         | 0.36760       | 0.00900        | 128             | 13.71 %       |
 | Inception_v3  | 32              | 0.03608         | n/a                         | 0.31797       | 0.00107        | 128             | 18.67 %       |
-| Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 26.40 %       |
-
+| Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 26.40 %       | 
 
 ## Hyperparameters for Segmentation
 
