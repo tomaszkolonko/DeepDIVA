@@ -78,8 +78,8 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda, log
             out_n = out_n.view(bs, ncrops, -1).mean(1)
 
 
-        pbar.set_description('nrows of out_a: {}, ncols of out_a: {}, nrows of out_p: {}, ncols of out_p: {}, nrows of out_n: {}, ncols of out_n: {},'.format(
-            len(out_a), len(out_a[0]), len(out_p), len(out_p[0]), len(out_n), len(out_n[0])))
+        # pbar.set_description('nrows of out_a: {}, ncols of out_a: {}, nrows of out_p: {}, ncols of out_p: {}, nrows of out_n: {}, ncols of out_n: {},'.format(
+        #     len(out_a), len(out_a[0]), len(out_p), len(out_p[0]), len(out_n), len(out_n[0])))
 
         # Compute and record the loss
         # Combine output of the two heads for the inception model

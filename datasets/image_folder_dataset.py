@@ -198,7 +198,6 @@ class ImageFolderApply(data.Dataset):
         target_transform : torchvision.transforms
             Transformation to apply on the labels
         """
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE")
         self.dataset_folder = os.path.expanduser(path)
         self.transform = transform
         self.target_transform = target_transform
@@ -221,7 +220,6 @@ class ImageFolderApply(data.Dataset):
         self.classes = np.unique(self.labels)
 
     def _get_filenames(self, path):
-        logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> get_filenames()")
         file_names = []
         for item in get_all_files_in_folders_and_subfolders(path):
             if has_extension(item, ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif']):
@@ -229,7 +227,6 @@ class ImageFolderApply(data.Dataset):
         return file_names
 
     def __getitem__(self, index):
-        #logging.info("*** TZ_DEBUG: YOU SHOULD NOT BE HERE -> getitem()")
         """
         Retrieve a sample by index and provides its filename as well
 
