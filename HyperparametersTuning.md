@@ -67,7 +67,7 @@ We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet 
 
 ## Hyperparameters for Segmentation
 
-For the Competition on Layout Analysis for Challenging Medieval ManusKcripts task on the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) we optimized the parameters for the following architectures:
+For the Competition on Layout Analysis for Challenging Medieval Manuscripts task on the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) we optimized the parameters for the following architectures:
 
 |               | Batch Size | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Test meanIU   |
 |-------------: |:----------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:---------:|:--------------:|:---------------:|:-------------:|
