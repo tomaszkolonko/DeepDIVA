@@ -233,7 +233,7 @@ class ImageFolder(data.Dataset):
         return total_exhaustive_crops_per_test_epoch
 
     def init_first_image_with_parameters(self):
-        self.current_PIL_image = self.pil_loader(self.img[0][0])
+        self.current_PIL_image = pil_loader(self.imgs[0][0])
         self.number_of_vertical_crops_current_image = self.current_PIL_image.width
         self.number_of_horizontal_crops_current_image = self.current_PIL_image.height
 
