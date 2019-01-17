@@ -142,10 +142,7 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
     else:
         best_value = 0.0
 
-    if kwargs['runner_class'] == "semantic_segmentation_hisdb":
-        return model, criterion, optimizer, best_value, start_epoch, weights
-    else:
-        return model, criterion, optimizer, best_value, start_epoch
+    return model, criterion, optimizer, best_value, start_epoch
 
 
 def _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class):

@@ -13,24 +13,13 @@ from tqdm import tqdm
 
 # DeepDIVA
 from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, \
-    save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_bgr, one_hot_to_full_output
+    save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_bgr, one_hot_to_full_output, gt_to_one_hot
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 from util.evaluation.metrics.accuracy import accuracy_segmentation
-from util.misc import gt_to_one_hot
-from template.runner.semantic_segmentation_hisdb.transform_library import functional
+from template.setup import _load_class_frequencies_weights_from_file
 
 
-# def validate(val_loader, model, criterion, weights, writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
-#     """Wrapper for _evaluate() with the intent to validate the model."""
-#     return _evaluate(val_loader, model, criterion, weights, writer, epoch, class_names, 'val', no_cuda, log_interval, **kwargs)
-#
-#
-# def test(test_loader, model, criterion, weights,  writer, epoch, class_names, no_cuda=False, log_interval=20, **kwargs):
-#     """Wrapper for _evaluate() with the intent to test the model"""
-#     return _evaluate(test_loader, model, criterion, weights, writer, epoch, class_names, 'test', no_cuda, log_interval, **kwargs)
-
-
-def test(data_loader, model, criterion, weights, writer, epoch, class_names, no_cuda=False, log_interval=10, **kwargs):
+def test(data_loader, model, criterion, writer, epoch, class_names, dataset_folder, inmem, workers, runner_class,  no_cuda=False, log_interval=10, **kwargs):
     """
     The evaluation routine
 
@@ -59,9 +48,7 @@ def test(data_loader, model, criterion, weights, writer, epoch, class_names, no_
         MeanIU of the model of the evaluated split
     """
     logging_label = "test"
-    dataset_folder = kwargs["dataset_folder"]
-    # if workers > 1 it creates a problem for the output generation
-    kwargs["workers"] = 1
+
     num_classes = len(class_names)
     multi_run = kwargs['run'] if 'run' in kwargs else None
 
@@ -118,18 +105,18 @@ def test(data_loader, model, criterion, weights, writer, epoch, class_names, no_
         loss = criterion(output, target_argmax_var)
         losses.update(loss.data[0], input.size(0))
 
-        # Compute and record the accuracy TODO check with Vinay & Michele if correct
-        acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target_argmax.cpu().numpy(), output_argmax, num_classes)
-        meanIU.update(mean_iu, input.size(0))
+        # Compute and record the batch meanIU TODO check with Vinay & Michele if correct
+        acc_batch, acc_cls_batch, mean_iu_batch, fwavacc_batch = accuracy_segmentation(target_argmax.cpu().numpy(), output_argmax, num_classes)
+        #meanIU.update(mean_iu, input.size(0))
 
         # Add loss and accuracy to Tensorboard
         if multi_run is None:
             writer.add_scalar(logging_label + '/mb_loss', loss.data[0], epoch * len(data_loader) + batch_idx)
-            writer.add_scalar(logging_label + '/mb_meanIU', mean_iu, epoch * len(data_loader) + batch_idx)
+            writer.add_scalar(logging_label + '/mb_meanIU', mean_iu_batch, epoch * len(data_loader) + batch_idx)
         else:
             writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), loss.data[0],
                               epoch * len(data_loader) + batch_idx)
-            writer.add_scalar(logging_label + '/mb_meanIU_{}'.format(multi_run), mean_iu,
+            writer.add_scalar(logging_label + '/mb_meanIU_{}'.format(multi_run), mean_iu_batch,
                                epoch * len(data_loader) + batch_idx)
 
         # Measure elapsed time
@@ -165,9 +152,11 @@ def test(data_loader, model, criterion, weights, writer, epoch, class_names, no_
                 # save the old one before starting the new one
                 img_to_save = current_img_names.pop(0)
                 one_hot_finished = combined_one_hots.pop(img_to_save)
-                pred, target = _save_test_img_output(img_to_save, one_hot_finished, multi_run, dataset_folder, logging_label, writer, meanIU, epoch)
+                pred, target, mean_iu = _save_test_img_output(img_to_save, one_hot_finished, multi_run, dataset_folder, logging_label, writer, epoch, num_classes)
                 preds.append(pred)
                 targets.append(target)
+                # update the meanIU
+                meanIU.update(mean_iu, 1)
 
                 # start the combination of the new image
                 logging.info("Starting segmentation of image {}".format(img_name))
@@ -178,20 +167,25 @@ def test(data_loader, model, criterion, weights, writer, epoch, class_names, no_
     while len(current_img_names) > 0:
         img_to_save = current_img_names.pop(0)
         one_hot_finished = combined_one_hots.pop(img_to_save)
-        pred, target = _save_test_img_output(img_to_save, one_hot_finished, multi_run, dataset_folder, logging_label, writer, meanIU, epoch)
+        pred, target, mean_iu = _save_test_img_output(img_to_save, one_hot_finished, multi_run, dataset_folder, logging_label, writer, epoch, num_classes)
         preds.append(pred)
         targets.append(target)
+        # update the meanIU
+        meanIU.update(mean_iu, 1)
 
     # Make a confusion matrix
     try:
         targets_flat = np.array(targets).flatten()
         preds_flat = np.array(preds).flatten()
+        # load the weights
+        weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
+        # calculate the confusion matrix
         sample_weight = [weights[i] for i in targets_flat]
         cm = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)])
         cm_w = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)], sample_weight=sample_weight)
         confusion_matrix_heatmap = make_heatmap(cm, class_names)
-        confusion_matrix_heatmap_w = confusion_matrix_heatmap
-        #confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w).astype(np.int), class_names)
+        #confusion_matrix_heatmap_w = confusion_matrix_heatmap
+        confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
     except ValueError:
         logging.warning('Confusion Matrix did not work as expected')
         confusion_matrix_heatmap = np.zeros((10, 10, 3))
@@ -225,7 +219,7 @@ def test(data_loader, model, criterion, weights, writer, epoch, class_names, no_
     return meanIU.avg
 
 
-def validate(data_loader, model, criterion, weights, writer, epoch, class_names, no_cuda=False, log_interval=10, **kwargs):
+def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_folder, inmem, workers, runner_class, no_cuda=False, log_interval=10, **kwargs):
     """
     The evaluation routine
 
@@ -255,7 +249,6 @@ def validate(data_loader, model, criterion, weights, writer, epoch, class_names,
     """
     logging_label = "val"
 
-    dataset_folder = kwargs["dataset_folder"]
     num_classes = len(class_names)
     multi_run = kwargs['run'] if 'run' in kwargs else None
 
@@ -341,12 +334,15 @@ def validate(data_loader, model, criterion, weights, writer, epoch, class_names,
     try:
         targets_flat = np.array(targets).flatten()
         preds_flat = np.array(preds).flatten()
+        # load the weights
+        weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
+        # calculate confusion matrices
         sample_weight = [weights[i] for i in targets_flat]
         cm = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)])
         cm_w = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)], sample_weight=sample_weight)
         confusion_matrix_heatmap = make_heatmap(cm, class_names)
-        confusion_matrix_heatmap_w = confusion_matrix_heatmap
-        #confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w).astype(np.int), class_names)
+        #confusion_matrix_heatmap_w = confusion_matrix_heatmap
+        confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
     except ValueError:
         logging.warning('Confusion Matrix did not work as expected')
         confusion_matrix_heatmap = np.zeros((10, 10, 3))
@@ -380,7 +376,7 @@ def validate(data_loader, model, criterion, weights, writer, epoch, class_names,
     return meanIU.avg
 
 
-def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, logging_label, writer, meanIU, epoch):
+def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, logging_label, writer, epoch, num_classes):
     """
     Helper function to save the output during testing
 
@@ -420,20 +416,23 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
             # ground_truth_argmax = functional.to_tensor(ground_truth)
     target = np.argmax(gt_to_one_hot(ground_truth).numpy(), axis=0)
 
+    # Compute and record the meanIU of the whole image TODO check with Vinay & Michele if correct
+    acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target, pred, num_classes)
+
     # TODO: also save input and gt image?
     if multi_run is None:
-        writer.add_scalar(logging_label + '/meanIU', meanIU.avg, epoch)
+        writer.add_scalar(logging_label + '/meanIU_{}'.format(img_to_save), mean_iu, epoch)
         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(img_to_save),
                                                        image=np_bgr,
                                                        gt_image=ground_truth[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
     else:
-        writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
+        writer.add_scalar(logging_label + '/meanIU_{}_{}'.format(img_to_save, multi_run), mean_iu, epoch)
         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run,
                                                                                                           img_to_save),
                                                        image=np_bgr,
                                                        gt_image=ground_truth[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
 
-    return pred, target
+    return pred, target, mean_iu
 
 
 def _log_classification_report(data_loader, epoch, preds, targets, writer):

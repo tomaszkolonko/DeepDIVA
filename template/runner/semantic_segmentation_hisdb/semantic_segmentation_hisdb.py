@@ -76,7 +76,7 @@ class SemanticSegmentationHisdb:
         class_names = [v for k, v in int_val_to_class_name.items()]
 
         # Setting up model, optimizer, criterion
-        model, _, optimizer, best_value, start_epoch, weights = set_up_model(num_classes=num_classes, # In this case is the num dimension of the output
+        model, criterion, optimizer, best_value, start_epoch = set_up_model(num_classes=num_classes, # In this case is the num dimension of the output
                                                                     model_name=model_name,
                                                                     lr=lr,
                                                                     train_loader=train_loader,
@@ -85,16 +85,13 @@ class SemanticSegmentationHisdb:
         # For the multi-dimensional cross entropy the array shapes are as follows:
         # Input: (N, C, d_1, d_2, ..., d_K) where N is the mini-batch size, C are the number of classes and d_K the kth dimension
         # Target: (N, d_1, d_2, ..., d_K
-        if not kwargs["no_cuda"]:
-            weights_tensor = torch.FloatTensor(weights).cuda(async=True)
-        criterion = nn.CrossEntropyLoss(weight=weights_tensor)
 
         # Core routine
         logging.info('Begin training')
         val_value = np.zeros((epochs + 1 - start_epoch))
         train_value = np.zeros((epochs - start_epoch))
 
-        val_value[-1] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, weights, writer, -1, class_names, **kwargs)
+        val_value[-1] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, -1, class_names, **kwargs)
         for epoch in range(start_epoch, epochs):
             # Train
             train_value[epoch] = SemanticSegmentationHisdb._train(train_loader, model, criterion, optimizer, writer, epoch,
@@ -102,7 +99,7 @@ class SemanticSegmentationHisdb:
 
             # Validate
             if epoch % validation_interval == 0:
-                val_value[epoch] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, weights, writer, epoch, class_names, **kwargs)
+                val_value[epoch] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, epoch, class_names, **kwargs)
             if decay_lr is not None:
                 adjust_learning_rate(lr=lr, optimizer=optimizer, epoch=epoch, decay_lr_epochs=decay_lr)
             # TODO best model is not saved if epoch = 1
@@ -117,14 +114,14 @@ class SemanticSegmentationHisdb:
         logging.info('Loading the best model before evaluating on the test set.')
         kwargs["load_model"] = os.path.join(current_log_folder, 'model_best.pth.tar')
         # TODO: add weights to kwargs
-        model, _, _, _, _, weights = set_up_model(num_classes=num_classes,
+        model, _, _, _, _ = set_up_model(num_classes=num_classes,
                                          model_name=model_name,
                                          lr=lr,
                                          train_loader=train_loader,
                                          **kwargs)
 
         # Test
-        test_value = SemanticSegmentationHisdb._test(test_loader, model, criterion, weights, writer, epochs - 1, class_names, **kwargs)
+        test_value = SemanticSegmentationHisdb._test(test_loader, model, criterion, writer, epochs - 1, class_names, **kwargs)
         logging.info('Training completed')
         # test_value = 0
 
@@ -166,9 +163,9 @@ class SemanticSegmentationHisdb:
         return train.train(train_loader, model, criterion, optimizer, writer, epoch, **kwargs)
 
     @classmethod
-    def _validate(cls, val_loader, model, criterion, weights, writer, epoch, class_names, **kwargs):
-        return evaluate.validate(val_loader, model, criterion, weights,  writer, epoch, class_names, **kwargs)
+    def _validate(cls, val_loader, model, criterion, writer, epoch, class_names, **kwargs):
+        return evaluate.validate(val_loader, model, criterion,  writer, epoch, class_names, **kwargs)
 
     @classmethod
-    def _test(cls, test_loader, model, criterion, weights, writer, epoch, class_names, **kwargs):
-        return evaluate.test(test_loader, model, criterion, weights, writer, epoch, class_names, **kwargs)
+    def _test(cls, test_loader, model, criterion, writer, epoch, class_names, **kwargs):
+        return evaluate.test(test_loader, model, criterion, writer, epoch, class_names, **kwargs)
