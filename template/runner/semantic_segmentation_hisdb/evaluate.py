@@ -332,14 +332,15 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
 
     # Make a confusion matrix
     try:
-        targets_flat = np.array(targets).flatten()
-        preds_flat = np.array(preds).flatten()
+        #targets_flat = np.array(targets).flatten()
+        #preds_flat = np.array(preds).flatten()
         # load the weights
         weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
         # calculate confusion matrices
-        sample_weight = [weights[i] for i in targets_flat]
-        cm = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)])
-        cm_w = confusion_matrix(y_true=targets_flat, y_pred=preds_flat, labels=[i for i in range(num_classes)], sample_weight=sample_weight)
+        # sample_weight = [weights[i] for i in np.array(targets).flatten()]
+        cm = confusion_matrix(y_true=np.array(targets).flatten(), y_pred= np.array(preds).flatten(), labels=[i for i in range(num_classes)])
+        cm_w = confusion_matrix(y_true=np.array(targets).flatten(), y_pred= np.array(preds).flatten(), labels=[i for i in range(num_classes)],
+                                sample_weight=[weights[i] for i in np.array(targets).flatten()])
         confusion_matrix_heatmap = make_heatmap(cm, class_names)
         #confusion_matrix_heatmap_w = confusion_matrix_heatmap
         confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
