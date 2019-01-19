@@ -338,8 +338,8 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
         weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
         # calculate confusion matrices
         # sample_weight = [weights[i] for i in np.array(targets).flatten()]
-        cm = confusion_matrix(y_true=np.array(targets).flatten(), y_pred= np.array(preds).flatten(), labels=[i for i in range(num_classes)])
-        cm_w = confusion_matrix(y_true=np.array(targets).flatten(), y_pred= np.array(preds).flatten(), labels=[i for i in range(num_classes)],
+        cm = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)])
+        cm_w = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)],
                                 sample_weight=[weights[i] for i in np.array(targets).flatten()])
         confusion_matrix_heatmap = make_heatmap(cm, class_names)
         #confusion_matrix_heatmap_w = confusion_matrix_heatmap
@@ -419,15 +419,16 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
 
     # Compute and record the meanIU of the whole image TODO check with Vinay & Michele if correct
     acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target, pred, num_classes)
+    logging.info("MeanIU {}: {}".format(img_to_save, mean_iu))
 
     # TODO: also save input and gt image?
     if multi_run is None:
-        writer.add_scalar(logging_label + '/meanIU_{}'.format(img_to_save), mean_iu, epoch)
+        writer.add_scalar(logging_label + '/meanIU', mean_iu, epoch)
         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(img_to_save),
                                                        image=np_bgr,
                                                        gt_image=ground_truth[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
     else:
-        writer.add_scalar(logging_label + '/meanIU_{}_{}'.format(img_to_save, multi_run), mean_iu, epoch)
+        writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), mean_iu, epoch)
         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run,
                                                                                                           img_to_save),
                                                        image=np_bgr,
