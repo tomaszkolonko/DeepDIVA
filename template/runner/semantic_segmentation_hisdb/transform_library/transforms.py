@@ -343,8 +343,8 @@ class RandomTwinCrop(object):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = random.randint(0, h - th)
-        j = random.randint(0, w - tw)
+        i = 1000
+        j = 1000
         return i, j, th, tw
 
     def __call__(self, img, gt, crop_size):
