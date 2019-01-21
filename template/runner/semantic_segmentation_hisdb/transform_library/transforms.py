@@ -12,6 +12,7 @@ import numbers
 import types
 import collections
 import warnings
+import scipy.stats
 
 from . import functional as F
 
@@ -343,8 +344,13 @@ class RandomTwinCrop(object):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = random.randint(0, h - th)
-        j = random.randint(0, w - tw)
+        mu = 0.5
+        sigma = 0.1
+
+        ij = scipy.stats.truncnorm.rvs((0 - mu) / sigma, (1 - mu) / sigma, loc=mu, scale=sigma, size=2)
+
+        i = ij[0]*(h - th)
+        j = ij[0]*(w - tw)
         return i, j, th, tw
 
     def __call__(self, img, gt, crop_size):
