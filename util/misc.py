@@ -643,12 +643,3 @@ def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
 
 
 
-
-
-
-
-
-
-
-
-
