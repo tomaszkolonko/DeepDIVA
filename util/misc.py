@@ -246,8 +246,9 @@ def tensor_to_image(image):
     assert (image.shape[2] == 3)  # Last channel is of size 3 for RGB
 
     # Check that the range is [0:255]
-    image = (image - image.min()) / (image.max() - image.min())
-    image = image * 255
+    if np.any(image): # if all zero array -> divison by zero leads to nan
+        image = (image - image.min()) / (image.max() - image.min())
+        image = image * 255
     assert (image.min() >= 0)  # Data should be in range [0:255]
 
     return image
