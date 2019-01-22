@@ -268,10 +268,6 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
     preds = []
     targets = []
 
-    # needed for test phase output generation
-    combined_one_hots = {}
-    current_img_names = []
-
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
@@ -329,6 +325,11 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
                              Loss='{loss.avg:.4f}\t'.format(loss=losses),
                              meanIU='{meanIU.avg:.3f}\t'.format(meanIU=meanIU),
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
+
+        # for i, (inp, outp) in zip(output.data.cpu().numpy(), output.data.cpu().numpy()):
+        #     save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(batch_idx, i),
+        #                                                    image=outp,
+        #                                                    gt_image=inp[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
 
     # Make a confusion matrix
     try:

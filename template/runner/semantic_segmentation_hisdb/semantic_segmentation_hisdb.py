@@ -94,7 +94,7 @@ class SemanticSegmentationHisdb:
         val_value[-1] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, -1, class_names, **kwargs)
         for epoch in range(start_epoch, epochs):
             # Train
-            train_value[epoch] = SemanticSegmentationHisdb._train(train_loader, model, criterion, optimizer, writer, epoch,
+            train_value[epoch] = SemanticSegmentationHisdb._train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
                                                                   **kwargs)
 
             # Validate
@@ -159,8 +159,8 @@ class SemanticSegmentationHisdb:
     """
 
     @classmethod
-    def _train(cls, train_loader, model, criterion, optimizer, writer, epoch, **kwargs):
-        return train.train(train_loader, model, criterion, optimizer, writer, epoch, **kwargs)
+    def _train(cls, train_loader, model, criterion, optimizer, writer, epoch, class_names, **kwargs):
+        return train.train(train_loader, model, criterion, optimizer, writer, epoch, class_names, **kwargs)
 
     @classmethod
     def _validate(cls, val_loader, model, criterion, writer, epoch, class_names, **kwargs):
