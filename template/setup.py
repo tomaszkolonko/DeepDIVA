@@ -20,6 +20,7 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
+import template.runner.triplet.transforms as ttran
 from tensorboardX import SummaryWriter
 
 # DeepDIVA
@@ -256,10 +257,11 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
             ])
         else:
             transform = transforms.Compose([
-                transforms.RandomCrop(model_expected_input_size),
-                #transforms.Resize(model_expected_input_size),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=mean, std=std)
+                ttran.MultiCrop(size=model_expected_input_size, n_crops=5),
+                transforms.Lambda(lambda crops: torch.stack([transforms.RandomCrop()(crop) for crop in crops])),
+                transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+                transforms.Lambda(
+                    lambda items: torch.stack([transforms.Normalize(mean=mean, std=std)(item) for item in items])),
             ])
 
         logging.info("Transform is set to RandomCrop")
