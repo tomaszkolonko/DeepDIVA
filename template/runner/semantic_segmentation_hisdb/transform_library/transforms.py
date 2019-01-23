@@ -337,6 +337,7 @@ class RandomTwinCrop(object):
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
+
         w, h = img.size
         th = crop_size
         tw = crop_size

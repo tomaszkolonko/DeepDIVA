@@ -58,9 +58,9 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
     # Iterate over whole training set
     end = time.time()
     pbar = tqdm(enumerate(train_loader), total=len(train_loader), unit='batch', ncols=150, leave=False)
-    for batch_idx, (input, target_argmax) in pbar:
+    for batch_idx, (input, target) in pbar:
         # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
-        target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target_argmax.numpy()]))
+        target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target.numpy()]))
 
         # Measure data loading time
         data_time.update(time.time() - end)
