@@ -111,6 +111,13 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
                  'Batch time={batch_time.avg:.3f} ({data_time.avg:.3f} to load data)'
                   .format(epoch, batch_time=batch_time, data_time=data_time, loss=loss_meter, meanIU=meanIU))
 
+    # logging.info(_prettyprint_logging_label("train") +
+    #              ' epoch[{}]: '
+    #              'MeanIU={meanIU.avg:.3f}\t'
+    #              'Loss={loss.avg:.4f}\t'
+    #              'Batch time={batch_time.avg:.3f} ({data_time.avg:.3f} to load data)'
+    #              .format(epoch, batch_time=batch_time, data_time=data_time, loss=loss_meter, meanIU=meanIU))
+
     return meanIU.avg
 
 

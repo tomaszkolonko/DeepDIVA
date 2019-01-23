@@ -201,7 +201,7 @@ def test(data_loader, model, criterion, writer, epoch, class_names, dataset_fold
     else:
         writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
-                                          image = confusion_matrix_heatmap, global_step = epoch)
+                                          image=confusion_matrix_heatmap, global_step = epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted{}'.format(multi_run),
                                           image=confusion_matrix_heatmap_w, global_step=epoch)
 
@@ -424,12 +424,12 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
 
     # TODO: also save input and gt image?
     if multi_run is None:
-        writer.add_scalar(logging_label + '/meanIU', mean_iu, epoch)
+        # writer.add_scalar(logging_label + '/meanIU', mean_iu, epoch)
         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(img_to_save),
                                                        image=np_bgr,
                                                        gt_image=ground_truth[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
     else:
-        writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), mean_iu, epoch)
+        # writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), mean_iu, epoch)
         save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run,
                                                                                                           img_to_save),
                                                        image=np_bgr,
