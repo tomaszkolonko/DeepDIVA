@@ -20,7 +20,7 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
-import template.runner.triplet.transforms as ttran
+#import template.runner.triplet.transforms as ttran
 from tensorboardX import SummaryWriter
 
 # DeepDIVA
