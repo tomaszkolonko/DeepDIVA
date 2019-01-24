@@ -245,6 +245,8 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
 
         # Loads the analytics csv and extract mean and std
         mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers, kwargs['runner_class'])
+        if kwargs['multi_crop'] is None:
+            kwargs['multi_crop'] = 1
 
         # Set up dataset transforms
         logging.debug('Setting up dataset transforms')
@@ -258,7 +260,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
             ])
         else:
             transform = transforms.Compose([
-                MultiCrop(size=model_expected_input_size, n_crops=5),
+                MultiCrop(size=model_expected_input_size, n_crops=kwargs['multi_crop']),
                 transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
                 transforms.Lambda(
                     lambda items: torch.stack([transforms.Normalize(mean=mean, std=std)(item) for item in items])),
