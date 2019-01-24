@@ -77,8 +77,25 @@ def _evaluate(data_loader, model, criterion, writer, epoch, logging_label, no_cu
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
 
+        # In your test loop you can do the following:
+        #input, target = batch  # input is a 5d tensor, target is 2d
+        #bs, ncrops, c, h, w = input.size()
+        #result = model(input.view(-1, c, h, w))  # fuse batch size and ncrops
+        #result_avg = result.view(bs, ncrops, -1).mean(1)  # avg over crops
+
+        # input [64, 5, 3, 299, 299]
+        bs, ncrops, c, h, w = input.size()
+        # input.view leaves the 3rd 4th and 5th dimension as is, but multiplies the 1st and 2nd together
+        # result [320, 3, 299, 299]
+        result = input.view(-1, c, h, w)
+
+        result_avg = result.view(bs, -1, c, h, w).mean(1)
+        input = result_avg
+
         # Measure data loading time
         data_time.update(time.time() - end)
+
+
 
         # Moving data to GPU
         if not no_cuda:
