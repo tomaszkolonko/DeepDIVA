@@ -258,6 +258,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std)
             ])
+            logging.info("Transform is set to RandomCrop")
         else:
             transform = transforms.Compose([
                 MultiCrop(size=model_expected_input_size, n_crops=kwargs['multi_crop']),
@@ -269,8 +270,7 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
                 # transforms.Normalize(mean=mean, std=std)
 
             ])
-
-        logging.info("Transform is set to RandomCrop")
+            logging.info("Transform is set to MultiCrop")
 
         train_ds.transform = transform
         val_ds.transform = transform
