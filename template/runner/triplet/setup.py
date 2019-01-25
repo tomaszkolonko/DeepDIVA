@@ -8,6 +8,11 @@ import os
 import torchvision.transforms as transforms
 from template.runner.triplet.transforms import MultiCrop
 
+import torch.nn.parallel
+import torch.optim
+import torch.utils.data
+import torchvision.transforms as transforms
+
 # DeepDIVA
 from datasets.image_folder_triplet import load_dataset
 from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
