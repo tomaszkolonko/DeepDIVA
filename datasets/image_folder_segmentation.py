@@ -199,7 +199,7 @@ class ImageFolder(data.Dataset):
     """
 
     # TODO: transform and target_transform could be the correct places for your cropping
-    def __init__(self, root, gt_to_one_hot, pages_in_memory=0, crops_per_page=0, crop_size=10, transform=None, target_transform=None,
+    def __init__(self, root, gt_to_one_hot, num_classes, pages_in_memory=0, crops_per_page=0, crop_size=10, transform=None, target_transform=None,
                  loader=default_loader, **kwargs):
         classes = find_classes()
         imgs = make_dataset(root)
@@ -214,6 +214,7 @@ class ImageFolder(data.Dataset):
         self.target_transform = target_transform
         self.loader = loader
         self.gt_to_one_hot = gt_to_one_hot
+        self.num_classes = num_classes
 
         # Variables for train and validation sets
         self.pages_in_memory = pages_in_memory
@@ -333,7 +334,7 @@ class ImageFolder(data.Dataset):
         # input_np = window_input_torch.numpy()[2,:,:]
         # print(np.unique(im_np))
 
-        one_hot_matrix = self.gt_to_one_hot(window_target_torch)
+        one_hot_matrix = self.gt_to_one_hot(window_target_torch, self.num_classes)
         self.current_crop += 1
         return ((window_input_torch, (self.img_width, self.img_heigth), (x_position, y_position),
                  os.path.basename(self.imgs[self.current_test_image_counter][1])[:]), one_hot_matrix)
@@ -363,16 +364,16 @@ class ImageFolder(data.Dataset):
             img, gt = self.transform(self.images[self.current_page], self.gt[self.current_page], self.crop_size)
             self.current_crop = self.current_crop + 1
             if unittesting:
-                return img, self.gt_to_one_hot(gt), self.current_page, self.current_crop, self.memory_pass
+                return img, self.gt_to_one_hot(gt, self.num_classes), self.current_page, self.current_crop, self.memory_pass
             else:
                 #unique, counts = np.unique(gt.numpy()[2, :, :]*255, return_counts=True)
                 #print(dict(zip(unique, counts)))
-                return img, self.gt_to_one_hot(gt)
+                return img, self.gt_to_one_hot(gt, self.num_classes)
         else:
             self.current_crop = self.current_crop + 1
             img = self.images[self.current_page]
             gt = self.gt[self.current_page]
-            return img, self.gt_to_one_hot(gt)
+            return img, self.gt_to_one_hot(gt, self.num_classes)
 
     def update_state_variables(self):
         """
