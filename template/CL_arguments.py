@@ -312,4 +312,9 @@ def _semantic_segmentation_options(parser):
                                        type=int,
                                        default=50, metavar='N',
                                        help='number of crops per iterations per page')
+    semantic_segmentation.add_argument('--no-multiclass',
+                             default=False,
+                             action='store_true',
+                             help='Reduce multi-class pixels to one class')
+
 
