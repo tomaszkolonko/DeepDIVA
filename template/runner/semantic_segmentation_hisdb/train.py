@@ -11,7 +11,8 @@ from tqdm import tqdm
 
 # DeepDIVA
 from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, \
-    save_image_and_log_to_tensorboard_segmentation, tensor_to_image, one_hot_to_np_bgr, one_hot_to_full_output, gt_to_one_hot
+    save_image_and_log_to_tensorboard_segmentation
+from template.runner.semantic_segmentation_hisdb.setup import one_hot_to_np_bgr, gt_to_one_hot
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
 def train(train_loader, model, criterion, optimizer, writer, epoch, class_names, no_cuda=False, log_interval=25,
@@ -175,7 +176,7 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argm
     # return acc, loss
     return mean_iu, loss
 
-def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, logging_label, writer):
+def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, logging_label, writer, **kwargs):
     """
     Helper function to save the output during testing
 
@@ -196,7 +197,7 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
     """
 
     logging.info("image {}. Saving output...".format(img_to_save))
-    np_bgr = one_hot_to_np_bgr(one_hot)
+    np_bgr = one_hot_to_np_bgr(one_hot, **kwargs)
     # add full image to predictions
     pred = np.argmax(one_hot, axis=0)
     # open full ground truth image
