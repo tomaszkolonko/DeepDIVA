@@ -108,7 +108,7 @@ def one_hot_to_np_bgr(matrix):
     numpy array of size [C x H x W] (BGR)
     """
     B = np.argmax(matrix, axis=0)
-    class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
+    class_to_B = {i: j for i, j in enumerate([1, 2, 4, 8])}
 
     masks = [B == old for old in class_to_B.keys()]
 

@@ -19,7 +19,8 @@ from util.evaluation.metrics.accuracy import accuracy_segmentation
 from template.setup import _load_class_frequencies_weights_from_file
 from .setup import one_hot_to_np_bgr, one_hot_to_full_output, gt_to_one_hot
 
-def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_folder, inmem, workers, runner_class, no_cuda=False, log_interval=10, **kwargs):
+def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_folder, inmem, workers, runner_class,
+             no_val_conf_matrix, no_cuda=False, log_interval=10, **kwargs):
     """
     The evaluation routine
 
@@ -126,29 +127,27 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
                              meanIU='{meanIU.avg:.3f}\t'.format(meanIU=meanIU),
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
 
-        # for i, (inp, outp) in zip(output.data.cpu().numpy(), output.data.cpu().numpy()):
-        #     save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(batch_idx, i),
-        #                                                    image=outp,
-        #                                                    gt_image=inp[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
-
     # Make a confusion matrix
-    try:
-        # targets_flat = np.array(targets).flatten()
-        # preds_flat = np.array(preds).flatten()
-        # calculate confusion matrices
-        cm = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)])
-        confusion_matrix_heatmap = make_heatmap(cm, class_names)
+    if no_val_conf_matrix:
+        try:
+            # targets_flat = np.array(targets).flatten()
+            # preds_flat = np.array(preds).flatten()
+            # calculate confusion matrices
+            cm = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)])
+            confusion_matrix_heatmap = make_heatmap(cm, class_names)
 
-        # load the weights
-        # weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
-        # sample_weight = [weights[i] for i in np.array(targets).flatten()]
-        # cm_w = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)],
-        #                         sample_weight=[weights[i] for i in np.array(targets).flatten()])
-        # confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
-    except ValueError:
-        logging.warning('Confusion Matrix did not work as expected')
-        confusion_matrix_heatmap = np.zeros((10, 10, 3))
-        # confusion_matrix_heatmap_w = confusion_matrix_heatmap
+            # load the weights
+            # weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
+            # sample_weight = [weights[i] for i in np.array(targets).flatten()]
+            # cm_w = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)],
+            #                         sample_weight=[weights[i] for i in np.array(targets).flatten()])
+            # confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
+        except ValueError:
+            logging.warning('Confusion Matrix did not work as expected')
+            confusion_matrix_heatmap = np.zeros((10, 10, 3))
+            # confusion_matrix_heatmap_w = confusion_matrix_heatmap
+    else:
+        logging.info("No confusion matrix created.")
 
     # Logging the epoch-wise accuracy and saving the confusion matrix
     if multi_run is None:

@@ -317,4 +317,9 @@ def _semantic_segmentation_options(parser):
                              action='store_true',
                              help='Take boundary pixel into account for the accuracy computation')
 
+    semantic_segmentation.add_argument('--no-val-conf-matrix',
+                             default=False,
+                             action='store_true',
+                             help='Confusion matrix is not made for validation phase, only for test phase')
+
 

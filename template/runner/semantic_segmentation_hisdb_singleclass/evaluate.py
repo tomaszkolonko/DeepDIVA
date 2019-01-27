@@ -20,7 +20,8 @@ from util.evaluation.metrics.accuracy import accuracy_segmentation
 from template.setup import _load_class_frequencies_weights_from_file
 from .setup import one_hot_to_np_bgr, one_hot_to_full_output, gt_to_one_hot
 
-def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_folder, inmem, workers, runner_class, no_cuda=False, log_interval=10, **kwargs):
+def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_folder, inmem, workers, runner_class,
+             no_val_conf_matrix, no_cuda=False, log_interval=10, **kwargs):
     """
     The evaluation routine
 
@@ -127,29 +128,27 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
                              meanIU='{meanIU.avg:.3f}\t'.format(meanIU=meanIU),
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
 
-        # for i, (inp, outp) in zip(output.data.cpu().numpy(), output.data.cpu().numpy()):
-        #     save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(batch_idx, i),
-        #                                                    image=outp,
-        #                                                    gt_image=inp[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
-
     # Make a confusion matrix
-    try:
-        # targets_flat = np.array(targets).flatten()
-        # preds_flat = np.array(preds).flatten()
-        # calculate confusion matrices
-        cm = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)])
-        confusion_matrix_heatmap = make_heatmap(cm, class_names)
+    if no_val_conf_matrix:
+        try:
+            # targets_flat = np.array(targets).flatten()
+            # preds_flat = np.array(preds).flatten()
+            # calculate confusion matrices
+            cm = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)])
+            confusion_matrix_heatmap = make_heatmap(cm, class_names)
 
-        # load the weights
-        # weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
-        # sample_weight = [weights[i] for i in np.array(targets).flatten()]
-        # cm_w = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)],
-        #                         sample_weight=[weights[i] for i in np.array(targets).flatten()])
-        # confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
-    except ValueError:
-        logging.warning('Confusion Matrix did not work as expected')
-        confusion_matrix_heatmap = np.zeros((10, 10, 3))
-        # confusion_matrix_heatmap_w = confusion_matrix_heatmap
+            # load the weights
+            # weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class)
+            # sample_weight = [weights[i] for i in np.array(targets).flatten()]
+            # cm_w = confusion_matrix(y_true=np.array(targets).flatten(), y_pred=np.array(preds).flatten(), labels=[i for i in range(num_classes)],
+            #                         sample_weight=[weights[i] for i in np.array(targets).flatten()])
+            # confusion_matrix_heatmap_w = make_heatmap(np.round(cm_w*100).astype(np.int), class_names)
+        except ValueError:
+            logging.warning('Confusion Matrix did not work as expected')
+            confusion_matrix_heatmap = np.zeros((10, 10, 3))
+            # confusion_matrix_heatmap_w = confusion_matrix_heatmap
+    else:
+        logging.info("No confusion matrix created.")
 
     # Logging the epoch-wise accuracy and saving the confusion matrix
     if multi_run is None:
@@ -431,9 +430,9 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
     logging.info("MeanIU {}: {}".format(img_to_save, mean_iu))
     if use_boundary_pixel:
         pred[border_mask] = target[border_mask]
-    acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target, pred, num_classes)
-    txt = " (adjusted for the boundary pixel)" if use_boundary_pixel else ""
-    logging.info("MeanIU {}: {}{}".format(img_to_save, mean_iu, txt))
+        acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target, pred, num_classes)
+        txt = " (adjusted for the boundary pixel)" if use_boundary_pixel else ""
+        logging.info("MeanIU {}: {}{}".format(img_to_save, mean_iu, txt))
 
     # TODO: also save input and gt image?
     if multi_run is None:
@@ -508,9 +507,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
 
     """
     #TODO pass this as argument
-    int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 6: "comment_decoration",
-                             8: "maintext", 10: "maintext_comment", 12: "maintext_decoration",
-                             14: "maintext_comment_decoration"}
+    int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 8: "maintext"}
 
     # 1. Create true output
     # Log image to Tensorboard
@@ -551,10 +548,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
     # Colours are in BGR
     class_col = {"background": (0, 0, 0), "maintext": (255, 255, 0), "comment": (0, 255, 255),
-                 "decoration": (255, 0, 255),
-                 "comment_decoration": (0, 125, 255), "maintext_comment": (0, 200, 0),
-                 "maintext_decoration": (200, 0, 200),
-                 "maintext_comment_decoration": (255, 255, 255)}
+                 "decoration": (255, 0, 255)}
 
     for c, mask in masks.items():
         img[mask] = class_col[c]
