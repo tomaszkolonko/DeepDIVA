@@ -152,16 +152,18 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
     # Logging the epoch-wise accuracy and saving the confusion matrix
     if multi_run is None:
         writer.add_scalar(logging_label + '/meanIU', meanIU.avg, epoch)
-        save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix',
-                                          image=confusion_matrix_heatmap, global_step=epoch)
-        # save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted',
-        #                                   image=confusion_matrix_heatmap_w, global_step=epoch)
+        if not no_val_conf_matrix :
+            save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix',
+                                              image=confusion_matrix_heatmap, global_step=epoch)
+            # save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted',
+            #                                   image=confusion_matrix_heatmap_w, global_step=epoch)
     else:
         writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
-        save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
-                                          image = confusion_matrix_heatmap, global_step = epoch)
-        # save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted{}'.format(multi_run),
-        #                                   image=confusion_matrix_heatmap_w, global_step=epoch)
+        if not no_val_conf_matrix :
+            save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
+                                              image = confusion_matrix_heatmap, global_step = epoch)
+            # save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted{}'.format(multi_run),
+            #                                   image=confusion_matrix_heatmap_w, global_step=epoch)
 
 
     logging.info(_prettyprint_logging_label(logging_label) +
