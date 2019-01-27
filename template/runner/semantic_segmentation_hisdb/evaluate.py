@@ -128,7 +128,7 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
                              Data='{data_time.avg:.3f}\t'.format(data_time=data_time))
 
     # Make a confusion matrix
-    if no_val_conf_matrix:
+    if not no_val_conf_matrix:
         try:
             # targets_flat = np.array(targets).flatten()
             # preds_flat = np.array(preds).flatten()
