@@ -20,7 +20,7 @@ import models
 # Delegated
 from template.runner.semantic_segmentation_hisdb import evaluate, train
 from template.setup import set_up_model
-from .setup import set_up_dataloaders, gt_to_one_hot
+from .setup import set_up_dataloaders
 from util.misc import checkpoint, adjust_learning_rate
 
 

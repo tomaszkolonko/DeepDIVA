@@ -416,9 +416,15 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
             # ajust blue channel according to border pixel in red channel
             border_mask = ground_truth[:, :, 0].astype(np.uint8) != 0
             ground_truth[:, :, 2][border_mask] = 1
-            # ground_truth_argmax = functional.to_tensor(ground_truth)
+            # reassig pixel values for multi-class
+            np.place(ground_truth, ground_truth == 6, 4)
+            np.place(ground_truth, ground_truth == 12, 4)
+            np.place(ground_truth, ground_truth == 14, 4)
+            np.place(ground_truth, ground_truth == 10, 2)
 
-    target = np.argmax(gt_to_one_hot(ground_truth).numpy(), axis=0)
+    # ground_truth_argmax = functional.to_tensor(ground_truth)
+
+    target = np.argmax(gt_to_one_hot(ground_truth, num_classes).numpy(), axis=0)
 
     # Compute and record the meanIU of the whole image TODO check with Vinay & Michele if correct
     acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target, pred, num_classes)
