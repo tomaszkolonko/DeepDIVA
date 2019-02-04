@@ -3,7 +3,7 @@
 #Experiments for HisDB-55
 
 # Unet ---------------------------------------
-python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-folder /home/ltp/dataset/HisDB/CB55/ --model-name Unet --epochs 60 --experiment-name ls-sigopt-segm-Unet --output-folder ../output/ --decay-lr 28 --ignoregit \
+python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-folder /home/ltp/dataset/HisDB/CB55/ --model-name Unet --epochs 60 --experiment-name segmentation --output-folder ../output/ --decay-lr 28 --ignoregit \
  --batch-size 8 --crop-size 256 --pages-in-memory 5 --crops-per-page 2000 --momentum 0.11280 --weight-decay 0.00594 --lr 0.04206
 
 
