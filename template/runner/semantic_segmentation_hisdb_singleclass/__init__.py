@@ -1,0 +1,3 @@
+from .semantic_segmentation_hisdb_singleclass import SemanticSegmentationHisdbSingleclass
+
+__all__ = ['SemanticSegmentationHisdbSingleclass']
