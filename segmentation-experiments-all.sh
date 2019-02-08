@@ -4,7 +4,7 @@
 
 # fcdensenet67 ---------------------------------------
 python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-folder ../datasets/HisDB-private/CB55/ --model-name fcdensenet57 --epochs 50 --experiment-name segmentation --output-folder ../output/ --decay-lr 24 \
- --batch-size 8 --crop-size 256 --pages-in-memory 3 --crops-per-page 1000 --momentum 0.9 --lr 0.005 \
+ --ignoregit --batch-size 8 --crop-size 256 --pages-in-memory 3 --crops-per-page 1000 --momentum 0.9 --lr 0.005 \
  --disable-databalancing --use-boundary-pixel --no-val-conf-matrix
 
 
@@ -12,7 +12,7 @@ python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-
 
 # fcdensenet67 ---------------------------------------
 python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-folder ../datasets/HisDB-private/CS863/ --model-name fcdensenet57 --epochs 50 --experiment-name segmentation --output-folder ../output/ --decay-lr 24 \
- --batch-size 8 --crop-size 256 --pages-in-memory 3 --crops-per-page 1000 --momentum 0.9 --lr 0.005 \
+ --ignoregit --batch-size 8 --crop-size 256 --pages-in-memory 3 --crops-per-page 1000 --momentum 0.9 --lr 0.005 \
  --disable-databalancing --use-boundary-pixel --no-val-conf-matrix
 
 
@@ -24,7 +24,7 @@ python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-
 
 # fcdensenet67 ---------------------------------------
 python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-folder ../datasets/HisDB-private/CS18/ --model-name fcdensenet57 --epochs 50 --experiment-name segmentation --output-folder ../output/ --decay-lr 24 \
- --batch-size 8 --crop-size 256 --pages-in-memory 3 --crops-per-page 1000 --momentum 0.9 --lr 0.005 \
+ --ignoregit --batch-size 8 --crop-size 256 --pages-in-memory 3 --crops-per-page 1000 --momentum 0.9 --lr 0.005 \
  --disable-databalancing --use-boundary-pixel --no-val-conf-matrix
 
 
