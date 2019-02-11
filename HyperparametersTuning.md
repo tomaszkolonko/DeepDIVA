@@ -67,11 +67,12 @@ We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet 
 
 ## Hyperparameters for Segmentation
 
-For the Competition on Layout Analysis for Challenging Medieval Manuscripts task on the CB55 manuscript of the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) we optimized the parameters for the following architectures:
+Hyperparemters for the architectures used for the Competition on Layout Analysis for Challenging Medieval Manuscripts task of the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) 
+(evaluation is performed using [this layout analysis tool](https://github.com/DIVA-DIA/DIVA_Layout_Analysis_Evaluator)): 
 
-|               | Batch Size | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Test meanIU   |
-|-------------: |:----------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:---------:|:--------------:|:---------------:|:-------------:|
-| UNet          | 8          | 0.04206         | 15                          | 0.11280       | 0.00594        | 256       | 200            | 3               | 58.56 %       | 
-| FC-Densenet57 | 8          | 0.02318         | 15                          | 0.32149       | 0.00549        | 256       | 200            | 3               | 58.36 %       |
+|               | Batch Size | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum  | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Test meanIU CB55 | Test meanIU CS863 | Test meanIU CS18 |
+|-------------: |:----------:|:---------------:|:---------------------------:|:---------:|:--------------:|:---------:|:--------------:|:---------------:|:----------------:|:-----------------:|:----------------:|
+| UNet          | 32         | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | 92.10 %          | XX.XX %           | XX.XX %          | 
+| FC-Densenet57 | 8          | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | XX.XX %          | XX.XX %           | XX.XX %          |
 
 
