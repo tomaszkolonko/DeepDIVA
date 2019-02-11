@@ -1,30 +1,22 @@
 # Utils
 import logging
 import os
-import numpy as np
-import numbers
-
 from sklearn.preprocessing import OneHotEncoder
+
 
 # TODO: from __future__ import print_function
 import torch
-import torch.nn as nn
 
-import torch.optim as optim
-import torchvision
-from torchvision import datasets
-import matplotlib.pyplot as plt
 import numpy as np
 
-# Torch
+# DeepDIVA
+from datasets.image_folder_segmentation import ImageFolder
+from template.setup import _load_mean_std_from_file, _get_optimizer, \
+    _load_class_frequencies_weights_from_file
 from datasets.transform_library import transforms
 
-# DeepDIVA
-from datasets.image_folder_segmentation import load_dataset
-from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
 
-
-def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
+def set_up_dataloader(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
     # TODO: refactor into the image_folder_segmentation.py
     """
     Set up the dataloaders for the specified datasets.
@@ -59,10 +51,15 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     logging.info('Loading {} from:{}'.format(dataset, dataset_folder))
 
     ###############################################################################################
-    # Load the dataset splits as images
-    train_ds, val_ds, test_ds = load_dataset(dataset_folder=dataset_folder,
-                                             in_memory=inmem,
-                                             workers=workers, **dict(kwargs, gt_to_one_hot=gt_to_one_hot))
+    # Load the dataset as images
+    apply_ds = ImageFolder(dataset_folder, **dict(kwargs, gt_to_one_hot=gt_to_one_hot))
+
+    # Loads the analytics csv and extract mean and std
+    try:
+        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers, kwargs['runner_class'])
+    except:
+        logging.error('analytics.csv not found in folder. Please copy the one generated in the '
+                        'training folder to this folder.')
 
     # Set up dataset transforms
     logging.debug('Setting up dataset transforms')
@@ -72,27 +69,16 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
         transforms.ToTensorTwinImage()
     ])
 
-    train_ds.transform = image_gt_transform
-    val_ds.transform = image_gt_transform
-    test_ds.transform = image_gt_transform
+    apply_ds.transform = image_gt_transform
 
     # Setup dataloaders
     logging.debug('Setting up dataloaders (#workers for test set to 1)')
-    train_loader = torch.utils.data.DataLoader(train_ds,
-                                               shuffle=True,
-                                               batch_size=batch_size,
-                                               num_workers=workers,
-                                               pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_ds,
-                                             batch_size=batch_size,
-                                             num_workers=workers,
-                                             pin_memory=True)
-    test_loader = torch.utils.data.DataLoader(test_ds,
-                                              batch_size=batch_size,
-                                              num_workers=1,
-                                              pin_memory=True)
+    apply_ds_loader = torch.utils.data.DataLoader(apply_ds,
+                                batch_size=batch_size,
+                                num_workers=1,
+                                pin_memory=True)
 
-    return train_loader, val_loader, test_loader
+    return apply_ds_loader
 
 
 def one_hot_to_np_bgr(matrix):
@@ -108,7 +94,7 @@ def one_hot_to_np_bgr(matrix):
     numpy array of size [C x H x W] (BGR)
     """
     B = np.argmax(matrix, axis=0)
-    class_to_B = {i: j for i, j in enumerate([1, 2, 4, 8])}
+    class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
 
     masks = [B == old for old in class_to_B.keys()]
 
@@ -152,7 +138,6 @@ def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
 
     return combined_one_hot
 
-
 def gt_to_one_hot(matrix, num_classes):
     """
     Convert ground truth tensor to one-hot encoded matrix
@@ -179,26 +164,16 @@ def gt_to_one_hot(matrix, num_classes):
     # ajust blue channel according to border pixel in red channel
     im_np[border_mask] = 1
 
-    # reassign multi-class
-    int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 6: "decoration",
-                             8: "maintext", 10: "comment", 12: "decoration",
-                             14: "decoration"}
-    np.place(im_np, im_np == 6, 4)
-    np.place(im_np, im_np == 12, 4)
-    np.place(im_np, im_np == 14, 4)
-    np.place(im_np, im_np == 10, 2)
-
     integer_encoded = np.array([i for i in range(num_classes)])
     onehot_encoder = OneHotEncoder(sparse=False)
     integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
     onehot_encoded = onehot_encoder.fit_transform(integer_encoded).astype(np.int8)
 
     np.place(im_np, im_np == 0, 1) # needed to deal with 0 fillers at the borders during testing (replace with background)
-    replace_dict = {k: v for k, v in zip([1, 2, 4, 8], onehot_encoded)}
+    replace_dict = {k: v for k, v in zip([1, 2, 4, 6, 8, 10, 12, 14], onehot_encoded)}
 
     # create the one hot matrix
     one_hot_matrix = np.asanyarray(
         [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])]).astype(np.uint8)
 
     return torch.LongTensor(one_hot_matrix.transpose((2, 0, 1)))
-
