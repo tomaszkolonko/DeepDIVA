@@ -76,7 +76,7 @@ class SemanticSegmentationHisdb:
         train_loader, val_loader, test_loader = set_up_dataloaders(input_patch_size, **dict(kwargs, num_classes=num_classes))
 
         if not kwargs["load_model"]:
-            # TODO: this is ugly, make a apply_model class instead
+            # TODO: this is ugly, make a apply_model_hisdb class instead
             # if model is specified, we just want to apply it and skip this part
 
             # Setting up model, optimizer, criterion
