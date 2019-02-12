@@ -50,10 +50,10 @@ For the Historical Writer Identification task on the [Historical-WI dataset](htt
 
 |               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.01998         | n/a                         | 0.15635       | 0.00785        | 128             | 2.645 %       | 
+| VGG19_bn      | 32              | 0.01998         | n/a                         | 0.15635       | 0.00785        | 128             | 14.85 %       | 
 | Resnet152     | 32              | 0.00817         | n/a                         | 0.40406       | 0.00565        | 128             | 6.570 %       |
 | Inception_v3  | 32              | 0.007           | n/a                         | 0.31808       | 0.00976        | 128             | 17.49 %       |
-| Densenet121   | 32              | 0.03354         | n/a                         | 0.21808       | 0.00231        | 128             | 13.97 %       |
+| Densenet121   | 32              | 0.03354         | n/a                         | 0.21808       | 0.00231        | 128             | 27.18 %       |
 
 We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
