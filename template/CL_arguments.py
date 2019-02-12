@@ -55,7 +55,7 @@ def _general_parameters(parser):
     # List of possible custom runner class. A runner class is defined as a module in template.runner
     runner_class_options = ["image_classification", "point_cloud", "triplet",
                             "apply_model", "image_auto_encoding", "image_segmentation",
-                            "semantic_segmentation", "semantic_segmentation_hisdb"]
+                            "semantic_segmentation", "semantic_segmentation_hisdb", "semantic_segmentation_hisdb_singleclass"]
 
     parser_general = parser.add_argument_group('GENERAL', 'General Options')
     parser_general.add_argument('--experiment-name',
@@ -312,4 +312,14 @@ def _semantic_segmentation_options(parser):
                                        type=int,
                                        default=50, metavar='N',
                                        help='number of crops per iterations per page')
+    semantic_segmentation.add_argument('--use-boundary-pixel',
+                             default=False,
+                             action='store_true',
+                             help='Take boundary pixel into account for the accuracy computation')
+
+    semantic_segmentation.add_argument('--no-val-conf-matrix',
+                             default=False,
+                             action='store_true',
+                             help='Confusion matrix is not made for validation phase, only for test phase')
+
 

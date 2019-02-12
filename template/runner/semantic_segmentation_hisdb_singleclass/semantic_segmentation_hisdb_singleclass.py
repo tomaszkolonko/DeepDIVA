@@ -12,19 +12,20 @@ import os
 # Utils
 import numpy as np
 
+
 # DeepDIVA
 import torch
 from torch import nn
 
 import models
 # Delegated
-from template.runner.semantic_segmentation_hisdb import evaluate, train
+from template.runner.semantic_segmentation_hisdb_singleclass import evaluate, train
 from template.setup import set_up_model
 from .setup import set_up_dataloaders
 from util.misc import checkpoint, adjust_learning_rate
 
 
-class SemanticSegmentationHisdb:
+class SemanticSegmentationHisdbSingleclass:
     @staticmethod
     def single_run(writer, current_log_folder, model_name, epochs, lr, decay_lr,
                    validation_interval, checkpoint_all_epochs,
@@ -65,71 +66,64 @@ class SemanticSegmentationHisdb:
             Accuracy value for test split
         """
 
-        int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 6: "comment_decoration",
-                                 8: "maintext", 10: "maintext_comment", 12: "maintext_decoration",
-                                 14: "maintext_comment_decoration"}
+        int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 6: "decoration",
+                                 8: "maintext", 10: "comment", 12: "decoration",
+                                 14: "decoration"}
 
-        class_names = [v for k, v in int_val_to_class_name.items()]
+        class_names = ["background", "comment", "decoration", "maintext"]
         num_classes = len(class_names)
 
         # Setting up the dataloaders
         train_loader, val_loader, test_loader = set_up_dataloaders(input_patch_size, **dict(kwargs, num_classes=num_classes))
 
-        if not kwargs["load_model"]:
-            # TODO: this is ugly, make a apply_model_hisdb class instead
-            # if model is specified, we just want to apply it and skip this part
+        # Setting up model, optimizer, criterion
+        model, criterion, optimizer, best_value, start_epoch = set_up_model(num_classes=num_classes, # In this case is the num dimension of the output
+                                                                    model_name=model_name,
+                                                                    lr=lr,
+                                                                    train_loader=train_loader,
+                                                                    **kwargs)
 
-            # Setting up model, optimizer, criterion
-            model, criterion, optimizer, best_value, start_epoch = set_up_model(num_classes=num_classes, # In this case is the num dimension of the output
-                                                                        model_name=model_name,
-                                                                        lr=lr,
-                                                                        train_loader=train_loader,
-                                                                        **kwargs)
+        # For the multi-dimensional cross entropy the array shapes are as follows:
+        # Input: (N, C, d_1, d_2, ..., d_K) where N is the mini-batch size, C are the number of classes and d_K the kth dimension
+        # Target: (N, d_1, d_2, ..., d_K
 
-            # For the multi-dimensional cross entropy the array shapes are as follows:
-            # Input: (N, C, d_1, d_2, ..., d_K) where N is the mini-batch size, C are the number of classes and d_K the kth dimension
-            # Target: (N, d_1, d_2, ..., d_K
+        # Core routine
+        logging.info('Begin training')
+        val_value = np.zeros((epochs + 1 - start_epoch))
+        train_value = np.zeros((epochs - start_epoch))
 
-            # Core routine
-            logging.info('Begin training')
-            val_value = np.zeros((epochs + 1 - start_epoch))
-            train_value = np.zeros((epochs - start_epoch))
+        val_value[-1] = SemanticSegmentationHisdbSingleclass._validate(val_loader, model, criterion, writer, -1, class_names, **kwargs)
+        for epoch in range(start_epoch, epochs):
+            # Train
+            train_value[epoch] = SemanticSegmentationHisdbSingleclass._train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
+                                                                             **kwargs)
 
-            val_value[-1] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, -1, class_names, **kwargs)
-            for epoch in range(start_epoch, epochs):
-                # Train
-                train_value[epoch] = SemanticSegmentationHisdb._train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
-                                                                      **kwargs)
-
-                # Validate
-                if epoch % validation_interval == 0:
-                    val_value[epoch] = SemanticSegmentationHisdb._validate(val_loader, model, criterion, writer, epoch, class_names, **kwargs)
-                if decay_lr is not None:
-                    adjust_learning_rate(lr=lr, optimizer=optimizer, epoch=epoch, decay_lr_epochs=decay_lr)
-                # TODO best model is not saved if epoch = 1
-                best_value = checkpoint(epoch=epoch, new_value=val_value[epoch],
-                                        best_value=best_value, model=model,
-                                        optimizer=optimizer,
-                                        log_dir=current_log_folder,
-                                        checkpoint_all_epochs=checkpoint_all_epochs)
+            # Validate
+            if epoch % validation_interval == 0:
+                val_value[epoch] = SemanticSegmentationHisdbSingleclass._validate(val_loader, model, criterion, writer, epoch, class_names, **kwargs)
+            if decay_lr is not None:
+                adjust_learning_rate(lr=lr, optimizer=optimizer, epoch=epoch, decay_lr_epochs=decay_lr)
+            # TODO best model is not saved if epoch = 1
+            best_value = checkpoint(epoch=epoch, new_value=val_value[epoch],
+                                    best_value=best_value, model=model,
+                                    optimizer=optimizer,
+                                    log_dir=current_log_folder,
+                                    checkpoint_all_epochs=checkpoint_all_epochs)
 
 
-            # Load the best model before evaluating on the test set.
-            logging.info('Loading the best model before evaluating on the test set.')
-            kwargs["load_model"] = os.path.join(current_log_folder, 'model_best.pth.tar')
-        else:
-            logging.info('Loading the specified model and evaluating on the test set.'.format(kwargs["load_model"]))
-            train_value = val_value = 0
+        # Load the best model before evaluating on the test set.
+        logging.info('Loading the best model before evaluating on the test set.')
+        kwargs["load_model"] = os.path.join(current_log_folder, 'model_best.pth.tar')
 
         # TODO: add weights to kwargs
-        model, criterion, _, _, _ = set_up_model(num_classes=num_classes,
+        model, _, _, _, _ = set_up_model(num_classes=num_classes,
                                          model_name=model_name,
                                          lr=lr,
                                          train_loader=train_loader,
                                          **kwargs)
 
         # Test
-        test_value = SemanticSegmentationHisdb._test(test_loader, model, criterion, writer, epochs - 1, class_names, **kwargs)
+        test_value = SemanticSegmentationHisdbSingleclass._test(test_loader, model, criterion, writer, epochs - 1, class_names, **kwargs)
         logging.info('Training completed')
         # test_value = 0
 

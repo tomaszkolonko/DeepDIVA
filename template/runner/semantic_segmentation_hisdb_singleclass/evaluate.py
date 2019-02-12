@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 import cv2
 
+
 # Torch related stuff
 import torch
 from sklearn.metrics import classification_report, confusion_matrix
@@ -416,7 +417,13 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
             # ajust blue channel according to border pixel in red channel
             border_mask = ground_truth[:, :, 0].astype(np.uint8) != 0
             ground_truth[:, :, 2][border_mask] = 1
-            # ground_truth_argmax = functional.to_tensor(ground_truth)
+            # reassig pixel values for multi-class
+            np.place(ground_truth, ground_truth == 6, 4)
+            np.place(ground_truth, ground_truth == 12, 4)
+            np.place(ground_truth, ground_truth == 14, 4)
+            np.place(ground_truth, ground_truth == 10, 2)
+
+    # ground_truth_argmax = functional.to_tensor(ground_truth)
 
     target = np.argmax(gt_to_one_hot(ground_truth, num_classes).numpy(), axis=0)
 
@@ -425,9 +432,9 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
     logging.info("MeanIU {}: {}".format(img_to_save, mean_iu))
     if use_boundary_pixel:
         pred[border_mask] = target[border_mask]
-    acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target, pred, num_classes)
-    txt = " (adjusted for the boundary pixel)" if use_boundary_pixel else ""
-    logging.info("MeanIU {}: {}{}".format(img_to_save, mean_iu, txt))
+        acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target, pred, num_classes)
+        txt = " (adjusted for the boundary pixel)" if use_boundary_pixel else ""
+        logging.info("MeanIU {}: {}{}".format(img_to_save, mean_iu, txt))
 
     # TODO: also save input and gt image?
     if multi_run is None:
@@ -481,7 +488,6 @@ def _log_classification_report(data_loader, epoch, preds, targets, writer):
 
     writer.add_text('Classification Report for epoch {}\n'.format(epoch), '\n' + classification_report_string, epoch)
 
-
 def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_image=[]):
     """Utility function to save image in the output folder and also log it to Tensorboard.
     ALL IMAGES ARE IN BGR BECAUSE OF CV3.IMWRITE()!!
@@ -502,6 +508,7 @@ def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=
     None
 
     """
+    #TODO pass this as argument
     int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 8: "maintext"}
 
     # 1. Create true output
@@ -611,15 +618,15 @@ def _get_colour(output, gt):
     class_col = {"fg_correct": (30, 160, 70), "fg_wrong_class": (60, 255, 255), "bg_correct": (0, 0, 0),
                  "bg_as_fg": (20, 30, 240), "fg_as_bg": (255, 240, 0)}
 
-    if output == gt and gt in [2, 4, 8]:
+    if output == gt and gt in [2, 4, 6, 8, 10, 12, 14]:
         return class_col["fg_correct"]
     elif output == gt and gt == 1:
         return class_col["bg_correct"]
-    elif output != gt and output in [2, 4, 8] and gt in [2, 4, 8]:
+    elif output != gt and output in [2, 4, 6, 8, 10, 12, 14] and gt in [2, 4, 6, 8, 10, 12, 14]:
         return class_col["fg_wrong_class"]
     elif output != gt and output == 1:
         return class_col["fg_as_bg"]
-    elif output != gt and output in [2, 4, 8]:
+    elif output != gt and output in [2, 4, 6, 8, 10, 12, 14]:
         return class_col["bg_as_fg"]
     else:
         return (255, 255, 255)
