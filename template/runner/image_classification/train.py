@@ -68,6 +68,9 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda=Fals
         # result [320, 3, 299, 299]
         result = input.view(-1, c, h, w)
 
+        # If you need to maximize across the crops just use the following two lines
+        # result_avg = result.view(bs, -1, c, h, w).max(1)
+        # input = result_avg[0] # FloatTensor
         result_avg = result.view(bs, -1, c, h, w).mean(1)
         input = result_avg
 
