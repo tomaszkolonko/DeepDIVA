@@ -184,7 +184,7 @@ def cifar10(args):
 
     split_dataset(dataset_folder=dataset_root, split=0.2, symbolic=False)
 
-def hisDB(args):
+def diva_hisdb(args):
     """
     Fetches and prepares (in a DeepDIVA friendly format) the DIVA HisDB-all dataset for semantic segmentation to the location specified
     on the file system
@@ -225,7 +225,7 @@ def hisDB(args):
     urllib.request.urlretrieve(link_public.geturl(), download_path_public)
 
     print('Downloading {}...'.format(link_test_private.geturl()))
-    urllib.request.urlretrieve(link_test_private.geturl(), download_path_public)
+    urllib.request.urlretrieve(link_test_private.geturl(), download_path_private)
     print('Download complete. Unpacking files...')
 
     # unpack relevant folders
@@ -247,7 +247,7 @@ def hisDB(args):
                 os.remove(os.path.join(dataset_folder, file))
 
         # create folder structure
-        for partition in ['train', 'val', 'test']:
+        for partition in ['train', 'val', 'test', 'public-test']:
             for folder in ['data', 'gt']:
                 _make_folder_if_not_exists(os.path.join(dataset_folder, partition, folder))
 
@@ -262,40 +262,38 @@ def hisDB(args):
             # remove old folders
             shutil.rmtree(os.path.join(dataset_root, folder, k1))
 
-    # TODO!
+    # fix naming issue
+    for old, new in {'CS18': 'CSG18', 'CS863': 'CSG863'}:
+        os.rename(os.path.join(dataset_root, old), os.path.join(dataset_root, new))
+
     # unpack private test folders
-    # zip_file_private = zipfile.ZipFile(download_path_private)
-    #
-    # # unpack imgs and gt
-    # data_gt_zip_private = {f: re.sub(r'img', 'pixel-level-gt', f) for f in zip_file_private.namelist() if 'img' in f}
-    # dataset_folders_test = [data_file.split('-')[-1][:-4] for data_file in data_gt_zip_private.keys()]
-    # for data_file, gt_file in data_gt_zip_private.items():
-    #     dataset_name = data_file.split('-')[-1][:-4]
-    #     dataset_folder = os.path.join(dataset_root, dataset_name)
-    #
-    #     for file in [data_file, gt_file]:
-    #         zip_file.extract(file, dataset_folder)
-    #         with zipfile.ZipFile(os.path.join(dataset_folder, file), "r") as zip_ref:
-    #             zip_ref.extractall(dataset_folder)
-    #             # delete zips
-    #             os.remove(os.path.join(dataset_folder, file))
-    #
-    #     # create folder structure
-    #     for folder in ['data', 'gt']:
-    #         _make_folder_if_not_exists(os.path.join(dataset_folder, 'test', folder))
-    #
-    # # move the files to the correct place
-    # for folder in dataset_folders:
-    #     for k1, v1 in {'pixel-level-gt': 'gt', 'img': 'data'}.items():
-    #         for k2, v2 in {'public-test': 'test', 'training': 'train', 'validation': 'val'}.items():
-    #             current_path = os.path.join(dataset_root, folder, k1, k2)
-    #             new_path = os.path.join(dataset_root, folder, v2, v1)
-    #             for f in [f for f in os.listdir(current_path) if os.path.isfile(os.path.join(current_path, f))]:
-    #                 shutil.move(os.path.join(current_path, f), os.path.join(new_path, f))
-    #         # remove old folders
-    #         shutil.rmtree(os.path.join(dataset_root, folder, k1))
+    zip_file_private = zipfile.ZipFile(download_path_private)
 
+    data_gt_zip_private = {f: re.sub(r'img', 'pixel-level-gt', f) for f in zip_file_private.namelist() if 'img' in f}
 
+    for data_file, gt_file in data_gt_zip_private.items():
+        dataset_name = re.search('-(.*)-', data_file).group(1)
+        dataset_folder = os.path.join(dataset_root, dataset_name)
+
+        for file in [data_file, gt_file]:
+            zip_file_private.extract(file, dataset_folder)
+            with zipfile.ZipFile(os.path.join(dataset_folder, file), "r") as zip_ref:
+                zip_ref.extractall(os.path.join(dataset_folder, file[:-4]))
+            # delete zip
+            os.remove(os.path.join(dataset_folder, file))
+
+        # create folder structure
+        for folder in ['data', 'gt']:
+            _make_folder_if_not_exists(os.path.join(dataset_folder, 'test', folder))
+
+        for old, new in {'pixel-level-gt': 'gt', 'img': 'data'}.items():
+            current_path = os.path.join(dataset_folder, "{}-{}-privateTest".format(old, dataset_name), dataset_name)
+            new_path = os.path.join(dataset_folder, "test", new)
+            for f in [f for f in os.listdir(current_path) if os.path.isfile(os.path.join(current_path, f))]:
+                shutil.move(os.path.join(current_path, f), os.path.join(new_path, f))
+
+            # remove old folders
+            shutil.rmtree(os.path.dirname(current_path))
 
     print('Finished. Data set up at {}.'.format(dataset_root))
 
