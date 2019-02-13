@@ -247,7 +247,7 @@ def diva_hisdb(args):
                 os.remove(os.path.join(dataset_folder, file))
 
         # create folder structure
-        for partition in ['train', 'val', 'test', 'public-test']:
+        for partition in ['train', 'val', 'test', 'test-public']:
             for folder in ['data', 'gt']:
                 _make_folder_if_not_exists(os.path.join(dataset_folder, partition, folder))
 
@@ -263,7 +263,7 @@ def diva_hisdb(args):
             shutil.rmtree(os.path.join(dataset_root, folder, k1))
 
     # fix naming issue
-    for old, new in {'CS18': 'CSG18', 'CS863': 'CSG863'}:
+    for old, new in {'CS18': 'CSG18', 'CS863': 'CSG863'}.items():
         os.rename(os.path.join(dataset_root, old), os.path.join(dataset_root, new))
 
     # unpack private test folders
