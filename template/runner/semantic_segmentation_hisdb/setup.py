@@ -1,27 +1,19 @@
 # Utils
 import logging
 import os
-import numpy as np
-import numbers
 from sklearn.preprocessing import OneHotEncoder
 
 
 # TODO: from __future__ import print_function
 import torch
-import torch.nn as nn
 
-import torch.optim as optim
-import torchvision
-from torchvision import datasets
-import matplotlib.pyplot as plt
 import numpy as np
 
 # Torch
-from .transform_library import transforms
+from datasets.transform_library import transforms
 
 # DeepDIVA
 from datasets.image_folder_segmentation import load_dataset
-from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
 
 
 def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):

@@ -10,7 +10,7 @@ import math
 import os.path
 import numpy as np
 
-from template.runner.semantic_segmentation.transform_library import transforms, functional
+from datasets.transform_library import transforms, functional
 
 # Torch related stuff
 import torch.utils.data as data
