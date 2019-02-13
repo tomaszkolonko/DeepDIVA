@@ -5,7 +5,7 @@ import PIL
 from PIL import Image
 from datasets.transform_library import transforms
 
-from datasets.image_folder_segmentation import find_classes, is_image_file, ImageFolder
+from datasets.image_folder_segmentation_hisdb import find_classes, is_image_file, ImageFolder
 
 
 class Test_get_item(TestCase):

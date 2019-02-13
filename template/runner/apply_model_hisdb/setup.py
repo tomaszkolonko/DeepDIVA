@@ -10,14 +10,14 @@ import torch
 import numpy as np
 
 # DeepDIVA
-from datasets.image_folder_segmentation import ImageFolder
+from datasets.image_folder_segmentation_hisdb import ImageFolder
 from template.setup import _load_mean_std_from_file, _get_optimizer, \
     _load_class_frequencies_weights_from_file
 from datasets.transform_library import transforms
 
 
 def set_up_dataloader(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
-    # TODO: refactor into the image_folder_segmentation.py
+    # TODO: refactor into the image_folder_segmentation_hisdb.py
     """
     Set up the dataloaders for the specified datasets.
 

@@ -20,12 +20,12 @@ import numpy as np
 from datasets.transform_library import transforms
 
 # DeepDIVA
-from datasets.image_folder_segmentation import load_dataset
+from datasets.image_folder_segmentation_hisdb import load_dataset
 from template.setup import _dataloaders_from_datasets, _load_mean_std_from_file
 
 
 def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
-    # TODO: refactor into the image_folder_segmentation.py
+    # TODO: refactor into the image_folder_segmentation_hisdb.py
     """
     Set up the dataloaders for the specified datasets.
 

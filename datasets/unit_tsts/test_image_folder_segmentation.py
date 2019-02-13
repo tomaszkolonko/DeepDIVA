@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from datasets.image_folder_segmentation import load_dataset
+from datasets.image_folder_segmentation_hisdb import load_dataset
 
 
 class Test_load_dataset(TestCase):
