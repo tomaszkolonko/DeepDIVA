@@ -11,11 +11,11 @@ from tqdm import tqdm
 
 # DeepDIVA
 from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, \
-    save_image_and_log_to_tensorboard_segmentation
-from .setup import one_hot_to_np_bgr, gt_to_one_hot
+    save_image_and_log_to_tensorboard_segmentation, annotation_to_argmax
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
-def train(train_loader, model, criterion, optimizer, writer, epoch, class_names, no_cuda=False, log_interval=25,
+
+def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehotindex, category_id_name, no_cuda=False, log_interval=25,
           **kwargs):
     """
     Training routine
@@ -45,7 +45,7 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
         meanIU of the model of the evaluated split
     """
     multi_run = kwargs['run'] if 'run' in kwargs else None
-    num_classes = len(class_names)
+    num_classes = len(name_onehotindex)
 
     # Instantiate the counters
     batch_time = AverageMeter()
@@ -59,9 +59,13 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
     # Iterate over whole training set
     end = time.time()
     pbar = tqdm(enumerate(train_loader), total=len(train_loader), unit='batch', ncols=150, leave=False)
-    for batch_idx, (input, target_argmax) in pbar:
-        # convert 3D one-hot encoded matrix to 2D matrix with class numbers (for CrossEntropy())
-        target_argmax = torch.LongTensor(np.array([np.argmax(a, axis=0) for a in target_argmax.numpy()]))
+    for batch_idx, (input_batch, annotations_batch) in pbar:
+        # convert input to torch tensor
+        input = torch.LongTensor(np.array([np.array(i) for i in input_batch]))
+
+        # convert annotation to argmax
+        target_argmax = torch.LongTensor(np.array([annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex, category_id_name)
+                                          for img_pil, annotations in zip(input_batch, annotations)]))
 
         # Measure data loading time
         data_time.update(time.time() - end)
@@ -175,169 +179,3 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argm
 
     # return acc, loss
     return mean_iu, loss
-
-def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, logging_label, writer, **kwargs):
-    """
-    Helper function to save the output during testing
-
-    Parameters
-    ----------
-    meanIU.avg : float
-        MeanIU of the model of the evaluated split
-    writer : tensorboardX.writer.SummaryWriter
-        The tensorboard writer object. Used to log values on file for the tensorboard visualization.
-    epoch : int
-        Number of the epoch (for logging purposes)
-    img_to_save: str
-        name of the image that is saved
-    one_hot: numpy array
-        one hot encoded output of the network for the whole image
-    dataset_folder: str
-        path to the dataset folder
-    """
-
-    logging.info("image {}. Saving output...".format(img_to_save))
-    np_bgr = one_hot_to_np_bgr(one_hot, **kwargs)
-    # add full image to predictions
-    pred = np.argmax(one_hot, axis=0)
-    # open full ground truth image
-    gt_img_path = os.path.join(dataset_folder, logging_label, "gt", img_to_save)
-    with open(gt_img_path, 'rb') as f:
-        with Image.open(f) as img:
-            ground_truth = np.array(img.convert('RGB'))
-            # ajust blue channel according to border pixel in red channel
-            border_mask = ground_truth[:, :, 0].astype(np.uint8) != 0
-            ground_truth[:, :, 2][border_mask] = 1
-
-            # ground_truth_argmax = functional.to_tensor(ground_truth)
-    target = np.argmax(gt_to_one_hot(ground_truth).numpy(), axis=0)
-
-    # TODO: also save input and gt image?
-    if multi_run is None:
-        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}'.format(img_to_save),
-                                                       image=np_bgr,
-                                                       gt_image=ground_truth[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
-    else:
-        save_image_and_log_to_tensorboard_segmentation(writer, tag=logging_label + '/output_{}_{}'.format(multi_run,
-                                                                                                          img_to_save),
-                                                       image=np_bgr,
-                                                       gt_image=ground_truth[:, :, ::-1])  # ground_truth[:, :, ::-1] convert image to BGR
-
-    return
-
-# def save_image_and_log_to_tensorboard_segmentation(writer=None, tag=None, image=None, global_step=None, gt_image=[]):
-#     """Utility function to save image in the output folder and also log it to Tensorboard.
-#     ALL IMAGES ARE IN BGR BECAUSE OF CV3.IMWRITE()!!
-#
-#     Parameters
-#     ----------
-#     writer : tensorboardX.writer.SummaryWriter object
-#         The writer object for Tensorboard
-#     tag : str
-#         Name of the image.
-#     image : ndarray [W x H x C]
-#         Image to be saved and logged to Tensorboard.
-#     global_step : int
-#         Epoch/Mini-batch counter.
-#
-#     Returns
-#     -------
-#     None
-#
-#     """
-#     #TODO pass this as argument
-#     int_val_to_class_name = {1: "background", 2: "comment", 4: "decoration", 6: "comment_decoration",
-#                              8: "maintext", 10: "maintext_comment", 12: "maintext_decoration",
-#                              14: "maintext_comment_decoration"}
-#
-#     # 1. Create true output
-#     # Log image to Tensorboard
-#     #writer.add_image(tag=tag, img_tensor=image, global_step=global_step)
-#
-#     # Get output folder using the FileHandler from the logger.
-#     # (Assumes the file handler is the last one)
-#     output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
-#
-#     if global_step is not None:
-#         dest_filename = os.path.join(output_folder, 'images', tag + '_{}'.format(global_step))
-#     else:
-#         dest_filename = os.path.join(output_folder, 'images', tag)
-#
-#     if not os.path.exists(os.path.dirname(dest_filename)):
-#         os.makedirs(os.path.dirname(dest_filename))
-#
-#     cv2.imwrite(dest_filename, image)
-#
-#     # 2. Make a more human readable output -> one colour per class
-#     # Write image to output folder
-#     tag_col = "coloured_" + tag
-#
-#     # Get output folder using the FileHandler from the logger.
-#     # (Assumes the file handler is the last one)
-#     output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
-#
-#     if global_step is not None:
-#         dest_filename = os.path.join(output_folder, 'images', tag_col + '_{}'.format(global_step))
-#     else:
-#         dest_filename = os.path.join(output_folder, 'images', tag_col)
-#
-#     if not os.path.exists(os.path.dirname(dest_filename)):
-#         os.makedirs(os.path.dirname(dest_filename))
-#
-#     img = np.copy(image)
-#     blue = image[:, :, 0]  # Extract just blue channel
-#     masks = {c: (blue == i) > 0 for i, c in int_val_to_class_name.items()}
-#     # Colours are in BGR
-#     class_col = {"background": (0, 0, 0), "maintext": (255, 255, 0), "comment": (0, 255, 255),
-#                  "decoration": (255, 0, 255),
-#                  "comment_decoration": (0, 125, 255), "maintext_comment": (0, 200, 0),
-#                  "maintext_decoration": (200, 0, 200),
-#                  "maintext_comment_decoration": (255, 255, 255)}
-#
-#     for c, mask in masks.items():
-#         img[mask] = class_col[c]
-#
-#     #writer.add_image(tag=tag_col, img_tensor=np.moveaxis(img, -1, 0), global_step=global_step)
-#     # Write image to output folder
-#     cv2.imwrite(dest_filename, img)
-#
-#     # 3. Output image as described in https://github.com/DIVA-DIA/DIVA_Layout_Analysis_Evaluator
-#     # GREEN: Foreground predicted correctly rgb(80, 140, 30)
-#     # YELLOW: Foreground predicted - but the wrong class (e.g. Text instead of Comment) rgb(250, 230, 60)
-#     # BLACK: Background predicted correctly rgb(0, 0, 0)
-#     # RED: Background mis-predicted as Foreground rgb(240, 30, 20)
-#     # BLUE: Foreground mis-predicted as Background rgb(0, 240, 255)
-#     if len(gt_image) != 0:
-#         class_col = {"fg_correct": (30, 160, 70), "fg_wrong_class": (60, 255, 255), "bg_correct": (0, 0, 0),
-#                      "bg_as_fg": (20, 30, 240), "fg_as_bg": (255, 240, 0)}
-#
-#         img_la = np.copy(image)
-#         tag_la = "layout_analysis_" + tag
-#         # Get output folder using the FileHandler from the logger.
-#         # (Assumes the file handler is the last one)
-#         output_folder = os.path.dirname(logging.getLogger().handlers[-1].baseFilename)
-#
-#         if global_step is not None:
-#             dest_filename = os.path.join(output_folder, 'images', tag_la + '_{}'.format(global_step))
-#         else:
-#             dest_filename = os.path.join(output_folder, 'images', tag_la)
-#
-#         if not os.path.exists(os.path.dirname(dest_filename)):
-#             os.makedirs(os.path.dirname(dest_filename))
-#
-#         out_blue = image[:, :, 0]  # Extract just blue channel
-#         gt_blue = gt_image[:, :, 0]
-#
-#         masks = {c: _get_mask(c, out_blue, gt_blue) for c in class_col.keys()}
-#
-#         for c, mask in masks.items():
-#             img_la[mask] = class_col[c]
-#
-#         # img_la = np.array([[_get_colour(out_blue[x, y], gt_blue[x, y]) for y in range(out_blue.shape[1])]
-#         #                    for x in range(out_blue.shape[0])])
-#         # Write image to output folder
-#         # TODO this does not work
-#         #writer.add_image(tag=tag_la, img_tensor=np.moveaxis(img_la, -1, 0), global_step=global_step)
-#         cv2.imwrite(dest_filename, img_la)
-#
-#     return

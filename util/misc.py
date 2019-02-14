@@ -14,6 +14,7 @@ import cv2
 
 import numpy as np
 import torch
+from skimage.draw import polygon
 
 
 def _prettyprint_logging_label(logging_label):
@@ -539,15 +540,36 @@ def multi_one_hot_to_output(matrix):
     return RGB
 
 
+def annotation_to_argmax(input_shape, annotations, name_onehotindex, category_id_name):
+    """
+    Convert ground truth tensor to one-hot encoded matrix
 
+    Parameters
+    -------
+    input_shape: tuple
+        image (width, height)
 
+    annotations: list
+        annotations from the COCO dataset loaded with the pycocotools and the torchvision dataset loader
 
+    name_onehotindex: dict
+        encodes the name and id for every class with the corresponding argmax number
 
+    category_id_name: dict
+        encodes the category id and the corresponding class name
 
+    Returns
+    -------
+    torch.LongTensor of size [#C x H x W]
+        sparse one-hot encoded multi-class matrix, where #C is the number of classes
+    """
+    gt_img = np.zeros(input_shape, 'uint8')
 
+    for ann in annotations:
+        for seg in ann['segmentation']:
+            poly = np.array(seg).reshape((int(len(seg) / 2), 2))
 
+            rr, cc = polygon(poly[:, 0], poly[:, 1], input_shape)
+            gt_img[rr, cc] = name_onehotindex[category_id_name[ann['category_id']]]
 
-
-
-
-
+    return torch.LongTensor(gt_img)

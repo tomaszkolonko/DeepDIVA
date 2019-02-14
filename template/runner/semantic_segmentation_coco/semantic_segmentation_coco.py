@@ -67,38 +67,36 @@ class SemanticSegmentationCoco:
         logging.warning("This runner needs the COCO API. Install it from https://github.com/cocodataset/cocoapi "
                         "or with 'pip install pycocotools'")
 
-        num_classes = 91
-
         # Setting up the dataloaders
-        train_loader, val_loader, test_loader = set_up_dataloaders(input_patch_size, **dict(kwargs, num_classes=num_classes))
+        train_loader, val_loader, test_loader, train_ds = set_up_dataloaders(**kwargs)
 
-        # if model is specified, we just want to apply it and skip this part
+        name_onehotindex = {d['name']: i + 1 for i, d in enumerate(train_ds['categories'])}
+        name_onehotindex['background'] = 0
+        category_id_name = {d['id']: d['name'] for d in train_ds['categories']}
 
         # Setting up model, optimizer, criterion
-        model, criterion, optimizer, best_value, start_epoch = set_up_model(num_classes=num_classes, # In this case is the num dimension of the output
+        model, criterion, optimizer, best_value, start_epoch = set_up_model(num_classes=len(name_onehotindex), # In this case is the num dimension of the output
                                                                     model_name=model_name,
                                                                     lr=lr,
                                                                     train_loader=train_loader,
-                                                                    **kwargs)
-
-        # For the multi-dimensional cross entropy the array shapes are as follows:
-        # Input: (N, C, d_1, d_2, ..., d_K) where N is the mini-batch size, C are the number of classes and d_K the kth dimension
-        # Target: (N, d_1, d_2, ..., d_K
+                                                                    **dict(kwargs, name_onehotindex=name_onehotindex, category_id_name=category_id_name))
 
         # Core routine
         logging.info('Begin training')
         val_value = np.zeros((epochs + 1 - start_epoch))
         train_value = np.zeros((epochs - start_epoch))
 
-        val_value[-1] = SemanticSegmentationCoco._validate(val_loader, model, criterion, writer, -1, class_names, **kwargs)
+        val_value[-1] = SemanticSegmentationCoco._validate(val_loader, model, criterion, writer, -1,
+                                                           **dict(kwargs, name_onehotindex=name_onehotindex, category_id_name=category_id_name))
         for epoch in range(start_epoch, epochs):
             # Train
-            train_value[epoch] = SemanticSegmentationCoco._train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
-                                                                 **kwargs)
+            train_value[epoch] = SemanticSegmentationCoco._train(train_loader, model, criterion, optimizer, writer,
+                                                                 epoch, **dict(kwargs, name_onehotindex=name_onehotindex, category_id_name=category_id_name))
 
             # Validate
             if epoch % validation_interval == 0:
-                val_value[epoch] = SemanticSegmentationCoco._validate(val_loader, model, criterion, writer, epoch, class_names, **kwargs)
+                val_value[epoch] = SemanticSegmentationCoco._validate(val_loader, model, criterion, writer, epoch,
+                                                                      **dict(kwargs, name_onehotindex=name_onehotindex, category_id_name=category_id_name))
             if decay_lr is not None:
                 adjust_learning_rate(lr=lr, optimizer=optimizer, epoch=epoch, decay_lr_epochs=decay_lr)
             # TODO best model is not saved if epoch = 1
@@ -114,14 +112,14 @@ class SemanticSegmentationCoco:
         kwargs["load_model"] = os.path.join(current_log_folder, 'model_best.pth.tar')
 
         # TODO: add weights to kwargs
-        model, _, _, _, _ = set_up_model(num_classes=num_classes,
+        model, _, _, _, _ = set_up_model(num_classes=len(name_onehotindex),
                                          model_name=model_name,
                                          lr=lr,
                                          train_loader=train_loader,
                                          **kwargs)
 
         # Test
-        test_value = SemanticSegmentationCoco._test(test_loader, model, criterion, writer, epochs - 1, class_names, **kwargs)
+        test_value = SemanticSegmentationCoco._test(test_loader, model, criterion, writer, epochs - 1, **dict(kwargs, name_onehotindex=name_onehotindex, category_id_name=category_id_name))
         logging.info('Training completed')
 
         return train_value, val_value, test_value
@@ -158,13 +156,13 @@ class SemanticSegmentationCoco:
     """
 
     @classmethod
-    def _train(cls, train_loader, model, criterion, optimizer, writer, epoch, class_names, **kwargs):
-        return train.train(train_loader, model, criterion, optimizer, writer, epoch, class_names, **kwargs)
+    def _train(cls, train_loader, model, criterion, optimizer, writer, epoch, **kwargs):
+        return train.train(train_loader, model, criterion, optimizer, writer, epoch, **kwargs)
 
     @classmethod
-    def _validate(cls, val_loader, model, criterion, writer, epoch, class_names, **kwargs):
-        return evaluate.validate(val_loader, model, criterion,  writer, epoch, class_names, **kwargs)
+    def _validate(cls, val_loader, model, criterion, writer, epoch, **kwargs):
+        return evaluate.evaluate('val', val_loader, model, criterion, writer, epoch, **kwargs)
 
     @classmethod
-    def _test(cls, test_loader, model, criterion, writer, epoch, class_names, **kwargs):
-        return evaluate.test(test_loader, model, criterion, writer, epoch, class_names, **kwargs)
+    def _test(cls, test_loader, model, criterion, writer, epoch, **kwargs):
+        return evaluate.evaluate('test', test_loader, model, criterion, writer, epoch, **kwargs)
