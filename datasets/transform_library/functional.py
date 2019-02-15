@@ -608,9 +608,10 @@ def annotation_to_argmax(input_shape, annotations, name_onehotindex, category_id
 
     for ann in annotations:
         for seg in ann['segmentation']:
-            poly = np.array(seg).reshape((int(len(seg) / 2), 2))
+            if type(ann['segmentation']) == list:
+                poly = np.array(seg).reshape((int(len(seg) / 2), 2))
 
-            rr, cc = polygon(poly[:, 0], poly[:, 1], input_shape)
-            gt_img[rr, cc] = name_onehotindex[category_id_name[ann['category_id']]]
+                rr, cc = polygon(poly[:, 0], poly[:, 1], input_shape)
+                gt_img[rr, cc] = name_onehotindex[category_id_name[ann['category_id']]]
 
     return torch.LongTensor(gt_img)

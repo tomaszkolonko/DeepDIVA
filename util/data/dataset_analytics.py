@@ -48,8 +48,7 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 # DeepDIVA
-from datasets.transform_library.functional import annotation_to_argmax
-
+from datasets import coco_detection
 
 def compute_mean_std(dataset_folder, inmem, workers):
     """
@@ -126,7 +125,7 @@ def compute_mean_std_coco(dataset_folder, inmem, workers, **kwargs):
 
     # Load the dataset file names
     json = [os.path.join(gtdir, f) for f in os.listdir(gtdir) if 'instances_{}'.format('train')][0]
-    train_ds = torchvision.datasets.CocoDetection(traindir, json)
+    train_ds = coco_detection.CocoDetection(traindir, json)
 
     # Extract the actual file names and labels as entries
     file_names = np.asarray([os.path.join(traindir, i['file_name']) for i in train_ds.coco.dataset['images']])
@@ -350,7 +349,7 @@ def _get_class_frequencies_weights_HisDB(gt_images):
     return (1 / num_samples_per_class) / ((1 / num_samples_per_class).sum())
 
 
-def _get_class_frequencies_weights_coco(dataset, category_id_name, name_onehotindex):
+def _get_class_frequencies_weights_coco(dataset, category_id_name, name_onehotindex, **kwargs):
     """
     Get the weights proportional to the inverse of their class frequencies.
     The vector sums up to 1
@@ -376,10 +375,14 @@ def _get_class_frequencies_weights_coco(dataset, category_id_name, name_onehotin
     #                                                      category_id_name)).flatten())
     # all_labels = np.array(all_labels)
 
-    all_labels = np.array([np.array(gt_mask).flatten() for _, gt_mask in dataset]).flatten()
+    count_labels = {v: 0 for v in name_onehotindex.values()}
 
-    total_num_samples = len(all_labels)
-    num_samples_per_class = np.unique(all_labels, return_counts=True)[1]
+    for (_, gt_mask) in dataset:
+        for k, v in zip(*np.unique(np.array(gt_mask).flatten(), return_counts=True)):
+            count_labels[k] += v
+
+    total_num_samples = sum(count_labels.values())
+    num_samples_per_class = [count_labels[k] for k in sorted(count_labels.keys())]
     class_frequencies = (num_samples_per_class / total_num_samples)
     logging.info('Finished computing class frequencies weights')
     logging.info('Class frequencies (rounded): {class_frequencies}'
