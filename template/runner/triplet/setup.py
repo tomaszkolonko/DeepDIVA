@@ -6,6 +6,12 @@ import os
 
 # Torch
 import torchvision.transforms as transforms
+from template.runner.triplet.transforms import MultiCrop
+
+import torch.nn.parallel
+import torch.optim
+import torch.utils.data
+import torchvision.transforms as transforms
 
 # DeepDIVA
 from datasets.image_folder_triplet import load_dataset
@@ -54,22 +60,36 @@ def setup_dataloaders(model_expected_input_size, dataset_folder, n_triplets, bat
 
     # Loads the analytics csv and extract mean and std
     mean, std = _load_mean_std_from_file(dataset_folder=dataset_folder, inmem=inmem, workers=workers, runner_class=kwargs['runner_class'])
+    if kwargs['multi_crop'] is None:
+        kwargs['multi_crop'] = 1
 
     # Set up dataset transforms
     logging.debug('Setting up dataset transforms')
 
-    standard_transform = transforms.Compose([
-        #transforms.Resize(size=model_expected_input_size)
-        transforms.RandomCrop(size=model_expected_input_size),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
+    #standard transform
+    #standard_transform = transforms.Compose([
+        ##transforms.Resize(size=model_expected_input_size)
+        #transforms.RandomCrop(size=model_expected_input_size),
+        #transforms.ToTensor(),
+        #transforms.Normalize(mean=mean, std=std)
+    #])
+    #logging.info("Transform is set to RandomCrop")
+
+    multicrop_transform = transforms.Compose([
+        MultiCrop(size=model_expected_input_size, n_crops=kwargs['multi_crop']),
+        transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+        transforms.Lambda(
+            lambda items: torch.stack([transforms.Normalize(mean=mean, std=std)(item) for item in items])),
+        # transforms.RandomCrop(model_expected_input_size),
+        # transforms.ToTensor(),
+        # transforms.Normalize(mean=mean, std=std)
+
     ])
+    logging.info("Transform is set to MultiCrop")
 
-    logging.info("Transform is set to RandomCrop")
-
-    train_ds.transform = standard_transform
-    val_ds.transform = standard_transform
-    test_ds.transform = standard_transform
+    train_ds.transform = multicrop_transform
+    val_ds.transform = multicrop_transform
+    test_ds.transform = multicrop_transform
 
     train_loader, val_loader, test_loader = _dataloaders_from_datasets(batch_size=batch_size,
                                                                        train_ds=train_ds,

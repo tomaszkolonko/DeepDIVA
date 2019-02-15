@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Torch
-from template.runner.semantic_segmentation.transform_library import transforms
+from datasets.transform_library import transforms
 
 # DeepDIVA
 from datasets.image_folder_segmentation import load_dataset

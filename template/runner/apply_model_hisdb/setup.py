@@ -9,14 +9,14 @@ import torch
 
 import numpy as np
 
-# Torch
+# DeepDIVA
+from datasets.image_folder_segmentation import ImageFolder
+from template.setup import _load_mean_std_from_file, _get_optimizer, \
+    _load_class_frequencies_weights_from_file
 from datasets.transform_library import transforms
 
-# DeepDIVA
-from datasets.image_folder_segmentation import load_dataset
 
-
-def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
+def set_up_dataloader(model_expected_input_size, dataset_folder, batch_size, workers, inmem, **kwargs):
     # TODO: refactor into the image_folder_segmentation.py
     """
     Set up the dataloaders for the specified datasets.
@@ -51,10 +51,15 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
     logging.info('Loading {} from:{}'.format(dataset, dataset_folder))
 
     ###############################################################################################
-    # Load the dataset splits as images
-    train_ds, val_ds, test_ds = load_dataset(dataset_folder=dataset_folder,
-                                             in_memory=inmem,
-                                             workers=workers, **dict(kwargs, gt_to_one_hot=gt_to_one_hot))
+    # Load the dataset as images
+    apply_ds = ImageFolder(dataset_folder, **dict(kwargs, gt_to_one_hot=gt_to_one_hot))
+
+    # Loads the analytics csv and extract mean and std
+    try:
+        mean, std = _load_mean_std_from_file(dataset_folder, inmem, workers, kwargs['runner_class'])
+    except:
+        logging.error('analytics.csv not found in folder. Please copy the one generated in the '
+                        'training folder to this folder.')
 
     # Set up dataset transforms
     logging.debug('Setting up dataset transforms')
@@ -64,27 +69,16 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
         transforms.ToTensorTwinImage()
     ])
 
-    train_ds.transform = image_gt_transform
-    val_ds.transform = image_gt_transform
-    test_ds.transform = image_gt_transform
+    apply_ds.transform = image_gt_transform
 
     # Setup dataloaders
     logging.debug('Setting up dataloaders (#workers for test set to 1)')
-    train_loader = torch.utils.data.DataLoader(train_ds,
-                                               shuffle=True,
-                                               batch_size=batch_size,
-                                               num_workers=workers,
-                                               pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_ds,
-                                             batch_size=batch_size,
-                                             num_workers=workers,
-                                             pin_memory=True)
-    test_loader = torch.utils.data.DataLoader(test_ds,
-                                              batch_size=batch_size,
-                                              num_workers=1,
-                                              pin_memory=True)
+    apply_ds_loader = torch.utils.data.DataLoader(apply_ds,
+                                batch_size=batch_size,
+                                num_workers=1,
+                                pin_memory=True)
 
-    return train_loader, val_loader, test_loader
+    return apply_ds_loader
 
 
 def one_hot_to_np_bgr(matrix):

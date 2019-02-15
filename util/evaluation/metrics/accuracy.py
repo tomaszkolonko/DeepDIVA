@@ -68,6 +68,8 @@ def accuracy_segmentation(label_trues, label_preds, n_class):
         contains the predicted class for each pixel
     n_class: int
         number possible classes
+    border_pixel: boolean
+        true if border pixel value should be
 
     Returns
     -------

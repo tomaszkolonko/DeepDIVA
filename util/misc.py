@@ -11,11 +11,9 @@ import shutil
 import string
 
 import cv2
-from PIL import Image
+
 import numpy as np
 import torch
-
-from sklearn.preprocessing import OneHotEncoder
 
 
 def _prettyprint_logging_label(logging_label):
@@ -491,47 +489,6 @@ def int_to_one_hot(x, n_classes):
     return list(map(int, list(s.format(x))))
 
 
-def gt_to_one_hot(matrix):
-    """
-    Convert ground truth tensor to one-hot encoded matrix
-
-    Parameters
-    -------
-    matrix: float tensor from to_tensor() or numpy array
-        shape (C x H x W) in the range [0.0, 1.0] or shape (H x W x C) BGR
-
-    Returns
-    -------
-    torch.LongTensor of size [#C x H x W]
-        sparse one-hot encoded multi-class matrix, where #C is the number of classes
-    """
-    # TODO: ugly fix -> better to not normalize in the first place
-    if type(matrix).__module__ == np.__name__:
-        im_np = matrix[:, :, 2].astype(np.uint8)
-        border_mask = matrix[:, :, 0].astype(np.uint8) != 0
-    else:
-        np_array = (matrix * 255).numpy().astype(np.uint8)
-        im_np = np_array[2, :, :].astype(np.uint8)
-        border_mask = np_array[0, :, :].astype(np.uint8) != 0
-
-    # ajust blue channel according to border pixel in red channel
-    im_np[border_mask] = 1
-
-    integer_encoded = np.array([i for i in range(8)])
-    onehot_encoder = OneHotEncoder(sparse=False)
-    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    onehot_encoded = onehot_encoder.fit_transform(integer_encoded).astype(np.int8)
-
-    np.place(im_np, im_np == 0, 1) # needed to deal with 0 fillers at the borders during testing (replace with background)
-    replace_dict = {k: v for k, v in zip([1, 2, 4, 6, 8, 10, 12, 14], onehot_encoded)}
-
-    # create the one hot matrix
-    one_hot_matrix = np.asanyarray(
-        [[replace_dict[im_np[i, j]] for j in range(im_np.shape[1])] for i in range(im_np.shape[0])]).astype(np.uint8)
-
-    return torch.LongTensor(one_hot_matrix.transpose((2, 0, 1)))
-
-
 def multi_label_img_to_multi_hot(np_array):
     """
     TODO: There must be a faster way of doing this + ajust to correct input format (see gt_tensor_to_one_hot)
@@ -580,65 +537,6 @@ def multi_one_hot_to_output(matrix):
     RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
 
     return RGB
-
-
-def one_hot_to_np_bgr(matrix):
-    """
-    This function converts the one-hot encoded matrix to an image like it was provided in the ground truth
-
-    Parameters
-    -------
-    np array of size [#C x H x W]
-        sparse one-hot encoded multi-class matrix, where #C is the number of classes
-    Returns
-    -------
-    numpy array of size [C x H x W] (BGR)
-    """
-    B = np.argmax(matrix, axis=0)
-    class_to_B = {i: j for i, j in enumerate([1, 2, 4, 6, 8, 10, 12, 14])}
-
-    masks = [B == old for old in class_to_B.keys()]
-
-    for mask, (old, new) in zip(masks, class_to_B.items()):
-        B = np.where(mask, new, B)
-
-    bgr = np.dstack((B, np.zeros(shape=(B.shape[0], B.shape[1], 2), dtype=np.int8)))
-
-    return bgr
-
-
-def one_hot_to_full_output(one_hot, coordinates, combined_one_hot, output_dim):
-    """
-    This function combines the one-hot matrix of all the patches in one image to one large output matrix. Overlapping
-    values are averaged.
-
-    Parameters
-    ----------
-    output_dims: tuples [Htot x Wtot]
-        dimension of the large image
-    one_hot: numpy matrix of size [batch size x #C x H x W]
-        a patch from the larger image
-    coordinates: tuple
-        top left coordinates of the patch within the larger image for all patches in a batch
-    combined_one_hot: numpy matrix of size [#C x Htot x Wtot]
-        one hot encoding of the full image
-    Returns
-    -------
-    combined_one_hot: numpy matrix [#C x Htot x Wtot]
-    """
-    if len(combined_one_hot) == 0:
-        combined_one_hot = np.zeros((one_hot.shape[0], *output_dim))
-
-    x1, y1 = coordinates
-    x2, y2 = (min(x1 + one_hot.shape[1], output_dim[0]), min(y1 + one_hot.shape[2], output_dim[1]))
-    zero_mask = combined_one_hot[:, x1:x2, y1:y2] == 0
-    # if still zero in combined_one_hot just insert value from crop, if there is a value average
-    combined_one_hot[:, x1:x2, y1:y2] = np.where(zero_mask, one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
-                                                 np.maximum(one_hot[:, :zero_mask.shape[1], :zero_mask.shape[2]],
-                                                  combined_one_hot[:, x1:x2, y1:y2]))
-
-    return combined_one_hot
-
 
 
 
