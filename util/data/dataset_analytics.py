@@ -349,7 +349,7 @@ def _get_class_frequencies_weights_HisDB(gt_images):
     return (1 / num_samples_per_class) / ((1 / num_samples_per_class).sum())
 
 
-def _get_class_frequencies_weights_coco(dataset, category_id_name, name_onehotindex, **kwargs):
+def _get_class_frequencies_weights_coco(dataset, name_onehotindex, **kwargs):
     """
     Get the weights proportional to the inverse of their class frequencies.
     The vector sums up to 1
@@ -368,12 +368,6 @@ def _get_class_frequencies_weights_coco(dataset, category_id_name, name_onehotin
         The weights vector as a 1D array normalized (sum up to 1)
     """
     logging.info('Begin computing class frequencies weights')
-
-    # all_labels = []
-    # for img_pil, annotations in dataset:
-    #     all_labels += list(np.array(annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex,
-    #                                                      category_id_name)).flatten())
-    # all_labels = np.array(all_labels)
 
     count_labels = {v: 0 for v in name_onehotindex.values()}
 

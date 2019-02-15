@@ -61,7 +61,7 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehoti
     end = time.time()
     pbar = tqdm(enumerate(train_loader), total=len(train_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
-        # convert input to torch tensor
+        # # convert input to torch tensor
         # input = torch.LongTensor(np.array([np.array(i) for i in input_batch]))
         #
         # # convert annotation to argmax
@@ -78,9 +78,9 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehoti
 
         # Convert the input and its labels to Torch Variables
         input_var = torch.autograd.Variable(input)
-        target_var_argmax = torch.autograd.Variable(target_argmax)
+        target_argmax_var = torch.autograd.Variable(target_argmax)
 
-        mean_iu, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU, num_classes)
+        mean_iu, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_argmax_var, loss_meter, meanIU, num_classes)
 
         # Add loss and accuracy to Tensorboard
         if multi_run is None:
