@@ -347,6 +347,7 @@ class RandomTwinCrop(object):
         mu = 0.5
         sigma = 0.1
 
+        # sample form normal distribution instead of random unifrom
         ij = scipy.stats.truncnorm.rvs((0 - mu) / sigma, (1 - mu) / sigma, loc=mu, scale=sigma, size=2)
 
         i = ij[0]*(h - th)
