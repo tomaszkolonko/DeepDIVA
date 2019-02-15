@@ -382,7 +382,7 @@ def _get_class_frequencies_weights_coco(dataset, category_id_name, name_onehotin
             count_labels[k] += v
 
     total_num_samples = sum(count_labels.values())
-    num_samples_per_class = [count_labels[k] for k in sorted(count_labels.keys())]
+    num_samples_per_class = np.array([count_labels[k] for k in sorted(count_labels.keys())])
     class_frequencies = (num_samples_per_class / total_num_samples)
     logging.info('Finished computing class frequencies weights')
     logging.info('Class frequencies (rounded): {class_frequencies}'
