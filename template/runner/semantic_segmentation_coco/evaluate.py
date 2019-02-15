@@ -70,7 +70,7 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
     targets = []
 
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
-    for batch_idx, (input, target_argmax) in pbar:
+    for batch_idx, (input, target) in pbar:
         # # convert input to torch tensor
         # input = torch.LongTensor(np.array([np.array(i) for i in input_batch]))
         #
@@ -84,12 +84,10 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
         # Moving data to GPU
         if not no_cuda:
             input = input.cuda(async=True)
-            target = target.cuda(async=True)
-            target_argmax = target_argmax.cuda(async=True)
+            target_argmax = target.cuda(async=True)
 
         # Convert the input and its labels to Torch Variables
         input_var = torch.autograd.Variable(input)
-        target_var = torch.autograd.Variable(target)
         target_argmax_var = torch.autograd.Variable(target_argmax)
 
         # Compute output

@@ -60,13 +60,13 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehoti
     # Iterate over whole training set
     end = time.time()
     pbar = tqdm(enumerate(train_loader), total=len(train_loader), unit='batch', ncols=150, leave=False)
-    for batch_idx, (input_batch, annotations_batch) in pbar:
+    for batch_idx, (input, target) in pbar:
         # convert input to torch tensor
-        input = torch.LongTensor(np.array([np.array(i) for i in input_batch]))
-
-        # convert annotation to argmax
-        target_argmax = torch.LongTensor(np.array([annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex, category_id_name)
-                                          for img_pil, annotations in zip(input_batch, annotations)]))
+        # input = torch.LongTensor(np.array([np.array(i) for i in input_batch]))
+        #
+        # # convert annotation to argmax
+        # target_argmax = torch.LongTensor(np.array([annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex, category_id_name)
+        #                                   for img_pil, annotations in zip(input_batch, annotations)]))
 
         # Measure data loading time
         data_time.update(time.time() - end)
@@ -74,7 +74,7 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehoti
         # Moving data to GPU
         if not no_cuda:
             input = input.cuda(async=True)
-            target_argmax = target_argmax.cuda(async=True)
+            target_argmax = target.cuda(async=True)
 
         # Convert the input and its labels to Torch Variables
         input_var = torch.autograd.Variable(input)
