@@ -68,11 +68,7 @@ class SemanticSegmentationCoco:
                         "or with 'pip install pycocotools'")
 
         # Setting up the dataloaders
-        train_loader, val_loader, test_loader, train_ds = set_up_dataloaders(**kwargs)
-
-        name_onehotindex = {d['name']: i + 1 for i, d in enumerate(train_ds['categories'])}
-        name_onehotindex['background'] = 0
-        category_id_name = {d['id']: d['name'] for d in train_ds['categories']}
+        train_loader, val_loader, test_loader, name_onehotindex, category_id_name = set_up_dataloaders(**kwargs)
 
         # Setting up model, optimizer, criterion
         model, criterion, optimizer, best_value, start_epoch = set_up_model(num_classes=len(name_onehotindex), # In this case is the num dimension of the output

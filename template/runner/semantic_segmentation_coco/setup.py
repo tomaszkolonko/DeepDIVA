@@ -87,15 +87,14 @@ def set_up_dataloaders(dataset_folder, batch_size, workers, **kwargs):
 
     # Setup dataloaders
     logging.debug('Setting up dataloaders')
-    train_ds = CocoDetection(train_dir, jsons['train'], transform=input_transform,
-                                                      target_transform=target_transform)
+    train_ds = CocoDetection(train_dir, jsons['train'])
+    name_onehotindex = train_ds.name_onehotindex
+    category_id_name = train_ds.category_id_name
 
-    val_ds = CocoDetection(val_dir, jsons['val'], transform=input_transform,
-                                                    target_transform=target_transform)
+    val_ds = CocoDetection(val_dir, jsons['val'], name_onehotindex=name_onehotindex, category_id_name=category_id_name)
 
-    test_ds = CocoDetection(test_dir, jsons['test'], transform=input_transform,
-                                                     target_transform=target_transform)
+    test_ds = CocoDetection(test_dir, jsons['test'], name_onehotindex=name_onehotindex, category_id_name=category_id_name)
 
     train_loader, val_loader, test_loader = _dataloaders_from_datasets(batch_size, train_ds, val_ds, test_ds, workers)
 
-    return train_loader, val_loader, test_loader, train_ds.coco.dataset
+    return train_loader, val_loader, test_loader, name_onehotindex, category_id_name

@@ -3,6 +3,8 @@ import torch
 import math
 import random
 from PIL import Image, ImageOps, ImageEnhance
+from skimage.draw import polygon
+
 try:
     import accimage
 except ImportError:
@@ -577,3 +579,38 @@ def to_grayscale(img, num_output_channels=1):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
+
+
+def annotation_to_argmax(input_shape, annotations, name_onehotindex, category_id_name):
+    """
+    Convert ground truth tensor to one-hot encoded matrix
+
+    Parameters
+    -------
+    input_shape: tuple
+        image (width, height)
+
+    annotations: list
+        annotations from the COCO dataset loaded with the pycocotools and the torchvision dataset loader
+
+    name_onehotindex: dict
+        encodes the name and id for every class with the corresponding argmax number
+
+    category_id_name: dict
+        encodes the category id and the corresponding class name
+
+    Returns
+    -------
+    torch.LongTensor of size [H x W]
+        argmax of the classes
+    """
+    gt_img = np.zeros(input_shape, 'uint8')
+
+    for ann in annotations:
+        for seg in ann['segmentation']:
+            poly = np.array(seg).reshape((int(len(seg) / 2), 2))
+
+            rr, cc = polygon(poly[:, 0], poly[:, 1], input_shape)
+            gt_img[rr, cc] = name_onehotindex[category_id_name[ann['category_id']]]
+
+    return torch.LongTensor(gt_img)

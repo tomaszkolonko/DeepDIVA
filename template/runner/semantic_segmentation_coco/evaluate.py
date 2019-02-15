@@ -13,7 +13,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 from tqdm import tqdm
 
 # DeepDIVA
-from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, annotation_to_argmax
+from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard
+from datasets.transform_library.functional import annotation_to_argmax
 from util.visualization.confusion_matrix_heatmap import make_heatmap
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
@@ -69,13 +70,13 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
     targets = []
 
     pbar = tqdm(enumerate(data_loader), total=len(data_loader), unit='batch', ncols=150, leave=False)
-    for batch_idx, (input_batch, annotations_batch) in pbar:
-        # convert input to torch tensor
-        input = torch.LongTensor(np.array([np.array(i) for i in input_batch]))
-
-        # convert annotation to argmax
-        target_argmax = torch.LongTensor(np.array([annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex, category_id_name)
-                                          for img_pil, annotations in zip(input_batch, annotations)]))
+    for batch_idx, (input, target_argmax) in pbar:
+        # # convert input to torch tensor
+        # input = torch.LongTensor(np.array([np.array(i) for i in input_batch]))
+        #
+        # # convert annotation to argmax
+        # target_argmax = torch.LongTensor(np.array([annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex, category_id_name)
+        #                                   for img_pil, annotations in zip(input_batch, annotations)]))
 
         # Measure data loading time
         data_time.update(time.time() - end)

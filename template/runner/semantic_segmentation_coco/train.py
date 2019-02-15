@@ -11,7 +11,8 @@ from tqdm import tqdm
 
 # DeepDIVA
 from util.misc import AverageMeter, _prettyprint_logging_label, save_image_and_log_to_tensorboard, \
-    save_image_and_log_to_tensorboard_segmentation, annotation_to_argmax
+    save_image_and_log_to_tensorboard_segmentation
+from datasets.transform_library.functional import annotation_to_argmax
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
 

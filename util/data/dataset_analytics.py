@@ -48,7 +48,7 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 # DeepDIVA
-from util.misc import annotation_to_argmax
+from datasets.transform_library.functional import annotation_to_argmax
 
 
 def compute_mean_std(dataset_folder, inmem, workers):
@@ -370,11 +370,13 @@ def _get_class_frequencies_weights_coco(dataset, category_id_name, name_onehotin
     """
     logging.info('Begin computing class frequencies weights')
 
-    all_labels = []
-    for img_pil, annotations in dataset:
-        all_labels += list(np.array(annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex,
-                                                         category_id_name)).flatten())
-    all_labels = np.array(all_labels)
+    # all_labels = []
+    # for img_pil, annotations in dataset:
+    #     all_labels += list(np.array(annotation_to_argmax((img_pil.height, img_pil.width), annotations, name_onehotindex,
+    #                                                      category_id_name)).flatten())
+    # all_labels = np.array(all_labels)
+
+    all_labels = np.array([np.array(gt_mask).flatten() for _, gt_mask in dataset]).flatten()
 
     total_num_samples = len(all_labels)
     num_samples_per_class = np.unique(all_labels, return_counts=True)[1]
