@@ -347,11 +347,12 @@ class RandomTwinCrop(object):
         mu = 0.5
         sigma = 0.1
 
-        # sample form normal distribution instead of random unifrom
-        ij = scipy.stats.truncnorm.rvs((0 - mu) / sigma, (1 - mu) / sigma, loc=mu, scale=sigma, size=2)
+        # sample form the beata distribution instead of random unifrom
+        #ij = scipy.stats.truncnorm.rvs((0 - mu) / sigma, (1 - mu) / sigma, loc=mu, scale=sigma, size=2)
+	ij = np.random.beta(5,5,2)
 
         i = ij[0]*(h - th)
-        j = ij[0]*(w - tw)
+        j = ij[1]*(w - tw)
         return i, j, th, tw
 
     def __call__(self, img, gt, crop_size):
