@@ -344,12 +344,12 @@ class RandomTwinCrop(object):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        mu = 0.5
-        sigma = 0.1
+        # mu = 0.5
+        # sigma = 0.1
 
         # sample form the beata distribution instead of random unifrom
         #ij = scipy.stats.truncnorm.rvs((0 - mu) / sigma, (1 - mu) / sigma, loc=mu, scale=sigma, size=2)
-        ij = np.random.beta(5,5,2)
+        ij = np.random.beta(2,2,2)
 
         i = ij[0]*(h - th)
         j = ij[1]*(w - tw)
