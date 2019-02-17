@@ -539,15 +539,3 @@ def multi_one_hot_to_output(matrix):
     return RGB
 
 
-
-
-
-
-
-
-
-
-
-
-
-

@@ -43,9 +43,12 @@ from PIL import Image
 
 # Torch related stuff
 import torch
+import torchvision
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
+# DeepDIVA
+from datasets import coco_detection
 
 def compute_mean_std(dataset_folder, inmem, workers):
     """
@@ -94,7 +97,55 @@ def compute_mean_std(dataset_folder, inmem, workers):
     df.to_csv(os.path.join(dataset_folder, 'analytics.csv'), header=False)
 
 
-def compute_mean_std_semantic_segmentation(dataset_folder, inmem, workers):
+def compute_mean_std_coco(dataset_folder, inmem, workers, **kwargs):
+    """
+    Computes mean and std for the coco segmentation dataset. Saves the results as CSV file in the dataset folder.
+
+    Parameters
+    ----------
+    dataset_folder : String (path)
+        Path to the dataset folder (see above for details)
+    inmem : Boolean
+        Specifies whether is should be computed i nan online of offline fashion.
+    workers : int
+        Number of workers to use for the mean/std computation
+
+    Returns
+    -------
+        None
+    """
+    # Getting the train dir
+    traindir = os.path.join(dataset_folder, 'train')
+    gtdir = os.path.join(dataset_folder, 'annotations')
+
+    # Sanity check on the training folder
+    if not os.path.isdir(traindir):
+        logging.warning("Train folder not found in the args.dataset_folder={}".format(dataset_folder))
+        return
+
+    # Load the dataset file names
+    json = [os.path.join(gtdir, f) for f in os.listdir(gtdir) if 'instances_{}'.format('train')][0]
+    train_ds = coco_detection.CocoDetection(traindir, json)
+
+    # Extract the actual file names and labels as entries
+    file_names = np.asarray([os.path.join(traindir, i['file_name']) for i in train_ds.coco.dataset['images']])
+
+    # Compute mean and std
+    if inmem:
+        mean, std = cms_inmem(file_names)
+    else:
+        mean, std = cms_online(file_names, workers)
+
+    # Compute class frequencies weights
+    class_frequencies_weights = _get_class_frequencies_weights_coco(train_ds, **kwargs)
+
+    # Save results as CSV file in the dataset folder
+    df = pd.DataFrame([mean, std, class_frequencies_weights])
+    df.index = ['mean[RGB]', 'std[RGB]', 'class_frequencies_weights[num_classes]']
+    df.to_csv(os.path.join(dataset_folder, 'analytics.csv'), header=False)
+
+
+def compute_mean_std_hisdb(dataset_folder, inmem, workers):
     """
     Computes mean and std of a dataset for semantic segmentation. Saves the results as CSV file in the dataset folder.
 
@@ -136,8 +187,6 @@ def compute_mean_std_semantic_segmentation(dataset_folder, inmem, workers):
     df = pd.DataFrame([mean, std, class_frequencies_weights])
     df.index = ['mean[RGB]', 'std[RGB]', 'class_frequencies_weights[num_classes]']
     df.to_csv(os.path.join(dataset_folder, 'analytics.csv'), header=False)
-
-
 
 
 # Loads an image with OpenCV and returns the channel wise means of the image.
@@ -269,6 +318,7 @@ def _get_class_frequencies_weights(dataset, workers):
     # Normalize vector to sum up to 1.0 (in case the Loss function does not do it)
     return (1 / num_samples_per_class) / ((1 / num_samples_per_class).sum())
 
+
 def _get_class_frequencies_weights_HisDB(gt_images):
     """
     Get the weights proportional to the inverse of their class frequencies.
@@ -297,6 +347,43 @@ def _get_class_frequencies_weights_HisDB(gt_images):
                  .format(class_frequencies=np.around(class_frequencies * 100, decimals=2)))
     # Normalize vector to sum up to 1.0 (in case the Loss function does not do it)
     return (1 / num_samples_per_class) / ((1 / num_samples_per_class).sum())
+
+
+def _get_class_frequencies_weights_coco(dataset, name_onehotindex, **kwargs):
+    """
+    Get the weights proportional to the inverse of their class frequencies.
+    The vector sums up to 1
+
+    Parameters
+    ----------
+    dataset: pycocotools.coco.COCO
+        COCO dataset loaded with the pycocotools and the torchvision dataset loader
+
+    classes: dict
+        dictionary containing the class names and the corresponding index for argmax
+
+    Returns
+    -------
+    ndarray[double] of size (num_classes)
+        The weights vector as a 1D array normalized (sum up to 1)
+    """
+    logging.info('Begin computing class frequencies weights')
+
+    count_labels = {v: 0 for v in name_onehotindex.values()}
+
+    for (_, gt_mask) in dataset:
+        for k, v in zip(*np.unique(np.array(gt_mask).flatten(), return_counts=True)):
+            count_labels[k] += v
+
+    total_num_samples = sum(count_labels.values())
+    num_samples_per_class = np.array([count_labels[k] for k in sorted(count_labels.keys())])
+    class_frequencies = (num_samples_per_class / total_num_samples)
+    logging.info('Finished computing class frequencies weights')
+    logging.info('Class frequencies (rounded): {class_frequencies}'
+                 .format(class_frequencies=np.around(class_frequencies * 100, decimals=2)))
+    # Normalize vector to sum up to 1.0 (in case the Loss function does not do it)
+    return (1 / num_samples_per_class) / ((1 / num_samples_per_class).sum())
+
 
 if __name__ == "__main__":
     logging.basicConfig(

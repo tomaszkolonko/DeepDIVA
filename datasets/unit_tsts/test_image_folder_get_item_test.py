@@ -3,9 +3,9 @@ import os
 from unittest import TestCase
 import PIL
 from PIL import Image
-from template.runner.semantic_segmentation.transform_library import transforms
+from datasets.transform_library import transforms
 
-from datasets.image_folder_segmentation import find_classes, is_image_file, ImageFolder
+from datasets.image_folder_segmentation_hisdb import find_classes, is_image_file, ImageFolder
 
 
 class Test_get_item(TestCase):

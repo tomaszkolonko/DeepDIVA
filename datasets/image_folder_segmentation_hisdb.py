@@ -10,7 +10,7 @@ import math
 import os.path
 import numpy as np
 
-from template.runner.semantic_segmentation.transform_library import transforms, functional
+from datasets.transform_library import transforms, functional
 
 # Torch related stuff
 import torch.utils.data as data
@@ -74,7 +74,7 @@ def default_loader(path):
     if get_image_backend() == 'PIL':
         return pil_loader(path)
     else:
-        logging.info("Something went wrong with the default_loader in image_folder_segmentation.py")
+        logging.info("Something went wrong with the default_loader in image_folder_segmentation_hisdb.py")
         sys.exit(-1)
 
 
@@ -130,7 +130,7 @@ def load_dataset(dataset_folder, in_memory=False, workers=1, testing=False, **kw
 
     workers: int
         Number of workers to use for the dataloaders
-    
+
     testing: boolean
         Take another path if you are in testing phase
 
@@ -199,7 +199,7 @@ class ImageFolder(data.Dataset):
     """
 
     # TODO: transform and target_transform could be the correct places for your cropping
-    def __init__(self, root, gt_to_one_hot, num_classes, pages_in_memory=0, crops_per_page=0, crop_size=10, transform=None, target_transform=None,
+    def __init__(self, root, gt_to_one_hot, num_classes, imgs_in_memory=0, crops_per_image=0, crop_size=10, transform=None, target_transform=None,
                  loader=default_loader, **kwargs):
         classes = find_classes()
         imgs = make_dataset(root)
@@ -217,16 +217,16 @@ class ImageFolder(data.Dataset):
         self.num_classes = num_classes
 
         # Variables for train and validation sets
-        self.pages_in_memory = pages_in_memory
-        self.crops_per_page = crops_per_page
+        self.imgs_in_memory = imgs_in_memory
+        self.crops_per_image = crops_per_image
         self.crop_size = crop_size
         self.current_crop = 0
         self.next_image = 0
         self.memory_position_to_change = 0
         self.memory_pass = 1
         self.test_set = "test" in self.root
-        self.images = [None] * pages_in_memory
-        self.gt = [None] * pages_in_memory
+        self.images = [None] * imgs_in_memory
+        self.gt = [None] * imgs_in_memory
 
         # Variables for test set
         self.current_page = 0
@@ -296,8 +296,8 @@ class ImageFolder(data.Dataset):
             if self.images[0] is None:
                 self.initialize_memory()
 
-            while self.current_page < self.pages_in_memory:
-                while self.current_crop < self.crops_per_page:
+            while self.current_page < self.imgs_in_memory:
+                while self.current_crop < self.crops_per_image:
                     return self.apply_transformation(unittesting)
 
                 self.update_state_variables()
@@ -382,7 +382,7 @@ class ImageFolder(data.Dataset):
         """
         self.current_page = self.current_page + 1
         self.current_crop = 0
-        if self.current_page == self.pages_in_memory:
+        if self.current_page == self.imgs_in_memory:
             self.update_memory()
             self.memory_pass = self.memory_pass + 1
             self.current_page = 0
@@ -395,7 +395,7 @@ class ImageFolder(data.Dataset):
         if self.test_set:
             return self.crops_per_image * len(self.imgs)
         else:
-            return len(self.imgs) * self.pages_in_memory * self.crops_per_page
+            return len(self.imgs) * self.imgs_in_memory * self.crops_per_image
 
     def initialize_memory(self):
         """
@@ -404,7 +404,7 @@ class ImageFolder(data.Dataset):
 
         :return:
         """
-        for i in range(0, self.pages_in_memory):
+        for i in range(0, self.imgs_in_memory):
             temp_image, temp_gt = self.imgs[i]
             self.next_image = self.next_image + 1
 
@@ -423,6 +423,6 @@ class ImageFolder(data.Dataset):
 
         self.images[self.memory_position_to_change] = self.loader(new_image)
         self.gt[self.memory_position_to_change] = self.loader(new_gt)
-        self.memory_position_to_change = (self.memory_position_to_change + 1) % self.pages_in_memory
+        self.memory_position_to_change = (self.memory_position_to_change + 1) % self.imgs_in_memory
 
 

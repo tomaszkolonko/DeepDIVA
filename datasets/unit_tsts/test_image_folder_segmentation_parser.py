@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from datasets.image_folder_segmentation import find_classes, is_image_file, ImageFolder
+from datasets.image_folder_segmentation_hisdb import find_classes, is_image_file, ImageFolder
 
 
 class Test_find_classes_(TestCase):

@@ -27,7 +27,7 @@ from tensorboardX import SummaryWriter
 # DeepDIVA
 import models
 from datasets import image_folder_dataset, bidimensional_dataset
-from util.data.dataset_analytics import compute_mean_std, compute_mean_std_semantic_segmentation
+from util.data.dataset_analytics import compute_mean_std, compute_mean_std_hisdb, compute_mean_std_coco
 from util.data.dataset_integrity import verify_integrity_quick, verify_integrity_deep
 from util.misc import get_all_files_in_folders_and_subfolders
 
@@ -99,7 +99,7 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
         criterion = nn.CrossEntropyLoss()
     else:
         try:
-            weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, kwargs['runner_class'])
+            weights = _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, **kwargs)
             criterion = nn.CrossEntropyLoss(weight=torch.from_numpy(weights).type(torch.FloatTensor))
             logging.info('Loading weights for data balancing')
         except:
@@ -147,7 +147,7 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
     return model, criterion, optimizer, best_value, start_epoch
 
 
-def _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class):
+def _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, runner_class, **kwargs):
     """
     This function simply recovers class_frequencies_weights from the analytics.csv file
 
@@ -168,7 +168,7 @@ def _load_class_frequencies_weights_from_file(dataset_folder, inmem, workers, ru
     ndarray[double]
         Class frequencies for the selected dataset, contained in the analytics.csv file.
     """
-    csv_file = _load_analytics_csv(dataset_folder, inmem, workers, runner_class)
+    csv_file = _load_analytics_csv(dataset_folder, inmem, workers, runner_class, **kwargs)
     class_frequencies_weights = csv_file.ix[2, 1:].as_matrix().astype(float)
     return class_frequencies_weights[np.logical_not(np.isnan(class_frequencies_weights))]
 
@@ -386,7 +386,7 @@ def _load_mean_std_from_file(dataset_folder, inmem, workers, runner_class):
     return mean, std
 
 
-def _load_analytics_csv(dataset_folder, inmem, workers, runner_class):
+def _load_analytics_csv(dataset_folder, inmem, workers, runner_class, **kwargs):
     """
     This function loads the analytics.csv file and attempts creating it, if it is missing
 
@@ -411,8 +411,10 @@ def _load_analytics_csv(dataset_folder, inmem, workers, runner_class):
         logging.warning('Missing analytics.csv file for dataset located at {}'.format(dataset_folder))
         try:
             logging.warning('Attempt creating analytics.csv file for dataset located at {}'.format(dataset_folder))
-            if 'semantic_segmentation' in runner_class:
-                compute_mean_std_semantic_segmentation(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
+            if 'hisdb' in runner_class:
+                compute_mean_std_hisdb(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
+            elif 'coco' in runner_class:
+                compute_mean_std_coco(dataset_folder=dataset_folder, inmem=inmem, workers=workers, **kwargs)
             else:
                 compute_mean_std(dataset_folder=dataset_folder, inmem=inmem, workers=workers)
             logging.warning('Created analytics.csv file for dataset located at {} '.format(dataset_folder))
