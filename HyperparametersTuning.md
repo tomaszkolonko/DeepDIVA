@@ -52,17 +52,17 @@ For the Historical Writer Identification task on the [Historical-WI dataset](htt
 |-------------: |:---------------:|:---------------:|:---------------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
 | VGG19_bn      | 32              | 0.01998         | n/a                         | 0.15635       | 0.00785        | 128             | 14.85 %       | 
 | Resnet152     | 32              | 0.00817         | n/a                         | 0.40406       | 0.00565        | 128             | 24.67 %       |
-| Inception_v3  | 32              | 0.007           | n/a                         | 0.31808       | 0.00976        | 128             | 17.49 %       |
+| Inception_v3  | 32              | 0.007           | n/a                         | 0.31808       | 0.00976        | 128             | 9.14  %       |
 | Densenet121   | 32              | 0.03354         | n/a                         | 0.21808       | 0.00231        | 128             | 27.18 %       |
 
 We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
 |               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.01554         | n/a                         | 0.48831       | 0.00959        | 128             | 7.648 %       | 
-| Resnet152     | 32              | 0.01366         | n/a                         | 0.36760       | 0.00900        | 128             | 13.71 %       |
-| Inception_v3  | 32              | 0.03608         | n/a                         | 0.31797       | 0.00107        | 128             | 18.67 %       |
-| Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 26.40 %       | 
+| VGG19_bn      | 32              | 0.01554         | n/a                         | 0.48831       | 0.00959        | 128             | 1.388 %       | 
+| Resnet152     | 32              | 0.01366         | n/a                         | 0.36760       | 0.00900        | 128             | - %       |
+| Inception_v3  | 32              | 0.03608         | n/a                         | 0.31797       | 0.00107        | 128             | 26.11 %       |
+| Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 34.62 %       | 
 
 
 ## Hyperparameters for Segmentation
