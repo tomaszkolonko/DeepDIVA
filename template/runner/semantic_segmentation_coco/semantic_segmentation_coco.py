@@ -83,7 +83,8 @@ class SemanticSegmentationCoco:
         train_value = np.zeros((epochs - start_epoch))
 
         # val_value[-1] = SemanticSegmentationCoco._validate(val_loader, model, criterion, writer, -1,
-                                                           **dict(kwargs, name_onehotindex=name_onehotindex, category_id_name=category_id_name))
+        #                                                  **dict(kwargs, name_onehotindex=name_onehotindex, category_id_name=category_id_name))
+
         for epoch in range(start_epoch, epochs):
             # Train
             train_value[epoch] = SemanticSegmentationCoco._train(train_loader, model, criterion, optimizer, writer,
