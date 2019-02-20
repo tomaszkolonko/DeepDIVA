@@ -67,17 +67,19 @@ class CocoDetection(data.Dataset):
         right = self.img_size - img.width - left
         padding = (left, top, right, bottom)
 
+        size = (320, 320)
+
         # convert the annotations to argmax and pad to make quadratic
         target = functional.annotation_to_argmax((img.height, img.width), target, self.name_onehotindex, self.category_id_name)
-        target = torch.LongTensor(np.array(functional.pad(Image.fromarray(np.array(target).astype('uint8')), padding)))
+        target = np.array(functional.pad(Image.fromarray(np.array(target).astype('uint8')), padding))
+        target = torch.LongTensor(cv2.resize(target, dsize=size, interpolation=cv2.INTER_NEAREST))
 
         # convert img to torch tensor and pad to make quadratic
         img = functional.pad(img, padding)
+        img = cv2.resize(np.asanyarray(img), dsize=size, interpolation=cv2.INTER_NEAREST)
         img = functional.to_tensor(img)
 
-        size = (320, 320)
-
-        return cv2.resize(img, dsize=size, interpolation=cv2.INTER_NEAREST), cv2.resize(target, dsize=size, interpolation=cv2.INTER_NEAREST)
+        return img, target
 
     def __len__(self):
         return len(self.ids)
