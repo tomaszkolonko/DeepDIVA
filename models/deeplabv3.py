@@ -1,5 +1,7 @@
 # camera-ready
 
+import logging
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,12 +12,12 @@ from models.deeplabv3_resnet import ResNet18_OS16, ResNet34_OS16, ResNet50_OS16,
 from models.deeplabv3_aspp import ASPP, ASPP_Bottleneck
 
 class DeepLabV3(nn.Module):
-    def __init__(self, num_classes, **kwargs):
+    def __init__(self, pretrained, output_channels, **kwargs):
         super(DeepLabV3, self).__init__()
 
-        self.num_classes = num_classes
+        self.num_classes = output_channels
 
-        self.resnet = ResNet18_OS8(**kwargs) # NOTE! specify the type of ResNet here
+        self.resnet = ResNet18_OS8(pretrained) # NOTE! specify the type of ResNet here
         self.aspp = ASPP(num_classes=self.num_classes) # NOTE! if you use ResNet50-152, set self.aspp = ASPP_Bottleneck(num_classes=self.num_classes) instead
 
     def forward(self, x):
@@ -31,3 +33,20 @@ class DeepLabV3(nn.Module):
         output = F.upsample(output, size=(h, w), mode="bilinear") # (shape: (batch_size, num_classes, h, w))
 
         return output
+
+def deeplabv3(pretrained=False, **kwargs):
+    """VGG 11-layer model (configuration "A")
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = DeepLabV3(pretrained, **kwargs)
+    if pretrained:
+        try:
+            model.load_state_dict(torch.load("../pretrained_models/model_13_2_2_2_epoch_580.pth"))
+            # remove the last layers
+
+        except Exception as exp:
+            logging.warning(exp)
+
+    return model

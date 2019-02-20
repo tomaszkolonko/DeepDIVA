@@ -15,6 +15,7 @@ from .FusionNet import FusionNet
 from .UNet import Unet
 from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
 from .Xception import xception
+from .deeplabv3 import deeplabv3
 
 
 """

@@ -90,7 +90,7 @@ class Bottleneck(nn.Module):
         return out
 
 class ResNet_Bottleneck_OS16(nn.Module):
-    def __init__(self, num_layers, pretrained=False, **kwargs):
+    def __init__(self, num_layers, pretrained=False):
         super(ResNet_Bottleneck_OS16, self).__init__()
 
         if num_layers == 50:
@@ -98,7 +98,7 @@ class ResNet_Bottleneck_OS16(nn.Module):
 
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("/root/deeplabv3/pretrained_models/resnet/resnet50-19c8e357.pth"))
+                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet50-19c8e357.pth"))
                 # remove fully connected layer, avg pool and layer5:
                 self.resnet = nn.Sequential(*list(resnet.children())[:-3])
 
@@ -108,7 +108,7 @@ class ResNet_Bottleneck_OS16(nn.Module):
             resnet = models.resnet101()
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("/root/deeplabv3/pretrained_models/resnet/resnet101-5d3b4d8f.pth"))
+                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet101-5d3b4d8f.pth"))
                 # remove fully connected layer, avg pool and layer5:
                 self.resnet = nn.Sequential(*list(resnet.children())[:-3])
 
@@ -117,7 +117,7 @@ class ResNet_Bottleneck_OS16(nn.Module):
             resnet = models.resnet152()
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("/root/deeplabv3/pretrained_models/resnet/resnet152-b121ed2d.pth"))
+                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet152-b121ed2d.pth"))
                 # remove fully connected layer, avg pool and layer5:
                 self.resnet = nn.Sequential(*list(resnet.children())[:-3])
 
@@ -138,23 +138,23 @@ class ResNet_Bottleneck_OS16(nn.Module):
         return output
 
 class ResNet_BasicBlock_OS16(nn.Module):
-    def __init__(self, num_layers, pretrained=False, **kwargs):
+    def __init__(self, num_layers, pretrained=False):
         super(ResNet_BasicBlock_OS16, self).__init__()
 
         if num_layers == 18:
             resnet = models.resnet18()
+            num_blocks = 2
+
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("/root/deeplabv3/pretrained_models/resnet/resnet18-5c106cde.pth"))
+                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet18-5c106cde.pth"))
                 # remove fully connected layer, avg pool and layer5:
                 self.resnet = nn.Sequential(*list(resnet.children())[:-3])
-
-                num_blocks = 2
                 print ("pretrained resnet, 18")
         elif num_layers == 34:
             resnet = models.resnet34()
             # load pretrained model:
-            resnet.load_state_dict(torch.load("/root/deeplabv3/pretrained_models/resnet/resnet34-333f7ec4.pth"))
+            resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet34-333f7ec4.pth"))
             # remove fully connected layer, avg pool and layer5:
             self.resnet = nn.Sequential(*list(resnet.children())[:-3])
 
@@ -176,29 +176,32 @@ class ResNet_BasicBlock_OS16(nn.Module):
         return output
 
 class ResNet_BasicBlock_OS8(nn.Module):
-    def __init__(self, num_layers, pretrained=False, **kwargs):
+    def __init__(self, num_layers, pretrained=False):
         super(ResNet_BasicBlock_OS8, self).__init__()
 
         if num_layers == 18:
             resnet = models.resnet18()
-            # load pretrained model:
-            resnet.load_state_dict(torch.load("/root/deeplabv3/pretrained_models/resnet/resnet18-5c106cde.pth"))
-            # remove fully connected layer, avg pool, layer4 and layer5:
-            self.resnet = nn.Sequential(*list(resnet.children())[:-4])
-
             num_blocks_layer_4 = 2
             num_blocks_layer_5 = 2
-            print ("pretrained resnet, 18")
+
+            if pretrained:
+                # load pretrained model:
+                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet18-5c106cde.pth"))
+                # remove fully connected layer, avg pool, layer4 and layer5:
+                self.resnet = nn.Sequential(*list(resnet.children())[:-4])
+                print ("pretrained resnet, 18")
+
         elif num_layers == 34:
             resnet = models.resnet34()
-            # load pretrained model:
-            resnet.load_state_dict(torch.load("/root/deeplabv3/pretrained_models/resnet/resnet34-333f7ec4.pth"))
-            # remove fully connected layer, avg pool, layer4 and layer5:
-            self.resnet = nn.Sequential(*list(resnet.children())[:-4])
-
             num_blocks_layer_4 = 6
             num_blocks_layer_5 = 3
-            print ("pretrained resnet, 34")
+
+            if pretrained:
+                # load pretrained model:
+                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet34-333f7ec4.pth"))
+                # remove fully connected layer, avg pool, layer4 and layer5:
+                self.resnet = nn.Sequential(*list(resnet.children())[:-4])
+                print ("pretrained resnet, 34")
         else:
             raise Exception("num_layers must be in {18, 34}!")
 
@@ -217,23 +220,30 @@ class ResNet_BasicBlock_OS8(nn.Module):
 
         return output
 
-def ResNet18_OS16(**kwargs):
-    return ResNet_BasicBlock_OS16(num_layers=18, **kwargs)
 
-def ResNet34_OS16(**kwargs):
-    return ResNet_BasicBlock_OS16(num_layers=34, **kwargs)
+def ResNet18_OS16(pretrained):
+    return ResNet_BasicBlock_OS16(num_layers=18, pretrained=pretrained)
 
-def ResNet50_OS16(**kwargs):
-    return ResNet_Bottleneck_OS16(num_layers=50, **kwargs)
 
-def ResNet101_OS16(**kwargs):
-    return ResNet_Bottleneck_OS16(num_layers=101, **kwargs)
+def ResNet34_OS16(pretrained):
+    return ResNet_BasicBlock_OS16(num_layers=34, pretrained=pretrained)
 
-def ResNet152_OS16(**kwargs):
-    return ResNet_Bottleneck_OS16(num_layers=152, **kwargs)
 
-def ResNet18_OS8(**kwargs):
-    return ResNet_BasicBlock_OS8(num_layers=18, **kwargs)
+def ResNet50_OS16(pretrained):
+    return ResNet_Bottleneck_OS16(num_layers=50, pretrained=pretrained)
 
-def ResNet34_OS8(**kwargs):
-    return ResNet_BasicBlock_OS8(num_layers=34, **kwargs)
+
+def ResNet101_OS16(pretrained):
+    return ResNet_Bottleneck_OS16(num_layers=101, pretrained=pretrained)
+
+
+def ResNet152_OS16(pretrained):
+    return ResNet_Bottleneck_OS16(num_layers=152, pretrained=pretrained)
+
+
+def ResNet18_OS8(pretrained):
+    return ResNet_BasicBlock_OS8(num_layers=18, pretrained=pretrained)
+
+
+def ResNet34_OS8(pretrained):
+    return ResNet_BasicBlock_OS8(num_layers=34, pretrained=pretrained)
