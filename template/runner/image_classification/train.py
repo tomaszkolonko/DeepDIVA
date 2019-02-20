@@ -42,6 +42,10 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda=Fals
     """
     multi_run = kwargs['run'] if 'run' in kwargs else None
 
+    multi_crop = False
+    bs = None
+    ncrops = None
+
     # Instantiate the counters
     batch_time = AverageMeter()
     loss_meter = AverageMeter()
@@ -56,23 +60,10 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda=Fals
     pbar = tqdm(enumerate(train_loader), total=len(train_loader), unit='batch', ncols=150, leave=False)
     for batch_idx, (input, target) in pbar:
 
-        # In your test loop you can do the following:
-        # input, target = batch  # input is a 5d tensor, target is 2d
-        # bs, ncrops, c, h, w = input.size()
-        # result = model(input.view(-1, c, h, w))  # fuse batch size and ncrops
-        # result_avg = result.view(bs, ncrops, -1).mean(1)  # avg over crops
-
-        # input [64, 5, 3, 299, 299]
-        bs, ncrops, c, h, w = input.size()
-        # input.view leaves the 3rd 4th and 5th dimension as is, but multiplies the 1st and 2nd together
-        # result [320, 3, 299, 299]
-        result = input.view(-1, c, h, w)
-
-        # If you need to maximize across the crops just use the following two lines
-        # result_avg = result.view(bs, -1, c, h, w).max(1)
-        # input = result_avg[0] # FloatTensor
-        result_avg = result.view(bs, -1, c, h, w).mean(1)
-        input = result_avg
+        if len(input.size()) == 5:
+            multi_crop = True
+            bs, ncrops, c, h, w = input.size()
+            input = input.view(-1, c, h, w)
 
         # Measure data loading time
         data_time.update(time.time() - end)
@@ -86,7 +77,8 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda=Fals
         input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target)
 
-        acc, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_var, loss_meter, acc_meter)
+        acc, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_var, loss_meter, acc_meter,
+                                         multi_crop, bs, ncrops)
 
         # Add loss and accuracy to Tensorboard
         if multi_run is None:
@@ -126,7 +118,8 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, no_cuda=Fals
     return acc_meter.avg
 
 
-def train_one_mini_batch(model, criterion, optimizer, input_var, target_var, loss_meter, acc_meter):
+def train_one_mini_batch(model, criterion, optimizer, input_var, target_var, loss_meter, acc_meter, multi_crop, bs,
+                         ncrops):
     """
     This routing train the model passed as parameter for one mini-batch
 
@@ -146,6 +139,12 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var, los
         Tracker for the overall loss
     acc_meter : AverageMeter
         Tracker for the overall accuracy
+    multi_crop : bool
+        Set to True if multi-crops are used.
+    bs : int
+        Batch size
+    ncrops : int
+        Number of crops.
 
     Returns
     -------
@@ -157,12 +156,15 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var, los
     # Compute output
     output = model(input_var)
 
+    if multi_crop:
+        output = output.view(bs, ncrops, -1).mean(1)
+
     # Compute and record the loss
     # for inception combine the two losses
     if isinstance(output, tuple):
         loss1 = criterion(output[0], target_var)
         loss2 = criterion(output[1], target_var)
-        loss = loss1 + 0.4*loss2
+        loss = loss1 + 0.4 * loss2
         output = output[0]
     else:
         loss = criterion(output, target_var)
