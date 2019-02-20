@@ -323,4 +323,9 @@ def _semantic_segmentation_options(parser):
                              action='store_true',
                              help='Confusion matrix is not made for validation phase, only for test phase')
 
+    # parameters for COCO
+    semantic_segmentation.add_argument('--resize-coco',
+                                       type=int,
+                                       default=None, metavar='size',
+                                       help='size you want coco input to be resized to')
 
