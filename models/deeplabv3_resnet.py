@@ -148,18 +148,23 @@ class ResNet_BasicBlock_OS16(nn.Module):
             if pretrained:
                 # load pretrained model:
                 resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet18-5c106cde.pth"))
-                # remove fully connected layer, avg pool and layer5:
-                self.resnet = nn.Sequential(*list(resnet.children())[:-3])
                 print ("pretrained resnet, 18")
-        elif num_layers == 34:
-            resnet = models.resnet34()
-            # load pretrained model:
-            resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet34-333f7ec4.pth"))
+
             # remove fully connected layer, avg pool and layer5:
             self.resnet = nn.Sequential(*list(resnet.children())[:-3])
 
+        elif num_layers == 34:
+            resnet = models.resnet34()
+
+            if pretrained:
+                # load pretrained model:
+                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet34-333f7ec4.pth"))
+                print ("pretrained resnet, 34")
+
+            # remove fully connected layer, avg pool and layer5:
+            self.resnet = nn.Sequential(*list(resnet.children())[:-3])
             num_blocks = 3
-            print ("pretrained resnet, 34")
+
         else:
             raise Exception("num_layers must be in {18, 34}!")
 
@@ -187,9 +192,10 @@ class ResNet_BasicBlock_OS8(nn.Module):
             if pretrained:
                 # load pretrained model:
                 resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet18-5c106cde.pth"))
-                # remove fully connected layer, avg pool, layer4 and layer5:
-                self.resnet = nn.Sequential(*list(resnet.children())[:-4])
                 print ("pretrained resnet, 18")
+
+            # remove fully connected layer, avg pool, layer4 and layer5:
+            self.resnet = nn.Sequential(*list(resnet.children())[:-4])
 
         elif num_layers == 34:
             resnet = models.resnet34()
@@ -200,13 +206,13 @@ class ResNet_BasicBlock_OS8(nn.Module):
                 # load pretrained model:
                 resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet34-333f7ec4.pth"))
                 # remove fully connected layer, avg pool, layer4 and layer5:
-                self.resnet = nn.Sequential(*list(resnet.children())[:-4])
-                print ("pretrained resnet, 34")
+            self.resnet = nn.Sequential(*list(resnet.children())[:-4])
+            print ("pretrained resnet, 34")
+
         else:
             raise Exception("num_layers must be in {18, 34}!")
 
         self.layer4 = make_layer(BasicBlock, in_channels=128, channels=256, num_blocks=num_blocks_layer_4, stride=1, dilation=2)
-
         self.layer5 = make_layer(BasicBlock, in_channels=256, channels=512, num_blocks=num_blocks_layer_5, stride=1, dilation=4)
 
     def forward(self, x):
