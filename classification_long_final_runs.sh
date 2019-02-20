@@ -5,14 +5,14 @@
 
 # Resnet152 -------------------------------------------------------
 python ./template/RunMe.py --runner-class image_classification \
-    --dataset-folder /home/ltp/dataset/ICDAR2017-CLAMM/ManuscriptDating \
+    --dataset-folder /home/ltp/dataset/ICDAR2017-CLAMM/ManuscrpitDating \
     --model-name resnet152 --epochs 100 --experiment-name tz_long_manuscript_resnet152 \
     --output-folder ../output_tz_classification_manuscript_long/ --ignoregit --lr 0.07116 \
     --momentum 0.49010 --decay-lr 30 --weight-decay 0.01000
 
 # Resnet152 with pre-training ---------------------------------------
 python ./template/RunMe.py --runner-class image_classification \
-    --dataset-folder /home/ltp/datasets/ICDAR2017-CLAMM/ManuscriptDating \
+    --dataset-folder /home/ltp/dataset/ICDAR2017-CLAMM/ManuscrpitDating \
     --model-name resnet152 --epochs 100 --experiment-name tz_long_manuscript_resnet152_pre \
     --output-folder ../output_tz_classification_manuscript_long/ --ignoregit --lr 0.01949 --pretrained \
     --momentum 0.56291 --decay-lr 30 --weight-decay 0.00498
