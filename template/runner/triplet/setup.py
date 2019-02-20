@@ -67,13 +67,13 @@ def setup_dataloaders(model_expected_input_size, dataset_folder, n_triplets, bat
     logging.debug('Setting up dataset transforms')
 
     #standard transform
-    #standard_transform = transforms.Compose([
-        ##transforms.Resize(size=model_expected_input_size)
-        #transforms.RandomCrop(size=model_expected_input_size),
-        #transforms.ToTensor(),
-        #transforms.Normalize(mean=mean, std=std)
-    #])
-    #logging.info("Transform is set to RandomCrop")
+    standard_transform = transforms.Compose([
+        #transforms.Resize(size=model_expected_input_size)
+        transforms.RandomCrop(size=model_expected_input_size),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std)
+    ])
+    # logging.info("Transform is set to RandomCrop")
 
     multicrop_transform = transforms.Compose([
         MultiCrop(size=model_expected_input_size, n_crops=kwargs['multi_crop']),
@@ -87,7 +87,7 @@ def setup_dataloaders(model_expected_input_size, dataset_folder, n_triplets, bat
     ])
     logging.info("Transform is set to MultiCrop")
 
-    train_ds.transform = multicrop_transform
+    train_ds.transform = standard_transform
     val_ds.transform = multicrop_transform
     test_ds.transform = multicrop_transform
 
