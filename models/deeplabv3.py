@@ -12,10 +12,10 @@ from models.deeplabv3_resnet import ResNet18_OS16, ResNet34_OS16, ResNet50_OS16,
 from models.deeplabv3_aspp import ASPP, ASPP_Bottleneck
 
 class DeepLabV3(nn.Module):
-    def __init__(self, pretrained, output_channels, **kwargs):
+    def __init__(self, pretrained, num_classes, **kwargs):
         super(DeepLabV3, self).__init__()
 
-        self.num_classes = output_channels
+        self.num_classes = num_classes
 
         self.resnet = ResNet18_OS8(pretrained) # NOTE! specify the type of ResNet here
         self.aspp = ASPP(num_classes=self.num_classes) # NOTE! if you use ResNet50-152, set self.aspp = ASPP_Bottleneck(num_classes=self.num_classes) instead
@@ -34,19 +34,20 @@ class DeepLabV3(nn.Module):
 
         return output
 
-def deeplabv3(pretrained=False, **kwargs):
+def deeplabv3(output_channels, pretrained=False, **kwargs):
     """VGG 11-layer model (configuration "A")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = DeepLabV3(pretrained, **kwargs)
-    if pretrained:
-        try:
-            model.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/model_13_2_2_2_epoch_580.pth")))
-            # remove the last layers
-
-        except Exception as exp:
-            logging.warning(exp)
+    model = DeepLabV3(pretrained, output_channels, **kwargs)
+    # if pretrained:
+    #     try:
+    #         model.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/model_13_2_2_2_epoch_580.pth")))
+    #         # reinitialize weights in the last layer
+    #         model.aspp.conv_1x1_4 = nn.Conv2d(256, output_channels, kernel_size=1)
+    #
+    #     except Exception as exp:
+    #         logging.warning(exp)
 
     return model
