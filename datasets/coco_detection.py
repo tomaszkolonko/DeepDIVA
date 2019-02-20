@@ -3,6 +3,7 @@ from PIL import Image
 import os
 import os.path
 import numpy as np
+import cv2
 
 import torch
 
@@ -74,7 +75,9 @@ class CocoDetection(data.Dataset):
         img = functional.pad(img, padding)
         img = functional.to_tensor(img)
 
-        return img, target
+        size = (320, 320)
+
+        return cv2.resize(img, dsize=size, interpolation=cv2.INTER_NEAREST), cv2.resize(target, dsize=size, interpolation=cv2.INTER_NEAREST)
 
     def __len__(self):
         return len(self.ids)
