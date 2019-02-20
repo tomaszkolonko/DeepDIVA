@@ -1,4 +1,4 @@
-# camera-ready
+# Adapted from https://github.com/fregu856/deeplabv3
 
 # NOTE! OS: output stride, the ratio of input image resolution to final output resolution (OS16: output size is (img_h/16, img_w/16)) (OS8: output size is (img_h/8, img_w/8))
 
@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+
+import os
 
 def make_layer(block, in_channels, channels, num_blocks, stride=1, dilation=1):
     strides = [stride] + [1]*(num_blocks - 1) # (stride == 2, num_blocks == 4 --> strides == [2, 1, 1, 1])
@@ -147,7 +149,7 @@ class ResNet_BasicBlock_OS16(nn.Module):
 
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet18-5c106cde.pth"))
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet18-5c106cde.pth")))
                 print ("pretrained resnet, 18")
 
             # remove fully connected layer, avg pool and layer5:
@@ -158,7 +160,7 @@ class ResNet_BasicBlock_OS16(nn.Module):
 
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet34-333f7ec4.pth"))
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet34-333f7ec4.pth")))
                 print ("pretrained resnet, 34")
 
             # remove fully connected layer, avg pool and layer5:
@@ -191,7 +193,7 @@ class ResNet_BasicBlock_OS8(nn.Module):
 
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet18-5c106cde.pth"))
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet18-5c106cde.pth")))
                 print ("pretrained resnet, 18")
 
             # remove fully connected layer, avg pool, layer4 and layer5:
@@ -204,7 +206,7 @@ class ResNet_BasicBlock_OS8(nn.Module):
 
             if pretrained:
                 # load pretrained model:
-                resnet.load_state_dict(torch.load("../pretrained_models/resnet/resnet34-333f7ec4.pth"))
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet34-333f7ec4.pth")))
                 # remove fully connected layer, avg pool, layer4 and layer5:
             self.resnet = nn.Sequential(*list(resnet.children())[:-4])
             print ("pretrained resnet, 34")

@@ -1,4 +1,4 @@
-# camera-ready
+# Adapted from https://github.com/fregu856/deeplabv3
 
 import logging
 
@@ -43,7 +43,7 @@ def deeplabv3(pretrained=False, **kwargs):
     model = DeepLabV3(pretrained, **kwargs)
     if pretrained:
         try:
-            model.load_state_dict(torch.load("../pretrained_models/model_13_2_2_2_epoch_580.pth"))
+            model.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/model_13_2_2_2_epoch_580.pth")))
             # remove the last layers
 
         except Exception as exp:
