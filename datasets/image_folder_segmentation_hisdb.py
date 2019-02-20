@@ -199,7 +199,7 @@ class ImageFolder(data.Dataset):
     """
 
     # TODO: transform and target_transform could be the correct places for your cropping
-    def __init__(self, root, gt_to_one_hot, num_classes, imgs_in_memory=0, crops_per_image=0, crop_size=10, transform=None, target_transform=None,
+    def __init__(self, root, gt_to_one_hot, num_classes, imgs_in_memory=3, crops_per_image=100, crop_size=10, transform=None, target_transform=None,
                  loader=default_loader, **kwargs):
         classes = find_classes()
         imgs = make_dataset(root)
