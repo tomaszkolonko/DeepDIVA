@@ -84,10 +84,10 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehoti
 
         # Add loss and accuracy to Tensorboard
         if multi_run is None:
-            writer.add_scalar('train/mb_loss', loss.item(), epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('train/mb_loss', loss.data[0], epoch * len(train_loader) + batch_idx)
             writer.add_scalar('train/mb_meanIU', mean_iu, epoch * len(train_loader) + batch_idx)
         else:
-            writer.add_scalar('train/mb_loss_{}'.format(multi_run), loss.item(),
+            writer.add_scalar('train/mb_loss_{}'.format(multi_run), loss.data[0],
                               epoch * len(train_loader) + batch_idx)
             writer.add_scalar('train/mb_meanIU_{}'.format(multi_run), mean_iu,
                               epoch * len(train_loader) + batch_idx)
@@ -162,7 +162,7 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argm
 
     # Compute and record the loss
     loss = criterion(output, target_var_argmax)
-    loss_meter.update(loss.item(), len(input_var))
+    loss_meter.update(loss.data[0], len(input_var))
 
     output_argmax = np.array([np.argmax(o, axis=0) for o in output.data.cpu().numpy()])
     target_argmax = target_var_argmax.data.cpu().numpy()
