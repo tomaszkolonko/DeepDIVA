@@ -97,6 +97,7 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
         # Compute and record the loss
         loss = criterion(output, target_argmax_var)
         losses.update(loss.data[0], input.size(0))
+        #losses.update(loss.data[0], input.size(0))
 
         # Compute and record the accuracy TODO check with Vinay & Michele if correct
         acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target_argmax.cpu().numpy(), output_argmax, num_classes)
