@@ -20,7 +20,7 @@ from template.setup import _load_class_frequencies_weights_from_file
 from .setup import one_hot_to_np_bgr, one_hot_to_full_output, gt_to_one_hot
 
 def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_folder, inmem, workers, runner_class,
-             no_val_conf_matrix, no_cuda=False, log_interval=10, **kwargs):
+             no_val_conf_matrix, no_cuda=False, log_interval=10, myclone_env=False, **kwargs):
     """
     The evaluation routine
 
@@ -94,7 +94,10 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
 
         # Compute and record the loss
         loss = criterion(output, target_argmax_var)
-        losses.update(loss.item(), input.size(0))
+        if myclone_env:
+            losses.update(loss.item(), input.size(0))
+        else:
+            losses.update(loss.data[0], input.size(0))
 
         # Compute and record the accuracy TODO check with Vinay & Michele if correct
         acc, acc_cls, mean_iu, fwavacc = accuracy_segmentation(target_argmax.cpu().numpy(), output_argmax, num_classes)
@@ -105,11 +108,16 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
         _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
 
         # Add loss and accuracy to Tensorboard
+        if myclone_env:
+            log_loss = loss.item()
+        else:
+            log_loss = loss.data[0]
+
         if multi_run is None:
-            writer.add_scalar(logging_label + '/mb_loss', loss.item(), epoch * len(data_loader) + batch_idx)
+            writer.add_scalar(logging_label + '/mb_loss', log_loss, epoch * len(data_loader) + batch_idx)
             writer.add_scalar(logging_label + '/mb_meanIU', mean_iu, epoch * len(data_loader) + batch_idx)
         else:
-            writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), loss.item(),
+            writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), log_loss,
                               epoch * len(data_loader) + batch_idx)
             writer.add_scalar(logging_label + '/mb_meanIU_{}'.format(multi_run), mean_iu,
                                epoch * len(data_loader) + batch_idx)

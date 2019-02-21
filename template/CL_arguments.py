@@ -258,6 +258,12 @@ def _system_options(parser):
                                default=4,
                                help='workers used for train/val loaders')
 
+    parser_system.add_argument('--myclone-env',
+                              action='store_true',
+                              default=False,
+                              help='set flag if not using the deepdiva env')
+
+
 
 def _triplet_options(parser):
     """
@@ -313,6 +319,7 @@ def _semantic_segmentation_options(parser):
                                        type=int,
                                        default=50, metavar='N',
                                        help='number of crops per iterations per page')
+
     semantic_segmentation.add_argument('--use-boundary-pixel',
                              default=False,
                              action='store_true',

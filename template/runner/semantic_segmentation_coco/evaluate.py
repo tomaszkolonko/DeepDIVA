@@ -20,7 +20,7 @@ from util.evaluation.metrics.accuracy import accuracy_segmentation
 
 
 def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_onehotindex, category_id_name,
-             no_val_conf_matrix, no_cuda=False, log_interval=10, **kwargs):
+             no_val_conf_matrix, no_cuda=False, log_interval=10, myclone_env=False, **kwargs):
     """
     The evaluation routine
 
@@ -96,7 +96,11 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
 
         # Compute and record the loss
         loss = criterion(output, target_argmax_var)
-        losses.update(loss.data[0], input.size(0))
+
+        if myclone_env:
+            losses.update(loss.item(), input.size(0))
+        else:
+            losses.update(loss.data[0], input.size(0))
         #losses.update(loss.data[0], input.size(0))
 
         # Compute and record the accuracy TODO check with Vinay & Michele if correct
@@ -108,11 +112,15 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
         _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
 
         # Add loss and accuracy to Tensorboard
+        if myclone_env:
+            log_loss = loss.item()
+        else:
+            log_loss = loss.data[0]
         if multi_run is None:
-            writer.add_scalar(logging_label + '/mb_loss', loss.data[0], epoch * len(data_loader) + batch_idx)
+            writer.add_scalar(logging_label + '/mb_loss', log_loss, epoch * len(data_loader) + batch_idx)
             writer.add_scalar(logging_label + '/mb_meanIU', mean_iu, epoch * len(data_loader) + batch_idx)
         else:
-            writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), loss.data[0],
+            writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), log_loss,
                               epoch * len(data_loader) + batch_idx)
             writer.add_scalar(logging_label + '/mb_meanIU_{}'.format(multi_run), mean_iu,
                                epoch * len(data_loader) + batch_idx)

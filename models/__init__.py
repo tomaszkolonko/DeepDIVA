@@ -16,7 +16,7 @@ from .UNet import Unet
 from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
 from .Xception import xception
 from .deeplabv3 import deeplabv3
-
+from .deeplabv3_imagenet import deeplabv3imagenet
 
 """
 Formula to compute the output size of a conv. layer

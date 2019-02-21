@@ -16,7 +16,7 @@ from .setup import one_hot_to_np_bgr, gt_to_one_hot
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
 def train(train_loader, model, criterion, optimizer, writer, epoch, class_names, no_cuda=False, log_interval=25,
-          **kwargs):
+          myclone_env=False, **kwargs):
     """
     Training routine
 
@@ -75,14 +75,19 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
         input_var = torch.autograd.Variable(input)
         target_var_argmax = torch.autograd.Variable(target_argmax)
 
-        mean_iu, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU, num_classes)
+        mean_iu, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU, num_classes, myclone_env)
 
         # Add loss and accuracy to Tensorboard
+        if myclone_env:
+            log_loss = loss.item()
+        else:
+            log_loss = loss.data[0]
+
         if multi_run is None:
-            writer.add_scalar('train/mb_loss', loss.item(), epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('train/mb_loss',log_loss, epoch * len(train_loader) + batch_idx)
             writer.add_scalar('train/mb_meanIU', mean_iu, epoch * len(train_loader) + batch_idx)
         else:
-            writer.add_scalar('train/mb_loss_{}'.format(multi_run), loss.item(),
+            writer.add_scalar('train/mb_loss_{}'.format(multi_run), log_loss,
                               epoch * len(train_loader) + batch_idx)
             writer.add_scalar('train/mb_meanIU_{}'.format(multi_run), mean_iu,
                               epoch * len(train_loader) + batch_idx)
@@ -122,7 +127,7 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
     return meanIU.avg
 
 
-def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU_meter, num_classes):
+def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU_meter, num_classes, myclone_env):
     """
     This routing train the model passed as parameter for one mini-batch
 
@@ -157,7 +162,10 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argm
 
     # Compute and record the loss
     loss = criterion(output, target_var_argmax)
-    loss_meter.update(loss.item(), len(input_var))
+    if myclone_env:
+        loss_meter.update(loss.item(), len(input_var))
+    else:
+        loss_meter.update(loss.data[0], len(input_var))
 
     output_argmax = np.array([np.argmax(o, axis=0) for o in output.data.cpu().numpy()])
     target_argmax = target_var_argmax.data.cpu().numpy()
