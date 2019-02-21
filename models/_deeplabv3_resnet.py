@@ -6,19 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-import torch.utils.model_zoo as model_zoo
 
 import os
-import logging
-
-model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
-}
-
 
 def make_layer(block, in_channels, channels, num_blocks, stride=1, dilation=1):
     strides = [stride] + [1]*(num_blocks - 1) # (stride == 2, num_blocks == 4 --> strides == [2, 1, 1, 1])
@@ -159,10 +148,9 @@ class ResNet_BasicBlock_OS16(nn.Module):
             num_blocks = 2
 
             if pretrained:
-                try:
-                    resnet.load_state_dict(model_zoo.load_url(model_urls['resnet18']), strict=False)
-                except Exception as exp:
-                    logging.warning(exp)
+                # load pretrained model:
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet18-5c106cde.pth")))
+                print ("pretrained resnet, 18")
 
             # remove fully connected layer, avg pool and layer5:
             self.resnet = nn.Sequential(*list(resnet.children())[:-3])
@@ -171,10 +159,9 @@ class ResNet_BasicBlock_OS16(nn.Module):
             resnet = models.resnet34()
 
             if pretrained:
-                try:
-                    resnet.load_state_dict(model_zoo.load_url(model_urls['resnet34']), strict=False)
-                except Exception as exp:
-                    logging.warning(exp)
+                # load pretrained model:
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet34-333f7ec4.pth")))
+                print ("pretrained resnet, 34")
 
             # remove fully connected layer, avg pool and layer5:
             self.resnet = nn.Sequential(*list(resnet.children())[:-3])
@@ -205,10 +192,9 @@ class ResNet_BasicBlock_OS8(nn.Module):
             num_blocks_layer_5 = 2
 
             if pretrained:
-                try:
-                    resnet.load_state_dict(model_zoo.load_url(model_urls['resnet18']), strict=False)
-                except Exception as exp:
-                    logging.warning(exp)
+                # load pretrained model:
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet18-5c106cde.pth")))
+                print ("pretrained resnet, 18")
 
             # remove fully connected layer, avg pool, layer4 and layer5:
             self.resnet = nn.Sequential(*list(resnet.children())[:-4])
@@ -219,10 +205,11 @@ class ResNet_BasicBlock_OS8(nn.Module):
             num_blocks_layer_5 = 3
 
             if pretrained:
-                try:
-                    resnet.load_state_dict(model_zoo.load_url(model_urls['resnet34']), strict=False)
-                except Exception as exp:
-                    logging.warning(exp)
+                # load pretrained model:
+                resnet.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/resnet/resnet34-333f7ec4.pth")))
+                # remove fully connected layer, avg pool, layer4 and layer5:
+            self.resnet = nn.Sequential(*list(resnet.children())[:-4])
+            print ("pretrained resnet, 34")
 
         else:
             raise Exception("num_layers must be in {18, 34}!")

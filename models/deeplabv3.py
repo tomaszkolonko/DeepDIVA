@@ -34,6 +34,7 @@ class DeepLabV3(nn.Module):
 
         return output
 
+
 def deeplabv3(output_channels, pretrained=False, **kwargs):
     """VGG 11-layer model (configuration "A")
 
@@ -41,13 +42,5 @@ def deeplabv3(output_channels, pretrained=False, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = DeepLabV3(pretrained, output_channels, **kwargs)
-    # if pretrained:
-    #     try:
-    #         model.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/model_13_2_2_2_epoch_580.pth")))
-    #         # reinitialize weights in the last layer
-    #         model.aspp.conv_1x1_4 = nn.Conv2d(256, output_channels, kernel_size=1)
-    #
-    #     except Exception as exp:
-    #         logging.warning(exp)
 
     return model

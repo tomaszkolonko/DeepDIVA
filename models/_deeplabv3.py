@@ -8,12 +8,12 @@ import torch.nn.functional as F
 
 import os
 
-from models.deeplabv3_resnet_imagenet import ResNet18_OS16, ResNet34_OS16, ResNet50_OS16, ResNet101_OS16, ResNet152_OS16, ResNet18_OS8, ResNet34_OS8
+from models._deeplabv3_resnet import ResNet18_OS16, ResNet34_OS16, ResNet50_OS16, ResNet101_OS16, ResNet152_OS16, ResNet18_OS8, ResNet34_OS8
 from models.deeplabv3_aspp import ASPP, ASPP_Bottleneck
 
-class DeepLabV3ImageNet(nn.Module):
+class DeepLabV3(nn.Module):
     def __init__(self, pretrained, num_classes, **kwargs):
-        super(DeepLabV3ImageNet, self).__init__()
+        super(DeepLabV3, self).__init__()
 
         self.num_classes = num_classes
 
@@ -34,14 +34,13 @@ class DeepLabV3ImageNet(nn.Module):
 
         return output
 
-
-def deeplabv3imagenet(output_channels, pretrained=False, **kwargs):
+def deeplabv3(output_channels, pretrained=False, **kwargs):
     """VGG 11-layer model (configuration "A")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = DeepLabV3ImageNet(pretrained, output_channels, **kwargs)
+    model = DeepLabV3(pretrained, output_channels, **kwargs)
     # if pretrained:
     #     try:
     #         model.load_state_dict(torch.load(os.path.join(os.getcwd(), "pretrained_models/model_13_2_2_2_epoch_580.pth")))

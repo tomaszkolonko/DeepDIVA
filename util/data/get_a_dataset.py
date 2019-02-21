@@ -19,6 +19,10 @@ import csv
 import numpy as np
 import scipy
 
+
+import requests
+from tqdm import tqdm
+
 # Torch
 import torch
 import torchvision
@@ -506,6 +510,73 @@ def historical_wi(args):
     split_dataset_writerIdentification(dataset_folder=dataset_root, split=0.2)
 
     print("Historical WI dataset is ready!")
+
+
+def kmnist(args):
+    """
+    Fetches and prepares (in a DeepDIVA friendly format) the K-MNIST dataset to the location specified
+    on the file system
+
+    Parameters
+    ----------
+    args : dict
+        List of arguments necessary to run this routine. In particular its necessary to provide
+        output_folder as String containing the path where the dataset will be downloaded
+
+    Returns
+    -------
+        None
+    """
+
+    url_list = ['http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-images-idx3-ubyte.gz',
+                 'http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-labels-idx1-ubyte.gz',
+                 'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-images-idx3-ubyte.gz',
+                 'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-labels-idx1-ubyte.gz']
+
+    for url in url_list:
+        path = os.path.join(args.output_folder, url.split('/')[-1])
+        r = requests.get(url, stream=True)
+        with open(path, 'wb') as f:
+            total_length = int(r.headers.get('content-length'))
+            print('Downloading {} - {:.1f} MB'.format(path, (total_length / 1024000)))
+
+            for chunk in tqdm(r.iter_content(chunk_size=1024), total=int(total_length / 1024) + 1, unit="KB"):
+                if chunk:
+                    f.write(chunk)
+
+    print('All dataset files downloaded!')
+
+    # Load the data into memory
+    train_data, train_labels = torch.load(os.path.join(args.output_folder,
+                                                       'processed',
+                                                       'training.pt'))
+    test_data, test_labels = torch.load(os.path.join(args.output_folder,
+                                                     'processed',
+                                                     'test.pt'))
+
+    # Make output folders
+    dataset_root = os.path.join(args.output_folder, 'Fashion-MNIST')
+    train_folder = os.path.join(dataset_root, 'train')
+    test_folder = os.path.join(dataset_root, 'test')
+
+    _make_folder_if_not_exists(dataset_root)
+    _make_folder_if_not_exists(train_folder)
+    _make_folder_if_not_exists(test_folder)
+
+    def _write_data_to_folder(arr, labels, folder):
+        for i, (img, label) in enumerate(zip(arr, labels)):
+            dest = os.path.join(folder, str(label))
+            _make_folder_if_not_exists(dest)
+            Image.fromarray(img.numpy(), mode='L').save(os.path.join(dest, str(i) + '.png'))
+
+    # Write the images to the folders
+    _write_data_to_folder(train_data, train_labels, train_folder)
+    _write_data_to_folder(test_data, test_labels, test_folder)
+
+    shutil.rmtree(os.path.join(args.output_folder, 'raw'))
+    shutil.rmtree(os.path.join(args.output_folder, 'processed'))
+
+    split_dataset(dataset_folder=dataset_root, split=0.2, symbolic=False)
 
 
 def fashion_mnist(args):
