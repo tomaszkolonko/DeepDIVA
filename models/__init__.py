@@ -15,7 +15,8 @@ from .FusionNet import FusionNet
 from .UNet import Unet
 from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
 from .Xception import xception
-from .deeplabv3 import deeplabv3
+from .Deeplabv3 import deeplabv3
+from .SegNet import SegNet
 
 """
 Formula to compute the output size of a conv. layer

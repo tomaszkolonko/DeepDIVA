@@ -274,7 +274,7 @@ def test(data_loader, model, criterion, writer, epoch, class_names, dataset_fold
         try:
             losses.update(loss.item(), input.size(0))
         except AttributeError:
-            losses.update((loss.data[0], input.size(0)))
+            losses.update(loss.data[0], input.size(0))
 
         # Compute and record the batch meanIU TODO check with Vinay & Michele if correct
 
