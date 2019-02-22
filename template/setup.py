@@ -89,7 +89,8 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
 
     output_channels = output_channels if num_classes == None else num_classes
     model = models.__dict__[model_name](output_channels=output_channels, pretrained=pretrained)
-    numberOfParameters = sum([p.numel() for p in model.parameters() if p.requires_grad]) #number of trainable parameters in the model
+    numberOfParameters = sum(
+        [p.numel() for p in model.parameters() if p.requires_grad])  # number of trainable parameters in the model
     logging.info("Number of parameters '{}'".format(numberOfParameters))
     # Get the optimizer created with the specified parameters in kwargs (such as lr, momentum, ... )
     optimizer = _get_optimizer(optimizer_name, model, **kwargs)
@@ -206,7 +207,7 @@ def _get_optimizer(optimizer_name, model, **kwargs):
 
 
 def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, workers,
-                       disable_dataset_integrity, enable_deep_dataset_integrity,  inmem=False, **kwargs):
+                       disable_dataset_integrity, enable_deep_dataset_integrity, inmem=False, **kwargs):
     """
     Set up the dataloaders for the specified datasets.
 
@@ -261,20 +262,22 @@ def set_up_dataloaders(model_expected_input_size, dataset_folder, batch_size, wo
             logging.info("Transform is set to RandomCrop")
         else:
             transform = transforms.Compose([
+                # transforms.RandomResizedCrop(model_expected_input_size, scale=(0.02, 0.2)),
+                transforms.RandomCrop(model_expected_input_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ])
+            transform_mc = transforms.Compose([
                 MultiCrop(size=model_expected_input_size, n_crops=kwargs['multi_crop']),
                 transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
                 transforms.Lambda(
                     lambda items: torch.stack([transforms.Normalize(mean=mean, std=std)(item) for item in items])),
-                # transforms.RandomCrop(model_expected_input_size),
-                # transforms.ToTensor(),
-                # transforms.Normalize(mean=mean, std=std)
-
             ])
             logging.info("Transform is set to MultiCrop")
 
         train_ds.transform = transform
-        val_ds.transform = transform
-        test_ds.transform = transform
+        val_ds.transform = transform_mc
+        test_ds.transform = transform_mc
 
         train_loader, val_loader, test_loader = _dataloaders_from_datasets(batch_size, train_ds, val_ds, test_ds,
                                                                            workers)
@@ -521,7 +524,8 @@ def set_up_logging(parser, experiment_name, output_folder, quiet, args_dict, deb
     for group in parser._action_groups[2:]:
         if group.title not in ['GENERAL', 'DATA']:
             for action in group._group_actions:
-                if (kwargs[action.dest] is not None) and (kwargs[action.dest] != action.default) and action.dest != 'load_model':
+                if (kwargs[action.dest] is not None) and (
+                        kwargs[action.dest] != action.default) and action.dest != 'load_model':
                     non_default_parameters.append(str(action.dest) + "=" + str(kwargs[action.dest]))
 
     # Build up final logging folder tree with the non-default training parameters
@@ -668,6 +672,4 @@ def set_up_env(gpu_id, seed, multi_run, no_cuda, **kwargs):
     # Torch random
     torch.manual_seed(seed)
     if not no_cuda:
-
         torch.cuda.manual_seed_all(seed)
-
