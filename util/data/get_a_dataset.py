@@ -15,13 +15,11 @@ import zipfile
 import re
 import csv
 
-
 import numpy as np
 import scipy
 
-
-import requests
-from tqdm import tqdm
+import codecs
+import gzip
 
 # Torch
 import torch
@@ -528,23 +526,74 @@ def kmnist(args):
         None
     """
 
-    url_list = ['http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-images-idx3-ubyte.gz',
-                 'http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-labels-idx1-ubyte.gz',
-                 'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-images-idx3-ubyte.gz',
-                 'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-labels-idx1-ubyte.gz']
+    def get_int(b):
+        return int(codecs.encode(b, 'hex'), 16)
 
-    for url in url_list:
-        path = os.path.join(args.output_folder, url.split('/')[-1])
-        r = requests.get(url, stream=True)
-        with open(path, 'wb') as f:
-            total_length = int(r.headers.get('content-length'))
-            print('Downloading {} - {:.1f} MB'.format(path, (total_length / 1024000)))
+    def read_image_file(path):
+        with open(path, 'rb') as f:
+            data = f.read()
+            assert get_int(data[:4]) == 2051
+            length = get_int(data[4:8])
+            num_rows = get_int(data[8:12])
+            num_cols = get_int(data[12:16])
+            images = []
+            parsed = np.frombuffer(data, dtype=np.uint8, offset=16)
+            return torch.from_numpy(parsed).view(length, num_rows, num_cols)
 
-            for chunk in tqdm(r.iter_content(chunk_size=1024), total=int(total_length / 1024) + 1, unit="KB"):
-                if chunk:
-                    f.write(chunk)
+    def read_label_file(path):
+        with open(path, 'rb') as f:
+            data = f.read()
+            assert get_int(data[:4]) == 2049
+            length = get_int(data[4:8])
+            parsed = np.frombuffer(data, dtype=np.uint8, offset=8)
+            return torch.from_numpy(parsed).view(length).long()
 
-    print('All dataset files downloaded!')
+    try:
+        torchvision.datasets.KMNIST(root=args.output_folder, download=True)
+
+    except AttributeError:
+        url_list = ['http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-images-idx3-ubyte.gz',
+                    'http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-labels-idx1-ubyte.gz',
+                    'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-images-idx3-ubyte.gz',
+                    'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-labels-idx1-ubyte.gz']
+
+        raw_folder = os.path.join(args.output_folder, 'raw')
+        processed_folder = os.path.join(args.output_folder, 'processed')
+        _make_folder_if_not_exists(raw_folder)
+        _make_folder_if_not_exists(processed_folder)
+
+        training_file = 'training.pt'
+        test_file = 'test.pt'
+
+        for url in url_list:
+            print('Downloading ' + url)
+            data = urllib.request.urlopen(url)
+            filename = url.rpartition('/')[2]
+            file_path = os.path.join(raw_folder, filename)
+            with open(file_path, 'wb') as f:
+                f.write(data.read())
+            with open(file_path.replace('.gz', ''), 'wb') as out_f, \
+                    gzip.GzipFile(file_path) as zip_f:
+                out_f.write(zip_f.read())
+            os.unlink(file_path)
+
+        # process and save as torch files
+        print('Processing...')
+
+        training_set = (
+            read_image_file(os.path.join(raw_folder, 'train-images-idx3-ubyte')),
+            read_label_file(os.path.join(raw_folder, 'train-labels-idx1-ubyte'))
+        )
+        test_set = (
+            read_image_file(os.path.join(raw_folder, 't10k-images-idx3-ubyte')),
+            read_label_file(os.path.join(raw_folder, 't10k-labels-idx1-ubyte'))
+        )
+        with open(os.path.join(processed_folder, training_file), 'wb') as f:
+            torch.save(training_set, f)
+        with open(os.path.join(processed_folder, test_file), 'wb') as f:
+            torch.save(test_set, f)
+
+        print('Done!')
 
     # Load the data into memory
     train_data, train_labels = torch.load(os.path.join(args.output_folder,
@@ -555,7 +604,7 @@ def kmnist(args):
                                                      'test.pt'))
 
     # Make output folders
-    dataset_root = os.path.join(args.output_folder, 'Fashion-MNIST')
+    dataset_root = os.path.join(args.output_folder, 'KMNIST')
     train_folder = os.path.join(dataset_root, 'train')
     test_folder = os.path.join(dataset_root, 'test')
 
@@ -577,6 +626,7 @@ def kmnist(args):
     shutil.rmtree(os.path.join(args.output_folder, 'processed'))
 
     split_dataset(dataset_folder=dataset_root, split=0.2, symbolic=False)
+    print("The KMNIST dataset is ready for you at {}".format(dataset_root))
 
 
 def fashion_mnist(args):

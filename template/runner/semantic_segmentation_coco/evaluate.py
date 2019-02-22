@@ -97,9 +97,9 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
         # Compute and record the loss
         loss = criterion(output, target_argmax_var)
 
-        if myclone_env:
+        try:
             losses.update(loss.item(), input.size(0))
-        else:
+        except AttributeError:
             losses.update(loss.data[0], input.size(0))
         #losses.update(loss.data[0], input.size(0))
 
@@ -112,10 +112,11 @@ def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_o
         _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
 
         # Add loss and accuracy to Tensorboard
-        if myclone_env:
+        try:
             log_loss = loss.item()
-        else:
+        except AttributeError:
             log_loss = loss.data[0]
+
         if multi_run is None:
             writer.add_scalar(logging_label + '/mb_loss', log_loss, epoch * len(data_loader) + batch_idx)
             writer.add_scalar(logging_label + '/mb_meanIU', mean_iu, epoch * len(data_loader) + batch_idx)

@@ -78,9 +78,9 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, class_names,
         mean_iu, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU, num_classes, myclone_env)
 
         # Add loss and accuracy to Tensorboard
-        if myclone_env:
+        try:
             log_loss = loss.item()
-        else:
+        except AttributeError:
             log_loss = loss.data[0]
 
         if multi_run is None:
@@ -162,9 +162,9 @@ def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argm
 
     # Compute and record the loss
     loss = criterion(output, target_var_argmax)
-    if myclone_env:
+    try:
         loss_meter.update(loss.item(), len(input_var))
-    else:
+    except AttributeError:
         loss_meter.update(loss.data[0], len(input_var))
 
     output_argmax = np.array([np.argmax(o, axis=0) for o in output.data.cpu().numpy()])

@@ -94,9 +94,9 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
 
         # Compute and record the loss
         loss = criterion(output, target_argmax_var)
-        if myclone_env:
+        try:
             losses.update(loss.item(), input.size(0))
-        else:
+        except AttributeError:
             losses.update(loss.data[0], input.size(0))
 
         # Compute and record the accuracy TODO check with Vinay & Michele if correct
@@ -108,9 +108,9 @@ def validate(data_loader, model, criterion, writer, epoch, class_names, dataset_
         _ = [targets.append(item) for item in target_argmax.cpu().numpy()]
 
         # Add loss and accuracy to Tensorboard
-        if myclone_env:
+        try:
             log_loss = loss.item()
-        else:
+        except AttributeError:
             log_loss = loss.data[0]
 
         if multi_run is None:
@@ -271,7 +271,10 @@ def test(data_loader, model, criterion, writer, epoch, class_names, dataset_fold
 
         # Compute and record the loss
         loss = criterion(output, target_argmax_var)
-        losses.update(loss.item(), input.size(0))
+        try:
+            losses.update(loss.item(), input.size(0))
+        except AttributeError:
+            losses.update((loss.data[0], input.size(0)))
 
         # Compute and record the batch meanIU TODO check with Vinay & Michele if correct
 
@@ -279,11 +282,16 @@ def test(data_loader, model, criterion, writer, epoch, class_names, dataset_fold
         #meanIU.update(mean_iu, input.size(0))
 
         # Add loss and accuracy to Tensorboard
+        try:
+            log_loss = loss.item()
+        except AttributeError:
+            log_loss = loss.data[0]
+
         if multi_run is None:
-            writer.add_scalar(logging_label + '/mb_loss', loss.item(), epoch * len(data_loader) + batch_idx)
+            writer.add_scalar(logging_label + '/mb_loss', log_loss, epoch * len(data_loader) + batch_idx)
             writer.add_scalar(logging_label + '/mb_meanIU', mean_iu_batch, epoch * len(data_loader) + batch_idx)
         else:
-            writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), loss.item(),
+            writer.add_scalar(logging_label + '/mb_loss_{}'.format(multi_run), log_loss,
                               epoch * len(data_loader) + batch_idx)
             writer.add_scalar(logging_label + '/mb_meanIU_{}'.format(multi_run), mean_iu_batch,
                                epoch * len(data_loader) + batch_idx)
