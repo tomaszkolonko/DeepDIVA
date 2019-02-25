@@ -65,7 +65,6 @@ python ./template/RunMe.py --runner-class semantic_segmentation_hisdb --dataset-
  --disable-databalancing --use-boundary-pixel --no-val-conf-matrix --gpu-id 3 -j 32 --pretrained
 
 
-
 #Experiments for HisDB-55
 
 # fcdensenet67 ---------------------------------------

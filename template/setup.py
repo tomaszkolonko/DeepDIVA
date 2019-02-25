@@ -88,7 +88,7 @@ def set_up_model(output_channels, model_name, pretrained, optimizer_name, no_cud
     logging.info('Setting up model {}'.format(model_name))
 
     output_channels = output_channels if num_classes == None else num_classes
-    model = models.__dict__[model_name](output_channels=output_channels, pretrained=pretrained)
+    model = models.__dict__[model_name](output_channels=output_channels, pretrained=pretrained, **kwargs)
     numberOfParameters = sum(
         [p.numel() for p in model.parameters() if p.requires_grad])  # number of trainable parameters in the model
     logging.info("Number of parameters '{}'".format(numberOfParameters))
