@@ -14,12 +14,15 @@ import urllib
 import zipfile
 import re
 import csv
+import tarfile
 
 import numpy as np
 import scipy
 
 import codecs
 import gzip
+import requests
+from tqdm import tqdm
 
 # Torch
 import torch
@@ -627,6 +630,53 @@ def kmnist(args):
 
     split_dataset(dataset_folder=dataset_root, split=0.2, symbolic=False)
     print("The KMNIST dataset is ready for you at {}".format(dataset_root))
+
+
+# def kuzushiji_kanji(args):
+#     """
+#     Fetches and prepares (in a DeepDIVA friendly format) the K-MNIST dataset to the location specified
+#     on the file system
+#
+#     Parameters
+#     ----------
+#     args : dict
+#         List of arguments necessary to run this routine. In particular its necessary to provide
+#         output_folder as String containing the path where the dataset will be downloaded
+#
+#     Returns
+#     -------
+#         None
+#     """
+#     url = 'http://codh.rois.ac.jp/kmnist/dataset/kkanji/kkanji.tar'
+#     dataset_root = os.path.join(args.output_folder, 'kkanji')
+#
+#     path = os.path.join(dataset_root, url.split('/')[-1])
+#     r = requests.get(url, stream=True)
+#     with open(path, 'wb') as f:
+#         total_length = int(r.headers.get('content-length'))
+#         print('Downloading {} - {:.1f} MB'.format(path, (total_length / 1024000)))
+#
+#         for chunk in tqdm(r.iter_content(chunk_size=1024), total=int(total_length / 1024) + 1, unit="KB"):
+#             if chunk:
+#                 f.write(chunk)
+#
+#     print('All dataset files downloaded!')
+#
+#     with tarfile.open(os.path.join(dataset_root, "kkanji.tar")) as f:
+#         f.extractall()
+#     shutil.rmtree(os.path.join(dataset_root, "kkanji.tar"))
+#
+#
+#     # Make output folders
+#     train_folder = os.path.join(dataset_root, 'train')
+#     test_folder = os.path.join(dataset_root, 'test')
+#
+#     _make_folder_if_not_exists(dataset_root)
+#     _make_folder_if_not_exists(train_folder)
+#     _make_folder_if_not_exists(test_folder)
+#
+#     split_dataset(dataset_folder=dataset_root, split=0.2, symbolic=False)
+#     print("The kkanji dataset is ready for you at {}".format(dataset_root))
 
 
 def fashion_mnist(args):
