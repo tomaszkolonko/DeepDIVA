@@ -1,45 +1,40 @@
 import torch
 import torch.nn as nn
-import torch.utils as utils
-import torch.nn.init as init
-import torch.utils.data as data
-import torchvision.utils as v_utils
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
-from torch.autograd import Variable
+import logging
+import os
 
 
 class Unet(nn.Module):
 
-	def __init__(self, input_channels=3, output_channels=3, num_filter=64, **kwargs):
+	def __init__(self, input_channels=3, output_channels=3, num_filter=64):
 		super(Unet, self).__init__()
 		self.in_dim = input_channels
 		self.out_dim = output_channels
 		self.num_filter = num_filter
 		act_fn = nn.LeakyReLU(0.2, inplace=True)
 
-		self.down_1 = conv_block_2(self.in_dim,self.num_filter,act_fn)
+		self.down_1 = conv_block_2(self.in_dim, self.num_filter, act_fn)
 		self.pool_1 = maxpool()
-		self.down_2 = conv_block_2(self.num_filter*1,self.num_filter*2,act_fn)
+		self.down_2 = conv_block_2(self.num_filter*1, self.num_filter*2, act_fn)
 		self.pool_2 = maxpool()
-		self.down_3 = conv_block_2(self.num_filter*2,self.num_filter*4,act_fn)
+		self.down_3 = conv_block_2(self.num_filter*2, self.num_filter*4, act_fn)
 		self.pool_3 = maxpool()
-		self.down_4 = conv_block_2(self.num_filter*4,self.num_filter*8,act_fn)
+		self.down_4 = conv_block_2(self.num_filter*4, self.num_filter*8, act_fn)
 		self.pool_4 = maxpool()
 
-		self.bridge = conv_block_2(self.num_filter*8,self.num_filter*16,act_fn)
+		self.bridge = conv_block_2(self.num_filter*8, self.num_filter*16, act_fn)
 
-		self.trans_1 = conv_trans_block(self.num_filter*16,self.num_filter*8,act_fn)
-		self.up_1 = conv_block_2(self.num_filter*16,self.num_filter*8,act_fn)
-		self.trans_2 = conv_trans_block(self.num_filter*8,self.num_filter*4,act_fn)
-		self.up_2 = conv_block_2(self.num_filter*8,self.num_filter*4,act_fn)
-		self.trans_3 = conv_trans_block(self.num_filter*4,self.num_filter*2,act_fn)
-		self.up_3 = conv_block_2(self.num_filter*4,self.num_filter*2,act_fn)
-		self.trans_4 = conv_trans_block(self.num_filter*2,self.num_filter*1,act_fn)
-		self.up_4 = conv_block_2(self.num_filter*2,self.num_filter*1,act_fn)
+		self.trans_1 = conv_trans_block(self.num_filter*16, self.num_filter*8,act_fn)
+		self.up_1 = conv_block_2(self.num_filter*16, self.num_filter*8,act_fn)
+		self.trans_2 = conv_trans_block(self.num_filter*8, self.num_filter*4, act_fn)
+		self.up_2 = conv_block_2(self.num_filter*8, self.num_filter*4, act_fn)
+		self.trans_3 = conv_trans_block(self.num_filter*4, self.num_filter*2, act_fn)
+		self.up_3 = conv_block_2(self.num_filter*4, self.num_filter*2, act_fn)
+		self.trans_4 = conv_trans_block(self.num_filter*2, self.num_filter*1, act_fn)
+		self.up_4 = conv_block_2(self.num_filter*2, self.num_filter*1, act_fn)
 
 		self.out = nn.Sequential(
-			nn.Conv2d(self.num_filter,self.out_dim,3,1,1),
+			nn.Conv2d(self.num_filter,self.out_dim, 3, 1, 1),
 			nn.Tanh(),
 		)
 
@@ -112,4 +107,20 @@ def conv_block_3(in_dim,out_dim,act_fn):
         nn.Conv2d(out_dim,out_dim, kernel_size=3, stride=1, padding=1),
         nn.BatchNorm2d(out_dim),
     )
+    return model
+
+def unet(output_channels=8, pretrained=False, path_pretrained_model=None, **kwargs):
+    model = Unet(output_channels=output_channels)
+
+    if pretrained:
+        if os.path.isfile(path_pretrained_model):
+            model_dict = torch.load(path_pretrained_model)
+            logging.info('Loading a saved model')
+            try:
+                model.load_state_dict(model_dict['state_dict'], strict=False)
+            except Exception as exp:
+                logging.warning(exp)
+        else:
+            logging.error("No model dict found at '{}'".format(path_pretrained_model))
+
     return model

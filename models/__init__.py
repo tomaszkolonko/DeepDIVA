@@ -12,11 +12,12 @@ from ._DenseNet import densenet121, densenet161, densenet169, densenet201
 from .CAE_basic import CAE_basic
 from .CAE_medium import CAE_medium
 from .FusionNet import FusionNet
-from .UNet import Unet
+from .UNet import unet
 from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
 from .Xception import xception
 from .Deeplabv3 import deeplabv3
 from .SegNet import SegNet
+from .Segmentation_basic import Segmentation_basic
 
 """
 Formula to compute the output size of a conv. layer
