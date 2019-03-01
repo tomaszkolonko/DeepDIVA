@@ -20,7 +20,7 @@ from .CAE_basic import CAE_basic
 from .Deeplabv3 import deeplabv3
 from .CAE_medium import CAE_medium
 from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
-from .Segmentation_basic import Segmentation_basic
+from .BabyUnet import BabyUnet
 
 """
 Formula to compute the output size of a conv. layer

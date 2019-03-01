@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch
 
 
-class Segmentation_basic(nn.Module):
+class BabyUnet(nn.Module):
     """
     Simple convolutional auto-encoder neural network
 
@@ -27,7 +27,7 @@ class Segmentation_basic(nn.Module):
             Number of classes
         """
 
-        super(Segmentation_basic, self).__init__()
+        super(BabyUnet, self).__init__()
         self.in_dim = input_channels
         self.out_dim = output_channels
         self.num_filter = num_filter
