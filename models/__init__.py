@@ -19,8 +19,9 @@ from .FusionNet import FusionNet
 from .CAE_basic import CAE_basic
 from .Deeplabv3 import deeplabv3
 from .CAE_medium import CAE_medium
-from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
 from .BabyUnet import BabyUnet
+from .Tiramisu import fcdensenet57, fcdensenet67, fcdensenet103
+
 
 """
 Formula to compute the output size of a conv. layer
