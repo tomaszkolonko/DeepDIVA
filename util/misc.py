@@ -537,5 +537,3 @@ def multi_one_hot_to_output(matrix):
     RGB = np.dstack((np.zeros(shape=(matrix.shape[0], matrix.shape[1], 2), dtype=np.int8), B))
 
     return RGB
-
-

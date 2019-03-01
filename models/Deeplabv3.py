@@ -5,7 +5,9 @@ import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.model_zoo as model_zoo
 
+import urllib
 import os
 
 from models.deeplabv3_resnet import ResNet18_OS16, ResNet34_OS16, ResNet50_OS16, ResNet101_OS16, ResNet152_OS16, ResNet18_OS8, ResNet34_OS8
@@ -35,7 +37,7 @@ class DeepLabV3(nn.Module):
         return output
 
 
-def deeplabv3(output_channels, pretrained=False, **kwargs):
+def deeplabv3(output_channels, pretrained=False, cityscapes=False, **kwargs):
     """VGG 11-layer model (configuration "A")
 
     Args:
@@ -43,4 +45,24 @@ def deeplabv3(output_channels, pretrained=False, **kwargs):
     """
     model = DeepLabV3(pretrained, output_channels, **kwargs)
 
+    if cityscapes:
+        try:
+            path = get_cityscapes_model_path(**kwargs)
+            model.load_state_dict(torch.load(path), strict=False)
+
+
+        except Exception as exp:
+            logging.warning(exp)
+
     return model
+
+
+def get_cityscapes_model_path(**kwargs):
+    download_path = os.path.join(os.getcwd(), "models/deeplabv3_13_2_2_2_epoch_580.pth")
+
+    if not os.path.exists(download_path):
+        url = urllib.parse.urlparse("https://github.com/fregu856/deeplabv3/blob/master/pretrained_models/model_13_2_2_2_epoch_580.pth?raw=true")
+        print('Downloading {}...'.format(url.geturl()))
+        urllib.request.urlretrieve(url.geturl(), download_path)
+
+    return download_path
