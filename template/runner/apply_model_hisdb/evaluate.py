@@ -249,7 +249,7 @@ def _save_test_img_output(img_to_save, one_hot, multi_run, dataset_folder, loggi
     # add full image to predictions
     pred = np.argmax(one_hot, axis=0)
     # open full ground truth image
-    gt_img_path = os.path.join(dataset_folder, logging_label, "gt", img_to_save)
+    gt_img_path = os.path.join(dataset_folder, "gt", img_to_save)
     with open(gt_img_path, 'rb') as f:
         with Image.open(f) as img:
             ground_truth = np.array(img.convert('RGB'))
