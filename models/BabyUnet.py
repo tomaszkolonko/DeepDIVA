@@ -33,13 +33,13 @@ class BabyUnet(nn.Module):
         self.num_filter = num_filter
         act_fn = nn.LeakyReLU(0.2, inplace=True)
 
-        self.down = conv_block_2(self.in_dim, self.num_filter, act_fn)
+        self.down = conv_block(self.in_dim, self.num_filter, act_fn)
         self.pool = maxpool()
 
-        self.bridge = conv_block_2(self.num_filter, self.num_filter * 2, act_fn)
+        self.bridge = conv_block(self.num_filter, self.num_filter * 2, act_fn)
 
         self.trans = conv_trans_block(self.num_filter * 2, self.num_filter, act_fn)
-        self.up = conv_block_2(self.num_filter * 2, self.num_filter, act_fn)
+        self.up = conv_block(self.num_filter * 2, self.num_filter, act_fn)
 
         self.out = nn.Sequential(
             nn.Conv2d(self.num_filter, self.out_dim, 3, 1, 1),
@@ -63,7 +63,6 @@ class BabyUnet(nn.Module):
 def conv_block(in_dim, out_dim, act_fn):
     model = nn.Sequential(
         nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=1, padding=1),
-        nn.BatchNorm2d(out_dim),
         act_fn,
     )
     return model
@@ -72,7 +71,6 @@ def conv_block(in_dim, out_dim, act_fn):
 def conv_trans_block(in_dim, out_dim, act_fn):
     model = nn.Sequential(
         nn.ConvTranspose2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1, output_padding=1),
-        nn.BatchNorm2d(out_dim),
         act_fn,
     )
     return model
@@ -81,22 +79,3 @@ def conv_trans_block(in_dim, out_dim, act_fn):
 def maxpool():
     pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
     return pool
-
-
-def conv_block_2(in_dim, out_dim, act_fn):
-    model = nn.Sequential(
-        conv_block(in_dim, out_dim, act_fn),
-        nn.Conv2d(out_dim, out_dim, kernel_size=3, stride=1, padding=1),
-        nn.BatchNorm2d(out_dim),
-    )
-    return model
-
-
-def conv_block_3(in_dim, out_dim, act_fn):
-    model = nn.Sequential(
-        conv_block(in_dim, out_dim, act_fn),
-        conv_block(out_dim, out_dim, act_fn),
-        nn.Conv2d(out_dim, out_dim, kernel_size=3, stride=1, padding=1),
-        nn.BatchNorm2d(out_dim),
-    )
-    return model
