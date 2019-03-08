@@ -33,12 +33,6 @@ def is_image_file(filename):
     return any(filename_lower.endswith(ext) for ext in IMG_EXTENSIONS)
 
 
-def find_classes():
-    classes = ["background", "foreground", "text", "decoration"]
-    classes.sort()
-    return classes
-
-
 def make_dataset(directory):
     images = []
     directory = os.path.expanduser(directory)
@@ -201,7 +195,7 @@ class ImageFolder(data.Dataset):
     # TODO: transform and target_transform could be the correct places for your cropping
     def __init__(self, root, gt_to_one_hot, num_classes, imgs_in_memory=3, crops_per_image=100, crop_size=10, transform=None, target_transform=None,
                  loader=default_loader, **kwargs):
-        classes = find_classes()
+
         imgs = make_dataset(root)
         if len(imgs) == 0:
             raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
@@ -209,7 +203,7 @@ class ImageFolder(data.Dataset):
 
         self.root = root
         self.imgs = imgs
-        self.classes = classes
+
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
@@ -264,7 +258,6 @@ class ImageFolder(data.Dataset):
             tuple: for test ((window_input, orig_img_shape, top_left_coordinates_of_crop,
                 is_new_img), target)
         """
-        # TODO: if you fix the width and height issue, just change the tuple in parameters (for linda)
         if self.test_set:
             # logging.info("*** v_crop: " + str(self.current_vert_crop) + "; h_crop: " + str(self.current_horiz_crop) +
             #              "; of image: " + str(self.current_test_image_counter + 1) +
