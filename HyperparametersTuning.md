@@ -67,7 +67,7 @@ For the Historical Writer Identification task on the [Historical-WI dataset](htt
 
 |               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum       | Weight Decay  | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
-| 3-layer CNN   | 32              | 0.001           | n/a                         | 0              | 0             | 128             | 11.4 %       |
+| CNN_basic     | 32              | 0.001           | n/a                         | 0              | 0             | 128             | 11.4 %       |
 | VGG19_bn      | 32              | 0.01998         | n/a                         | 0.15635        | 0.00785       | 128             | 14.6 %       | 
 | Resnet152     | 32              | 0.00817         | n/a                         | 0.40406        | 0.00565       | 128             | 24.7 %       |
 | Inception_v3  | 32              | 0.007           | n/a                         | 0.31808        | 0.00976       | 128             | 9.1  %       |
