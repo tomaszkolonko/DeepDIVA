@@ -125,7 +125,7 @@ def compute_mean_std_coco(dataset_folder, inmem, workers, **kwargs):
 
     # Load the dataset file names
     json = [os.path.join(gtdir, f) for f in os.listdir(gtdir) if 'instances_{}'.format('train')][0]
-    train_ds = coco_detection.CocoDetection(traindir, json)
+    train_ds = coco_detection.CocoDetection(traindir, json, **kwargs)
 
     # Extract the actual file names and labels as entries
     file_names = np.asarray([os.path.join(traindir, i['file_name']) for i in train_ds.coco.dataset['images']])

@@ -1,11 +1,16 @@
 # Impact of Architectural Features and Pre-training on the Performance of Deep Neural Networks used in the Analysis of Historical Document
 
-This document provides all the hyperparameters for the different architectures used in the above mentioned paper. All runs have been done with the [DeepDIVA framework](https://github.com/DIVA-DIA/DeepDIVA). 
-The learning rate decay divides the learning rate by 10 and happens every N epochs.
+This document provides all the hyper-parameters for the different architectures used in the above mentioned paper. All runs have been done with the [DeepDIVA framework](https://github.com/DIVA-DIA/DeepDIVA). The learning rate decay divides the learning rate by 10 and happens every N epochs.
 
+## Hyper-parameters for Character Recognition (Classification)
+hyper-parameters for the character recognition task on the [KMNIST dataset](https://github.com/rois-codh/kmnist). 
+All architectures (VGG19 BN, Inception V3, ResNet152, DenseNet121) have been trained with the same hyper-parameters for both experiments (from scratch and pre-trained).
 
-## Hyperparameters for Style Classification
+| Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum | Weight Decay   |
+|-------------: |:---------------:|:---------------------------:|:--------:|:--------------:|
+| 64            | 0.01            | 30                          | 0.9      | 0              |
 
+## Hyper-parameters for Style Classification (Classification)
 For the Style Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip) we optimized the parameters the parameters with [SIGOPT](https://sigopt.com) for the following architectures:
 
 |               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay  | Momentum      | Weight Decay   | Test Accuracy |
@@ -16,19 +21,19 @@ For the Style Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.
 | Inception_v3  | 64            | 0.08231         | 20                           | 0.67468       | 0.00689        | 42.72 %       |
 | Densenet121   | 64            | 0.08750         | 20                           | 0.32541       | 0.00389        | 42.17 %       | 
 
-We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
+We let SIGOPT optimize all the hyper-parameters again for the runs with ImageNet pre-training with the following results:
 
 |               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:-------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:-------------:|
-| CNN_basic     | -             | -               | -                           | -             | -              | -             |
 | VGG19_bn      | 64            | 0.09656         | 20                          | 0.65385       | 0.00435        | 47.27 %       |
 | Resnet152     | 64            | 0.02609         | 20                          | 0.74250       | 0.00895        | 44.42 %       |
 | Inception_v3  | 64            | 0.08782         | 20                          | 0.25135       | 0.00956        | 48.82 %       |
 | Densenet121   | 64            | 0.05002         | 20                          | 0.42603       | 0.00575        | 45.92 %       | 
 
-## Hyperparameters for Manuscript Dating
 
-For the Manuscript Dating Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip) we optimized the parameters the parameters with [SIGOPT](https://sigopt.com) for the following architectures:
+## Hyper-parameters for Manuscript Dating (Classification)
+
+For the Manuscript Dating Classification task on the [CLaMM dataset](http://clamm.irht.cnrs.fr/wp-content/uploads/ICDAR2017_CLaMM_Training.zip) we optimized the parameters with [SIGOPT](https://sigopt.com) for the following architectures:
 
 |               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:-------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:-------------:|
@@ -38,32 +43,18 @@ For the Manuscript Dating Classification task on the [CLaMM dataset](http://clam
 | Inception_v3  | 64            | 0.01523         | 20                          | 0.95131       | 0.00674        | 22.36 %       |
 | Densenet121   | 64            | 0.04435         | 20                          | 0.34480       | 0.00848        | 27.26 %       |
 
-We let SIGOPT optimize all the hyperparameters again for the runs with pre-training with the following results:
+We let SIGOPT optimize all the hyper-parameters again for the runs with pre-training with the following results:
 
 |               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Test Accuracy |
 |-------------: |:-------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:-------------:|
-| CNN_basic     | -             | -               | -                           | -             | -              | -             |
 | VGG19_bn      | 64            | 0.05288         | 20                          | 0.49782       | 0.00001        | 32.12 %       |
 | Resnet152     | 64            | 0.01949         | 20                          | 0.56291       | 0.00498        | 32.82 %       |
 | Inception_v3  | 64            | 0.01788         | 20                          | 0.81922       | 0.00621        | 31.92 %       |
 | Densenet121   | 64            | 0.03187         | 20                          | 0.20721       | 0.00006        | 31.27 %       |
 
-## Hyperparameters for KMNIST
+## Hyper-parameters for Writer Identification (Image Similarity)
 
-For the Manuscript Dating Classification task on the [KMNIST dataset](https://github.com/rois-codh/kmnist) the same hyperparameters
-were used for all the experiments:
-
-|               | Batch Size    | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Test Accuracy |
-|-------------: |:-------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:-------------:|
-| VGG19_bn      | 64            | 0.01            | 30                          | 0.09          | 0              |  %       |
-| Resnet152     | 64            | 0.01            | 30                          | 0.09          | 0              |  %       |
-| Inception_v3  | 64            | 0.01            | 30                          | 0.09          | 0              |  %       |
-| Densenet121   | 64            | 0.01            | 30                          | 0.09          | 0              |  %       |
-
-
-## Hyperparameters for Content-Based Image Retrieval
-
-For the Historical Writer Identification task on the [Historical-WI dataset](https://scriptnet.iit.demokritos.gr/competitions/6/) we optimized the parameters the parameters with [SIGOPT](https://sigopt.com) for the following architectures:
+For the Historical Writer Identification task on the [Historical-WI dataset](https://scriptnet.iit.demokritos.gr/competitions/6/) we optimized the parameters with [SIGOPT](https://sigopt.com) for the following architectures:
 
 |               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum       | Weight Decay  | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
@@ -73,7 +64,8 @@ For the Historical Writer Identification task on the [Historical-WI dataset](htt
 | Inception_v3  | 32              | 0.007           | n/a                         | 0.31808        | 0.00976       | 128             | 9.1  %       |
 | Densenet121   | 32              | 0.03354         | n/a                         | 0.21808        | 0.00231       | 128             | 27.2 %       |
 
-We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
+
+We let SIGOPT optimize all the hyper-parameters again for the runs with ImageNet pre-training with the following results:
 
 |               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:---------------:|:-------------:|
@@ -83,25 +75,13 @@ We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet 
 | Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 34.6 %       | 
 
 
-## Hyperparameters for Segmentation
+## Hyper-parameters for Segmentation
 
-Hyperparemters for the architectures used for the Competition on Layout Analysis for Challenging Medieval Manuscripts task of the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp) 
-(evaluation is performed using [this layout analysis tool](https://github.com/DIVA-DIA/DIVA_Layout_Analysis_Evaluator)): 
+Hyper-parameters for the architectures used for the Competition on Layout Analysis for Challenging Medieval Manuscripts task of the [DIVA-HisDB dataset](https://diuf.unifr.ch/main/hisdoc/icdar2017-hisdoc-layout-comp): 
 
-|               | Batch Size | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum  | Weight Decay   | Crop Size | Crops per Page | Pages in Memory | Overall MeanIU<br/>From Scratch | Overall MeanIU<br/>Pre-trained | Pre-trained On          |
-|-------------: |:----------:|:---------------:|:---------------------------:|:---------:|:--------------:|:---------:|:--------------:|:---------------:|:-------------------------------:|:------------------------------:|:-----------------------:|
-| SegNet        | 32         | 0.001           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | XX.X %                          |                                | ImageNet (just encoder) |
-| DeepLabV3     | 32         | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | 82.8 %                          | 83.8                           | ImageNet (just encoder) |
-| UNet          | 32         | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | 91.1 %                          |                                | COCO                    |
-| FC-Densenet57 | 8          | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | 92.4 %                          |                                | COCO                    |
-| Segmentation_simple | X    | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | XX.X %                          | n/a                            | n/a                    |
-
-
-Hyperparemters for COCO pre-training:
-
-|               | Batch Size | Learning Rate   | Momentum  | Weight Decay   |
-|-------------: |:----------:|:---------------:|:---------:|:--------------:|
-| UNet          | 16         | 0.02            | 0.9       | 0              | 
-| FC-Densenet57 | 10         | 0.01            | 0.9       | 0              | 
-
+|                              | Batch Size | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum  | Weight Decay   | Crop Size | Crops per Page | Pages in Memory |
+|-----------------------------:|:----------:|:---------------:|:---------------------------:|:---------:|:--------------:|:---------:|:--------------:|:---------------:|
+| SegNet (VGG19 BN encoder)    | 32         | 0.001           | 24                          | 0.9       | 0              | 256       | 1000           | 3               | 
+| DeepLabV3 (ResNet18 encoder) | 32         | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               |
+| 5-layer CNN (BabyUnet)       | 32         | 0.005           | 24                          | 0.9       | 0              | 256       | 1000           | 3               |
 
