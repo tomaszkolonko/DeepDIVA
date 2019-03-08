@@ -65,21 +65,22 @@ were used for all the experiments:
 
 For the Historical Writer Identification task on the [Historical-WI dataset](https://scriptnet.iit.demokritos.gr/competitions/6/) we optimized the parameters the parameters with [SIGOPT](https://sigopt.com) for the following architectures:
 
-|               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
+|               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum       | Weight Decay  | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:--------------:|:-------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.01998         | n/a                         | 0.15635       | 0.00785        | 128             | 14.85 %       | 
-| Resnet152     | 32              | 0.00817         | n/a                         | 0.40406       | 0.00565        | 128             | 24.67 %       |
-| Inception_v3  | 32              | 0.007           | n/a                         | 0.31808       | 0.00976        | 128             | 9.14  %       |
-| Densenet121   | 32              | 0.03354         | n/a                         | 0.21808       | 0.00231        | 128             | 27.18 %       |
+| CNN_basic     | 32              | 0.001           | n/a                         | 0              | 0             | 128             | 11.4 %       |
+| VGG19_bn      | 32              | 0.01998         | n/a                         | 0.15635        | 0.00785       | 128             | 14.6 %       | 
+| Resnet152     | 32              | 0.00817         | n/a                         | 0.40406        | 0.00565       | 128             | 24.7 %       |
+| Inception_v3  | 32              | 0.007           | n/a                         | 0.31808        | 0.00976       | 128             | 9.1  %       |
+| Densenet121   | 32              | 0.03354         | n/a                         | 0.21808        | 0.00231       | 128             | 27.2 %       |
 
 We let SIGOPT optimize all the hyperparameters again for the runs with ImageNet pre-training with the following results:
 
 |               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.01554         | n/a                         | 0.48831       | 0.00959        | 128             | 1.388 %       | 
-| Resnet152     | 32              | 0.01366         | n/a                         | 0.36760       | 0.00900        | 128             | - %       |
-| Inception_v3  | 32              | 0.03608         | n/a                         | 0.31797       | 0.00107        | 128             | 26.11 %       |
-| Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 34.62 %       | 
+| VGG19_bn      | 32              | 0.001554        | n/a                         | 0.48831       | 0.00959        | 128             | xx %       | 
+| Resnet152     | 32              | 0.01366         | n/a                         | 0.36760       | 0.00900        | 128             | 22.1 %       |
+| Inception_v3  | 32              | 0.03608         | n/a                         | 0.31797       | 0.00107        | 128             | 26.1 %       |
+| Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 34.6 %       | 
 
 
 ## Hyperparameters for Segmentation
