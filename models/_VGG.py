@@ -199,7 +199,7 @@ def vgg19_bn(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = VGG(make_layers(cfg['E'], batch_norm=True), **kwargs)
+    model = VGG(make_layers(cfg['E'], batch_norm=True))
     if pretrained:
         try:
             model.load_state_dict(model_zoo.load_url(model_urls['vgg19_bn']), strict=False)

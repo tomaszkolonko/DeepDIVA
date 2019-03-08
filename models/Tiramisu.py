@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 
+import logging
+import os
+
 #from .Layers import *
 
 """
@@ -185,22 +188,61 @@ def center_crop(layer, max_height, max_width):
     return layer[:, :, xy2:(xy2 + max_height), xy1:(xy1 + max_width)]
 
 
-def fcdensenet57(output_channels=8, **kwargs):
-    return FCDenseNet(
+def fcdensenet57(output_channels=8, pretrained=False, path_pretrained_model=None, **kwargs):
+    model = FCDenseNet(
         in_channels=3, down_blocks=(4, 4, 4, 4, 4),
         up_blocks=(4, 4, 4, 4, 4), bottleneck_layers=4,
         growth_rate=12, out_chans_first_conv=48, output_channels=output_channels)
 
+    if pretrained:
+        if os.path.isfile(path_pretrained_model):
+            model_dict = torch.load(path_pretrained_model)
+            logging.info('Loading a saved model')
+            try:
+                model.load_state_dict(model_dict['state_dict'], strict=False)
+            except Exception as exp:
+                logging.warning(exp)
+        else:
+            logging.error("No model dict found at '{}'".format(path_pretrained_model))
 
-def fcdensenet67(output_channels=8, **kwargs):
-    return FCDenseNet(
+    return model
+
+
+def fcdensenet67(output_channels=8, pretrained=False, path_pretrained_model=None, **kwargs):
+    model = FCDenseNet(
         in_channels=3, down_blocks=(5, 5, 5, 5, 5),
         up_blocks=(5, 5, 5, 5, 5), bottleneck_layers=5,
         growth_rate=16, out_chans_first_conv=48, output_channels=output_channels)
 
+    if pretrained:
+        if os.path.isfile(path_pretrained_model):
+            model_dict = torch.load(path_pretrained_model)
+            logging.info('Loading a saved model')
+            try:
+                model.load_state_dict(model_dict['state_dict'], strict=False)
+            except Exception as exp:
+                logging.warning(exp)
+        else:
+            logging.error("No model dict found at '{}'".format(path_pretrained_model))
 
-def fcdensenet103(output_channels=8, **kwargs):
-    return FCDenseNet(
+    return model
+
+
+def fcdensenet103(output_channels=8, pretrained=False, path_pretrained_model=None, **kwargs):
+    model = FCDenseNet(
         in_channels=3, down_blocks=(4, 5, 7, 10, 12),
         up_blocks=(12, 10, 7, 5, 4), bottleneck_layers=15,
         growth_rate=16, out_chans_first_conv=48, output_channels=output_channels)
+
+    if pretrained:
+        if os.path.isfile(path_pretrained_model):
+            model_dict = torch.load(path_pretrained_model)
+            logging.info('Loading a saved model')
+            try:
+                model.load_state_dict(model_dict['state_dict'], strict=False)
+            except Exception as exp:
+                logging.warning(exp)
+        else:
+            logging.error("No model dict found at '{}'".format(path_pretrained_model))
+
+    return model

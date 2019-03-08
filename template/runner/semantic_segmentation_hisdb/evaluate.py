@@ -378,7 +378,7 @@ def test(data_loader, model, criterion, writer, epoch, class_names, dataset_fold
     else:
         writer.add_scalar(logging_label + '/meanIU_{}'.format(multi_run), meanIU.avg, epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_{}'.format(multi_run),
-                                          image=confusion_matrix_heatmap, global_step = epoch)
+                                          image=confusion_matrix_heatmap, global_step=epoch)
         save_image_and_log_to_tensorboard(writer, tag=logging_label + '/confusion_matrix_weighted{}'.format(multi_run),
                                           image=confusion_matrix_heatmap_w, global_step=epoch)
 
