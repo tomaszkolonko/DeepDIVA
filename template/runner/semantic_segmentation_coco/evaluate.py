@@ -20,7 +20,7 @@ from util.evaluation.metrics.accuracy import accuracy_segmentation
 
 
 def evaluate(logging_label, data_loader, model, criterion, writer, epoch, name_onehotindex, category_id_name,
-             no_val_conf_matrix, no_cuda=False, log_interval=10, myclone_env=False, **kwargs):
+             no_val_conf_matrix, no_cuda=False, log_interval=10, **kwargs):
     """
     The evaluation routine
 

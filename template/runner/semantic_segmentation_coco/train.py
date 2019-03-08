@@ -16,8 +16,8 @@ from datasets.transform_library.functional import annotation_to_argmax
 from util.evaluation.metrics.accuracy import accuracy_segmentation
 
 
-def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehotindex, category_id_name, no_cuda=False,
-          log_interval=25, myclone_env=False, **kwargs):
+def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehotindex, category_id_name, no_cuda=False, log_interval=25,
+          **kwargs):
     """
     Training routine
 
@@ -80,7 +80,7 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehoti
         input_var = torch.autograd.Variable(input)
         target_argmax_var = torch.autograd.Variable(target_argmax)
 
-        mean_iu, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_argmax_var, loss_meter, meanIU, num_classes, myclone_env)
+        mean_iu, loss = train_one_mini_batch(model, criterion, optimizer, input_var, target_argmax_var, loss_meter, meanIU, num_classes)
 
         # Add loss and accuracy to Tensorboard
         try:
@@ -132,7 +132,7 @@ def train(train_loader, model, criterion, optimizer, writer, epoch, name_onehoti
     return meanIU.avg
 
 
-def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU_meter, num_classes, myclone_env):
+def train_one_mini_batch(model, criterion, optimizer, input_var, target_var_argmax, loss_meter, meanIU_meter, num_classes):
     """
     This routing train the model passed as parameter for one mini-batch
 
