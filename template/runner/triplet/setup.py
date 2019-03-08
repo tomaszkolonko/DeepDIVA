@@ -87,7 +87,7 @@ def setup_dataloaders(model_expected_input_size, dataset_folder, n_triplets, bat
     ])
     logging.info("Transform is set to MultiCrop")
 
-    train_ds.transform = standard_transform
+    train_ds.transform = multicrop_transform
     val_ds.transform = multicrop_transform
     test_ds.transform = multicrop_transform
 
