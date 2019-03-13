@@ -69,7 +69,7 @@ We let SIGOPT optimize all the hyper-parameters again for the runs with ImageNet
 
 |               | Batch Size      | Learning Rate   | Learning<br/>Rate<br/>Decay | Momentum      | Weight Decay   | Output Channels | Test mAP      |
 |-------------: |:---------------:|:---------------:|:---------------------------:|:-------------:|:--------------:|:---------------:|:-------------:|
-| VGG19_bn      | 32              | 0.001554        | n/a                         | 0.48831       | 0.00959        | 128             | 26.0 %       | 
+| VGG19_bn      | 32              | 0.001554        | n/a                         | 0.48831       | 0.00959        | 128             | 24.0 %       | 
 | Resnet152     | 32              | 0.01366         | n/a                         | 0.36760       | 0.00900        | 128             | 22.1 %       |
 | Inception_v3  | 32              | 0.03608         | n/a                         | 0.31797       | 0.00107        | 128             | 26.1 %       |
 | Densenet121   | 32              | 0.01662         | n/a                         | 0.17825       | 0.00254        | 128             | 34.6 %       | 
